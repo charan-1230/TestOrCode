@@ -2,7 +2,7 @@
 .env
 
 # Ignore virtual environment directories:
-myenv/
+myvenv/
 .venv/
 
 # Ignore Python bytecode files
