@@ -169,9 +169,10 @@ Add the required API configuration to `.env` according to the selected provider.
 For example:
 
 ```dotenv
-OPENAI_API_KEY=your_api_key_here
-OPENAI_BASE_URL=
-MODEL_NAME=
+LLM_PROVIDER=openai_compatible
+LLM_API_KEY=your_api_key_here
+LLM_BASE_URL=
+LLM_MODEL=
 ```
 
 Never commit `.env`, API keys, access tokens, or other secrets to Git. Keep `.env.example` free of real credentials.
@@ -189,10 +190,15 @@ testorcode/
 ├── README.md
 ├── .env.example
 ├── .gitignore
+├── docs/
+│   └── interfaces.md          # shared interfaces: read before branching
 ├── src/
 │   └── testorcode/
 │       ├── __init__.py
-│       ├── schemas.py
+│       ├── config.py          # Settings.from_env()
+│       ├── logging_config.py
+│       ├── errors.py
+│       ├── schemas/           # episode_schemas, result_schemas, contracts
 │       ├── orchestrator.py
 │       ├── llm_client.py
 │       ├── agents/
@@ -208,11 +214,12 @@ testorcode/
 │       ├── memory.py
 │       └── evaluation.py
 ├── datasets/
-│   └── pilot_episodes.jsonl
 ├── tests/
 ├── results/
 └── scripts/
 ```
+
+Most modules are interface stubs that raise `NotImplementedError`; `docs/interfaces.md` says which parts are stable.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
 

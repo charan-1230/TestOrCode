@@ -32,7 +32,7 @@ mutation = [
 packages = ["src/testorcode"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["src", "tests"]
 pythonpath = ["src"]
 python_classes = []
 
