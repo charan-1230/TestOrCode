@@ -1,0 +1,276 @@
+{
+  "schema_version": "1.0.0",
+  "episode_id": "ep-s3",
+  "scenario": "S3",
+  "difficulty": "hard",
+  "stream_id": "synthlib-stream",
+  "stream_position": 12,
+  "created_at": null,
+  "agent_input": {
+    "schema_version": "1.0.0",
+    "episode_id": "ep-s3",
+    "repo": {
+      "repo_id": "synthlib",
+      "repo_url": null,
+      "package_name": "synthlib",
+      "license": "MIT"
+    },
+    "environment": {
+      "python_version": "3.12.3",
+      "docker_image": "synthlib-env@sha256:deadbeef",
+      "dependency_lock_hash": "sha256:1234",
+      "pytest_version": "8.2.0",
+      "network_enabled": false,
+      "test_timeout_seconds": null,
+      "stability_runs": 5,
+      "tool_versions": {
+        "git": "2.43.0"
+      }
+    },
+    "ci_event": {
+      "event_id": "ci-1",
+      "commit": {
+        "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        "committed_at": null,
+        "stream_index": 10
+      },
+      "parent_commit": {
+        "sha": "0f1e2d3c4b5a69788796a5b4c3d2e1f098765432",
+        "committed_at": null,
+        "stream_index": 9
+      },
+      "commit_message": "Capitalise normalise() output",
+      "commit_message_availability": "available",
+      "changed_files": [
+        {
+          "path": "src/synthlib/core.py",
+          "change_kind": "modified",
+          "unified_diff": "@@ -1 +1 @@\n-    return s.lower()\n+    return s.capitalize()",
+          "lines_added": 1,
+          "lines_removed": 1
+        }
+      ],
+      "failing_tests": [
+        {
+          "test_id": "tests/test_synthlib.py::test_normalise",
+          "test_file": "tests/test_synthlib.py",
+          "test_name": "test_normalise",
+          "target_function": "synthlib.core.normalise",
+          "failure_type": "assertion",
+          "failure_message": "assert 'A' == 'a'",
+          "traceback": "Traceback (most recent call last): ...",
+          "assertion_diff": "- 'a'\n+ 'A'",
+          "stability_runs": 5,
+          "stable": true
+        },
+        {
+          "test_id": "tests/test_synthlib.py::test_slugify",
+          "test_file": "tests/test_synthlib.py",
+          "test_name": "test_slugify",
+          "target_function": "synthlib.core.slugify",
+          "failure_type": "assertion",
+          "failure_message": "assert 'A' == 'a'",
+          "traceback": "Traceback (most recent call last): ...",
+          "assertion_diff": "- 'a'\n+ 'A'",
+          "stability_runs": 5,
+          "stable": true
+        }
+      ],
+      "failure_groups": [
+        {
+          "group_id": "g-normalise",
+          "function_qualname": "synthlib.core.normalise",
+          "test_ids": [
+            "tests/test_synthlib.py::test_normalise"
+          ]
+        },
+        {
+          "group_id": "g-slugify",
+          "function_qualname": "synthlib.core.slugify",
+          "test_ids": [
+            "tests/test_synthlib.py::test_slugify"
+          ]
+        }
+      ],
+      "suite_snapshot": {
+        "phase": "episode_start",
+        "collected": true,
+        "total": 40,
+        "passed": 38,
+        "failed": 2,
+        "errors": null,
+        "skipped": null,
+        "failing_test_ids": [
+          "tests/test_synthlib.py::test_normalise",
+          "tests/test_synthlib.py::test_slugify"
+        ],
+        "outcomes": null
+      }
+    },
+    "corpus": {
+      "corpus_id": "synthlib-corpus",
+      "corpus_version": "v1",
+      "index_version": "bm25-v1",
+      "history_cutoff_commit": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "history_cutoff_index": 10,
+      "included_source_types": [
+        "commit_message",
+        "changelog",
+        "documentation",
+        "docstring"
+      ],
+      "items": [
+        {
+          "evidence_id": "ev-commit-msg-1",
+          "source_type": "commit_message",
+          "source_ref": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "commit_sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+          "commit_index": 10,
+          "section": null,
+          "line_start": null,
+          "line_end": null,
+          "text": "Capitalise the first letter of normalise() output on purpose.",
+          "created_at": null
+        },
+        {
+          "evidence_id": "ev-changelog-1",
+          "source_type": "changelog",
+          "source_ref": "CHANGELOG.md",
+          "commit_sha": null,
+          "commit_index": 10,
+          "section": "Unreleased",
+          "line_start": 3,
+          "line_end": 4,
+          "text": "normalise() now returns a capitalised string.",
+          "created_at": null
+        }
+      ],
+      "excluded_note": null
+    },
+    "visible_memory": null,
+    "edit_policy": {
+      "allowed_source_roots": [
+        "src/"
+      ],
+      "allowed_test_roots": [
+        "tests/",
+        "test/"
+      ],
+      "forbidden_globs": [
+        "**/conftest.py",
+        "conftest.py",
+        ".github/**",
+        "pyproject.toml",
+        "setup.py",
+        "setup.cfg",
+        "tox.ini",
+        "requirements*.txt",
+        "*.lock",
+        ".pre-commit-config.yaml",
+        "Dockerfile*"
+      ]
+    },
+    "budget": {
+      "max_tool_calls": 40,
+      "max_llm_calls": 20,
+      "max_tokens": 200000,
+      "max_revisions": 1,
+      "wall_clock_seconds": null
+    },
+    "allowed_tools": [
+      "run_tests",
+      "read_file",
+      "search_repo",
+      "git_log",
+      "git_show",
+      "git_blame",
+      "apply_patch",
+      "memory.read",
+      "escalate"
+    ],
+    "allowed_actions": [
+      "UPDATE_TEST",
+      "FIX_CODE",
+      "ESCALATE"
+    ]
+  },
+  "ground_truth": {
+    "episode_id": "ep-s3",
+    "scenario": "S3",
+    "per_test_labels": [
+      {
+        "test_id": "tests/test_synthlib.py::test_normalise",
+        "group_id": "g-normalise",
+        "function_qualname": "synthlib.core.normalise",
+        "gold_direction": "UPDATE_TEST",
+        "expected_action": "UPDATE_TEST",
+        "cause": "outdated_test",
+        "gold_evidence_ids": [
+          "ev-commit-msg-1"
+        ],
+        "related_memory_record_id": null,
+        "memory_applies": null,
+        "injected_mutant_id": null,
+        "note": null
+      },
+      {
+        "test_id": "tests/test_synthlib.py::test_slugify",
+        "group_id": "g-slugify",
+        "function_qualname": "synthlib.core.slugify",
+        "gold_direction": "FIX_CODE",
+        "expected_action": "FIX_CODE",
+        "cause": "injected_regression",
+        "gold_evidence_ids": [],
+        "related_memory_record_id": null,
+        "memory_applies": null,
+        "injected_mutant_id": "mut-9",
+        "note": null
+      }
+    ],
+    "expected_episode_outcome": null,
+    "reference_repairs": [
+      {
+        "kind": "developer_test_diff",
+        "unified_diff": "@@\n-    assert normalise('ab') == 'ab'\n+    assert normalise('ab') == 'Ab'",
+        "changed_files": [
+          "tests/test_synthlib.py"
+        ],
+        "source_commit": null
+      }
+    ],
+    "injected_mutants": [
+      {
+        "mutant_id": "mut-9",
+        "function_qualname": "synthlib.core.slugify",
+        "file_path": "src/synthlib/core.py",
+        "operator": null,
+        "unified_diff": null,
+        "killed_by_reference_tests": null
+      }
+    ],
+    "mutation_fixtures": [],
+    "gold_evidence_ids": [
+      "ev-commit-msg-1"
+    ],
+    "evidence_availability": "available",
+    "stripped_evidence": [],
+    "decoy_memory_record_ids": [],
+    "future_commit_shas": [],
+    "label_provenance": {
+      "method": "manual_review",
+      "stability_runs": 5,
+      "verified_by": "synthetic",
+      "verified_at": null,
+      "note": null
+    },
+    "note": null
+  },
+  "fault_plan": {
+    "enabled": false,
+    "seed": null,
+    "target_failure_rate": null,
+    "injections": []
+  },
+  "tags": [],
+  "note": null
+}
