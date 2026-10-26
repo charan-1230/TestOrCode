@@ -11,3 +11,8 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+
+# Generated experiment output and logs (the directory itself is kept via .gitkeep)
+results/*
+!results/.gitkeep
+*.log
