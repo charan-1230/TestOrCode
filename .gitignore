@@ -1,1 +1,13 @@
+# Ignore environment variable files
+.env
+
+# Ignore virtual environment directories:
+myenv/
+.venv/
+
+# Ignore Python bytecode files
+*.py[cod]
+__pycache__/
+.pytest_cache/
+.ruff_cache/
 
