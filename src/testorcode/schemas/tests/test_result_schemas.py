@@ -1,939 +1,433 @@
-"""Tests for ``testorcode.result_schemas``.
-
-All runs, token counts and tool traces below are synthetic.  No real experiment
-has been executed to produce them.
-"""
+"""Tests for ``testorcode.result_schemas``.  Runs, tokens and traces are synthetic;
+no experiment was executed to produce them."""
 
 from __future__ import annotations
 
 import json
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
-from testorcode.result_schemas import (
-    AgentRole,
-    BudgetUsage,
-    ConfidenceReport,
-    DecisionRationale,
-    ErrorCategory,
-    ErrorRecord,
-    EscalationSummary,
-    EvidenceEvaluation,
-    ExperimentCondition,
-    ExperimentRunRecord,
-    GuardDecision,
-    Hypothesis,
-    IntegrityCheck,
-    IntegrityEvaluation,
-    IntegrityReport,
-    CheckStatus,
-    MemoryReadEvent,
-    MemoryWriteAttempt,
-    MutantOutcome,
-    MutationResult,
-    OperationType,
-    PatchApplicationStatus,
-    PatchRecord,
-    PredictedDecision,
-    ProbeRun,
-    ProbeStatus,
-    ProhibitedEditCheck,
-    RepairEvaluation,
-    RepairVerificationDimension,
-    RetrievalMethod,
-    RetrievedEvidence,
-    RunEvaluation,
-    RunOutcome,
-    RunProvenance,
-    RunStatus,
-    StopReason,
-    SupportStatus,
-    TestRunPhase,
-    TestRunResult,
-    TestRunStatus,
-    TestWeakeningFindings,
-    TokenUsage,
-    ToolCallStatus,
-    ToolCallSummary,
-    ToolEvent,
-    TrajectoryStep,
-    UnitDecisionScore,
-    METRIC_SUPPORT,
+from testorcode.schemas.tests.conftest import T_NORM, T_SLUG, make_s3
+from testorcode.schemas.episode_schemas import (
+    DecisionLabel, EvidenceSourceType, HypothesisKind, PatchScope,
+    RepairDirection, ToolFaultKind, ToolName,
 )
-from testorcode.episode_schemas import (
-    DecisionLabel,
-    Episode,
-    EvidenceSourceType,
-    HypothesisKind,
-    PatchScope,
-    RepairDirection,
-    ToolFaultKind,
-    ToolName,
+from testorcode.schemas.result_schemas import (
+    CORE_CONDITIONS, METRIC_SUPPORT, AgentRole, ErrorCategory, ErrorRecord, EscalationSummary,
+    EvidenceEvaluation, ExperimentCondition, ExperimentRunRecord, GuardDecision, IntegrityEvaluation,
+    IntegrityReport, MemoryReadEvent, MemoryWriteAttempt, MutationResult, PatchApplicationStatus,
+    PatchRecord, PredictedDecision, ProbeStatus, ProhibitedEditCheck, RepairEvaluation,
+    RepairVerificationDimension as Dim, RetrievalMethod, RetrievedEvidence, RunEvaluation,
+    RunOutcome, RunProvenance, RunStatus, SupportStatus, TestRunPhase, TestRunResult, TestRunStatus,
+    TestWeakeningFindings, TokenUsage, ToolCallStatus, ToolEvent, UnitDecisionScore,
 )
 
-MODEL_ID = "qwen/qwen3-coder-480b-a35b-instruct"
+MODEL = "qwen/qwen3-coder-480b-a35b-instruct"
+C = ExperimentCondition
 
 
-def provenance(
-    *,
-    run_id: str = "run-1",
-    episode_id: str = "ep-s1",
-    condition: ExperimentCondition = ExperimentCondition.FULL,
-    seed: int | None = 0,
-) -> RunProvenance:
-    return RunProvenance(
-        run_id=run_id,
-        episode_id=episode_id,
-        condition=condition,
-        seed=seed,
-        model_id=MODEL_ID,
-        provider="nvidia-nim",
-        dataset_id="pilot",
-        dataset_version="2026-10-25",
-        split="pilot",
-        code_revision="deadbee",
-        prompt_template_version="prompts-v3",
-        agent_config_version="full-v1",
-        retrieval_config_version="bm25-k8-v1",
-        index_version="bm25-v1",
-        evaluation_protocol_version="eval-v1",
-    )
+def prov(run_id: str = "run-1", condition: ExperimentCondition = C.FULL, seed: int | None = 0,
+         episode_id: str = "ep-0001", **kw: Any) -> RunProvenance:
+    kw.setdefault("model_id", MODEL)
+    return RunProvenance(run_id=run_id, episode_id=episode_id, condition=condition, seed=seed, **kw)
 
 
-def evidence_item() -> RetrievedEvidence:
-    return RetrievedEvidence(
-        evidence_id="ev-commit-msg-1",
-        source_type=EvidenceSourceType.COMMIT_MESSAGE,
-        source_ref="a1b2c3d",
-        retrieval_query="normalise capitalise intent",
-        retrieval_method=RetrievalMethod.BM25,
-        rank=1,
-        score=12.4,
-        used_by_agent=True,
-        cited=True,
-        support=SupportStatus.SUPPORTS,
-    )
+def decision(test_id: str = T_NORM, action: DecisionLabel = DecisionLabel.UPDATE_TEST, **kw: Any) -> PredictedDecision:
+    kw.setdefault("cited_evidence_ids", ["ev-msg"])
+    return PredictedDecision(test_id=test_id, predicted_action=action, hypothesis=HypothesisKind.OUTDATED_TEST,
+                             predicted_behaviour="normalise('ab') == 'Ab'", rationale="Commit says intended.", **kw)
 
 
-def decision(
-    action: DecisionLabel = DecisionLabel.UPDATE_TEST,
-    test_id: str = "tests/test_synthlib.py::test_normalise",
-    decision_id: str = "d-1",
-) -> PredictedDecision:
-    return PredictedDecision(
-        decision_id=decision_id,
-        unit_kind="test",
-        test_ids=[test_id],
-        group_id="g-normalise",
-        function_qualname="synthlib.core.normalise",
-        predicted_action=action,
-        predicted_direction=(
-            None if action is DecisionLabel.ESCALATE else RepairDirection(action.value)
-        ),
-        hypotheses=[
-            Hypothesis(
-                hypothesis_id="h-1",
-                kind=HypothesisKind.OUTDATED_TEST,
-                statement="normalise() was intentionally changed to capitalise.",
-                predicted_behaviour="normalise('ab') == 'Ab'",
-                supporting_evidence_ids=["ev-commit-msg-1"],
-                checked=True,
-                check_outcome="confirmed",
-                selected=True,
-            )
-        ],
-        selected_hypothesis_id="h-1",
-        cited_evidence_ids=["ev-commit-msg-1"],
-        rationale=DecisionRationale(
-            summary="Commit message states the capitalisation is intended.",
-            escalation_reason=(
-                "No positive evidence found" if action is DecisionLabel.ESCALATE else None
-            ),
-        ),
-    )
+def evidence() -> RetrievedEvidence:
+    return RetrievedEvidence(evidence_id="ev-msg", source_type=EvidenceSourceType.COMMIT_MESSAGE, source_ref="a1b2c3d",
+                             retrieval_query="normalise intent", retrieval_method=RetrievalMethod.BM25, rank=1,
+                             score=12.4, support=SupportStatus.SUPPORTS)
 
 
-# --------------------------------------------------------------------------- #
-# 10. Serialisation round-trip
-# --------------------------------------------------------------------------- #
+def passed_run(run_id: str = "tr-2", phase: TestRunPhase = TestRunPhase.POST_REPAIR) -> TestRunResult:
+    return TestRunResult(run_id=run_id, phase=phase, status=TestRunStatus.PASSED, passed=40, failed=0)
 
 
-def test_run_record_json_round_trip() -> None:
-    run = ExperimentRunRecord(
-        provenance=provenance(),
-        predictions=[decision()],
-        retrieved_evidence=[evidence_item()],
-    )
-    line = run.to_jsonl()
-    assert "\n" not in line
-    restored = ExperimentRunRecord.model_validate_json(line)
-    assert restored == run
-    assert json.loads(line)["provenance"]["condition"] == "FULL"
-
-
-# --------------------------------------------------------------------------- #
-# 15. One run records every mandatory field
-# --------------------------------------------------------------------------- #
-
-
-def full_run_record() -> ExperimentRunRecord:
-    post = TestRunResult(
-        run_id="tr-2",
-        phase=TestRunPhase.POST_REPAIR,
-        status=TestRunStatus.PASSED,
-        passed=40,
-        failed=0,
-    )
+def complete_run() -> ExperimentRunRecord:
+    post = passed_run()
     return ExperimentRunRecord(
-        provenance=provenance(),
-        predictions=[decision()],
-        retrieved_evidence=[evidence_item()],
-        trajectory=[
-            TrajectoryStep(
-                step_id="s-1",
-                index=0,
-                operation=OperationType.RETRIEVAL,
-                actor=AgentRole.INTENT_ANALYST,
-                parameters={"query": "normalise capitalise", "k": 8},
-                evidence_ids_returned=["ev-commit-msg-1"],
-                stopping_reason=StopReason.SUFFICIENT_EVIDENCE,
-            ),
-            TrajectoryStep(
-                step_id="s-2",
-                index=1,
-                operation=OperationType.INTEGRITY_VERIFICATION,
-                actor=AgentRole.INTEGRITY_GUARD,
-                changed_decision=False,
-                stopping_reason=StopReason.COMPLETED,
-            ),
-        ],
-        patches=[
-            PatchRecord(
-                patch_id="p-1",
-                scope=PatchScope.TEST,
-                declared_for_decision_id="d-1",
-                target_files=["tests/test_synthlib.py"],
-                unified_diff="@@\n-    assert normalise('ab') == 'ab'\n+    assert normalise('ab') == 'Ab'",
-                application_status=PatchApplicationStatus.APPLIED,
-            )
-        ],
-        test_runs=[
-            TestRunResult(
-                run_id="tr-1",
-                phase=TestRunPhase.PRE_REPAIR,
-                status=TestRunStatus.FAILED,
-                passed=39,
-                failed=1,
-                failing_test_ids=["tests/test_synthlib.py::test_normalise"],
-            ),
-            post,
-        ],
-        final_test_run=post,
-        integrity=IntegrityReport(
-            guard_ran=True,
-            guard_decision=GuardDecision.APPROVE,
-            checks=[
-                IntegrityCheck(name="assertion_count", status=CheckStatus.PASSED),
-                IntegrityCheck(name="scope", status=CheckStatus.PASSED),
-            ],
-            weakening=TestWeakeningFindings(
-                checks_run=True,
-                assertions_before=3,
-                assertions_after=3,
-                removed_assertions=0,
-                added_skip_markers=0,
-                weakening_detected=False,
-            ),
-            prohibited_edits=ProhibitedEditCheck(
-                checks_run=True,
-                files_modified=["tests/test_synthlib.py"],
-                test_files_modified=["tests/test_synthlib.py"],
-                ci_config_touched=False,
-                dependency_files_touched=False,
-                conftest_touched=False,
-            ),
-            mutation=MutationResult(
-                status=TestRunStatus.PASSED,
-                function_qualname="synthlib.core.normalise",
-                catalogue_id="cat-normalise",
-                mutants_total=4,
-                killed_by_reference_tests=3,
-                killed_by_repaired_tests=3,
-                per_mutant=[
-                    MutantOutcome(
-                        mutant_id="mut-1",
-                        killed_by_reference=True,
-                        killed_after_repair=True,
-                        run_status=TestRunStatus.PASSED,
-                    )
-                ],
-            ),
-            evidence_requirement_met=True,
-        ),
-        memory_reads=[
-            MemoryReadEvent(
-                record_id="mem-1",
-                function_qualname="synthlib.core.normalise",
-                probe=ProbeRun(probe_id="probe-mem-1", status=ProbeStatus.PASSED),
-                used_as_evidence=True,
-            )
-        ],
-        memory_writes=[
-            MemoryWriteAttempt(
-                record_id="mem-2",
-                function_qualname="synthlib.core.normalise",
-                behaviour_signature="normalise() capitalises",
-                direction=RepairDirection.UPDATE_TEST,
-                probe_id="probe-mem-2",
-                evidence_ids=["ev-commit-msg-1"],
-                approved=True,
-                approval_source="simulated_maintainer",
-                written=True,
-            )
-        ],
-        tool_events=[
-            ToolEvent(
-                event_id="te-1",
-                step_index=0,
-                tool=ToolName.SEARCH_REPO,
-                called_by=AgentRole.INTENT_ANALYST,
-                arguments={"query": "normalise"},
-                status=ToolCallStatus.OK,
-                duration_ms=35.0,
-            )
-        ],
-        tool_summary=ToolCallSummary(
-            total_calls=7, calls_by_tool={"search_repo": 2, "run_tests": 3}
-        ),
-        usage=TokenUsage(
-            reported=True, input_tokens=18_000, output_tokens=2_100, llm_calls=12
-        ),
-        budget=BudgetUsage(
-            max_tool_calls=40, tool_calls_used=7, max_revisions=1, revisions_used=0
-        ),
-        errors=[
-            ErrorRecord(
-                error_id="e-1",
-                category=ErrorCategory.RATE_LIMIT,
-                message="429 from provider",
-                operation="llm_call",
-                retries=2,
-                recovered=True,
-                counted_against_agent=False,
-            )
-        ],
-        outcome=RunOutcome(
-            status=RunStatus.COMPLETED,
-            final_action=DecisionLabel.UPDATE_TEST,
-            terminated_by=StopReason.COMPLETED,
-        ),
-    )
-
-
-def test_single_run_records_all_mandatory_fields() -> None:
-    run = full_run_record()
-    data = json.loads(run.to_jsonl())
-    prov = data["provenance"]
-    assert prov["episode_id"] == "ep-s1"
-    assert prov["condition"] == "FULL"
-    assert prov["seed"] == 0
-    assert prov["model_id"] == MODEL_ID
-    assert data["predictions"][0]["predicted_action"] == "UPDATE_TEST"
-    assert data["retrieved_evidence"][0]["evidence_id"] == "ev-commit-msg-1"
-    assert data["patches"][0]["application_status"] == "applied"
-    assert data["final_test_run"]["status"] == "passed"
-    assert data["integrity"]["guard_decision"] == "approve"
-    assert data["usage"]["input_tokens"] == 18_000
-    assert data["tool_summary"]["total_calls"] == 7
-    assert data["errors"][0]["category"] == "rate_limit"
-    assert run.final_test_status is TestRunStatus.PASSED
-
-
-# --------------------------------------------------------------------------- #
-# 11. Test pass status vs. repair success
-# --------------------------------------------------------------------------- #
-
-
-def test_green_suite_alone_does_not_establish_repair_success() -> None:
-    with pytest.raises(ValidationError, match="passing suite alone"):
-        RepairEvaluation(
-            repair_attempted=True,
-            repair_successful=True,
-            verified_dimensions=[RepairVerificationDimension.SUITE_PASSED],
-            final_test_status=TestRunStatus.PASSED,
-        )
-
-
-def test_repair_success_requires_all_three_dimensions() -> None:
-    ok = RepairEvaluation(
-        repair_attempted=True,
-        repair_successful=True,
-        verified_dimensions=[
-            RepairVerificationDimension.DIRECTION_CORRECT,
-            RepairVerificationDimension.SUITE_PASSED,
-            RepairVerificationDimension.INTEGRITY_PRESERVED,
-            RepairVerificationDimension.SCOPE_RESPECTED,
-        ],
+        provenance=prov(dataset_version="pilot-v1", split="pilot", code_revision="deadbee",
+                        prompt_template_version="p3", retrieval_config_version="bm25-k8"),
+        predictions=[decision()], retrieved_evidence=[evidence()],
+        patches=[PatchRecord(patch_id="p-1", scope=PatchScope.TEST, test_ids=[T_NORM],
+                             target_files=["tests/test_synthlib.py"], unified_diff="@@ ...",
+                             application_status=PatchApplicationStatus.APPLIED)],
+        test_runs=[TestRunResult(run_id="tr-1", phase=TestRunPhase.PRE_REPAIR, status=TestRunStatus.FAILED,
+                                 passed=39, failed=1, failing_test_ids=[T_NORM]), post],
         final_test_status=TestRunStatus.PASSED,
-    )
-    assert ok.repair_successful
+        integrity=IntegrityReport(
+            guard_ran=True, guard_decision=GuardDecision.APPROVE,
+            weakening=TestWeakeningFindings(checks_run=True, assertions_before=3, assertions_after=3,
+                                            removed_assertions=0, added_skip_markers=0, weakening_detected=False),
+            prohibited_edits=ProhibitedEditCheck(checks_run=True, files_modified=["tests/test_synthlib.py"],
+                                                 test_files_modified=["tests/test_synthlib.py"]),
+            mutation=MutationResult(status=TestRunStatus.PASSED, mutants_total=4,
+                                    killed_by_reference_tests=3, killed_by_repaired_tests=3),
+            evidence_requirement_met=True),
+        memory_reads=[MemoryReadEvent(record_id="mem-1", probe_status=ProbeStatus.PASSED, used_as_evidence=True)],
+        memory_writes=[MemoryWriteAttempt(record_id="mem-2", approved=True, written=True)],
+        tool_events=[ToolEvent(event_id="te-1", step_index=0, tool=ToolName.SEARCH_REPO,
+                               called_by=AgentRole.INTENT_ANALYST, arguments={"query": "normalise"})],
+        usage=TokenUsage(reported=True, input_tokens=18_000, output_tokens=2_100, llm_calls=12),
+        errors=[ErrorRecord(error_id="e-1", category=ErrorCategory.RATE_LIMIT, message="429", retries=2,
+                            recovered=True, counted_against_agent=False)],
+        outcome=RunOutcome(status=RunStatus.COMPLETED, maintainer_approved=True))
 
 
-def test_correct_decision_does_not_imply_successful_repair() -> None:
-    evaluation = RunEvaluation(
-        decisions=[
-            UnitDecisionScore(
-                test_id="tests/test_synthlib.py::test_normalise",
-                predicted_action=DecisionLabel.UPDATE_TEST,
-                expected_action=DecisionLabel.UPDATE_TEST,
-                gold_direction=RepairDirection.UPDATE_TEST,
-                correct=True,
-            )
-        ],
-        repair=RepairEvaluation(
-            repair_attempted=True,
-            repair_successful=False,
-            final_test_status=TestRunStatus.PASSED,
-            reason="tests pass but mutant-kill retention dropped",
-        ),
-        integrity=IntegrityEvaluation(
-            test_weakening_detected=True,
-            mutant_kill_retention=0.5,
-            mutants_killed_after=2,
-            mutants_killed_reference=4,
-        ),
-    )
-    assert evaluation.decisions[0].correct
-    assert evaluation.repair is not None and evaluation.repair.repair_successful is False
-    assert evaluation.integrity is not None
-    assert evaluation.integrity.test_weakening_detected
+# 10/12. serialisation and completeness ------------------------------------- #
+
+def test_round_trip_and_required_fields_present_in_one_run() -> None:
+    run = complete_run()
+    line = run.to_jsonl()
+    assert "\n" not in line and ExperimentRunRecord.model_validate_json(line) == run
+    d = json.loads(line)
+    assert (d["provenance"]["episode_id"], d["provenance"]["condition"], d["provenance"]["seed"],
+            d["provenance"]["model_id"]) == ("ep-0001", "FULL", 0, MODEL)
+    assert d["predictions"][0]["predicted_action"] == "UPDATE_TEST"
+    assert d["retrieved_evidence"][0]["rank"] == 1 and d["retrieved_evidence"][0]["retrieval_method"] == "bm25"
+    assert d["patches"][0]["scope"] == "test" and d["patches"][0]["application_status"] == "applied"
+    assert d["final_test_status"] == "passed"
+    assert d["integrity"]["guard_decision"] == "approve"
+    assert d["usage"]["input_tokens"] == 18_000 and len(d["tool_events"]) == 1
+    assert d["errors"][0]["category"] == "rate_limit" and d["outcome"]["status"] == "completed"
 
 
-# --------------------------------------------------------------------------- #
-# 12. Mutation and integrity outcomes
-# --------------------------------------------------------------------------- #
+def test_core_conditions_cover_the_five_day_plan() -> None:
+    assert set(CORE_CONDITIONS) == {C.FULL, C.B1, C.A1_NO_INTENT_RETRIEVAL, C.A2_NO_MEMORY, C.A3_NO_INTEGRITY_GUARD}
+    assert {"Direction accuracy / macro-F1", "Mutant-kill retention", "Per-test hypothesis accuracy"} <= set(METRIC_SUPPORT)
 
 
-def test_mutation_results_are_recorded_with_counts() -> None:
-    result = MutationResult(
-        status=TestRunStatus.PASSED,
-        mutants_total=5,
-        killed_by_reference_tests=4,
-        killed_by_repaired_tests=2,
-        per_mutant=[
-            MutantOutcome(mutant_id="m1", killed_by_reference=True, killed_after_repair=False),
-        ],
-    )
-    assert result.killed_by_repaired_tests == 2
-    with pytest.raises(ValidationError, match="exceeds mutants_total"):
-        MutationResult(
-            status=TestRunStatus.PASSED, mutants_total=2, killed_by_repaired_tests=3
-        )
+# provenance ---------------------------------------------------------------- #
 
-
-def test_unrun_mutation_is_not_zero_kills() -> None:
-    result = MutationResult()
-    assert result.status is TestRunStatus.NOT_RUN
-    assert result.killed_by_repaired_tests is None
-    with pytest.raises(ValidationError, match="NOT_RUN mutation result"):
-        MutationResult(killed_by_repaired_tests=0)
-
-
-def test_unchecked_weakening_is_not_no_weakening() -> None:
-    findings = TestWeakeningFindings()
-    assert findings.checks_run is False
-    assert findings.weakening_detected is None
-    with pytest.raises(ValidationError, match="must stay None"):
-        TestWeakeningFindings(checks_run=False, weakening_detected=False)
-
-
-def test_guard_rejection_requires_a_reason() -> None:
-    with pytest.raises(ValidationError, match="rejection must record"):
-        IntegrityReport(guard_ran=True, guard_decision=GuardDecision.REJECT)
-    report = IntegrityReport(
-        guard_ran=True,
-        guard_decision=GuardDecision.REJECT,
-        rejection_reasons=["assertion removed"],
-        revision_requested=True,
-    )
-    assert report.revision_requested
-
-
-def test_a3_ablation_leaves_integrity_not_run() -> None:
-    report = IntegrityReport()
-    assert report.guard_decision is GuardDecision.NOT_RUN
-    assert report.mutation.status is TestRunStatus.NOT_RUN
-    assert report.weakening.weakening_detected is None
-
-
-# --------------------------------------------------------------------------- #
-# 16. Unavailable token usage and tests that were not run
-# --------------------------------------------------------------------------- #
-
-
-def test_unavailable_token_usage_is_not_zero() -> None:
-    unavailable = TokenUsage(reported=False)
-    assert unavailable.input_tokens is None
-    zero = TokenUsage(reported=True, input_tokens=0, output_tokens=0, total_tokens=0)
-    assert zero.total_tokens == 0
-    assert unavailable != zero
-    with pytest.raises(ValidationError, match="returned no usage"):
-        TokenUsage(reported=False, input_tokens=0)
-    with pytest.raises(ValidationError, match="requires at least one token count"):
-        TokenUsage(reported=True)
-
-
-def test_tests_not_run_is_not_tests_passed() -> None:
-    not_run = TestRunResult(run_id="tr", phase=TestRunPhase.POST_REPAIR)
-    assert not_run.status is TestRunStatus.NOT_RUN
-    assert not_run.passed is None
-    with pytest.raises(ValidationError, match="must not carry counts"):
-        TestRunResult(
-            run_id="tr", phase=TestRunPhase.POST_REPAIR, status=TestRunStatus.NOT_RUN, failed=0
-        )
-    run = ExperimentRunRecord(provenance=provenance())
-    assert run.final_test_run is None
-    assert run.final_test_status is TestRunStatus.NOT_RUN
-
-
-def test_missing_seed_differs_from_seed_zero() -> None:
-    unseeded = provenance(run_id="r-a", seed=None)
-    seeded = provenance(run_id="r-b", seed=0)
-    assert unseeded.seed is None and seeded.seed == 0
-    assert json.loads(unseeded.model_dump_json())["seed"] is None
+def test_unseeded_differs_from_seed_zero_and_seed_is_required() -> None:
+    assert prov(seed=None).seed is None and prov(seed=0).seed == 0
+    assert json.loads(prov(seed=None).model_dump_json())["seed"] is None
     with pytest.raises(ValidationError):
-        RunProvenance(  # seed is required and must be given explicitly
-            run_id="r", episode_id="e", condition=ExperimentCondition.FULL,
-            model_id=MODEL_ID,
-        )
+        RunProvenance(run_id="r", episode_id="e", condition=C.FULL, model_id=MODEL)  # type: ignore[call-arg]
 
 
-def test_model_id_must_not_be_a_bare_provider_name() -> None:
-    with pytest.raises(ValidationError, match="names a provider"):
-        RunProvenance(
-            run_id="r",
-            episode_id="e",
-            condition=ExperimentCondition.FULL,
-            seed=1,
-            model_id="mistral",
-        )
-
-
-# --------------------------------------------------------------------------- #
-# 17. Several runs of the same episode across conditions
-# --------------------------------------------------------------------------- #
+def test_model_id_rules() -> None:
+    with pytest.raises(ValidationError, match="provider name"):
+        prov(model_id="mistral")
+    with pytest.raises(ValidationError, match="model_id is required"):
+        prov(model_id=None)
+    assert prov(condition=C.TRIVIAL_ALWAYS_FIX_CODE, model_id=None, seed=None).model_id is None
 
 
 def test_same_episode_across_conditions_and_seeds() -> None:
-    runs = [
-        ExperimentRunRecord(
-            provenance=provenance(
-                run_id=f"run-{condition.value}-{seed}", condition=condition, seed=seed
-            ),
-            predictions=[decision()],
-        )
-        for condition in (
-            ExperimentCondition.FULL,
-            ExperimentCondition.B1,
-            ExperimentCondition.A1_NO_INTENT_RETRIEVAL,
-            ExperimentCondition.A2_NO_MEMORY,
-            ExperimentCondition.A3_NO_INTEGRITY_GUARD,
-        )
-        for seed in (0, 1)
-    ]
-    assert {r.episode_id for r in runs} == {"ep-s1"}
-    assert len({r.provenance.run_id for r in runs}) == 10
-    grouped: dict[ExperimentCondition, int] = {}
-    for run in runs:
-        grouped[run.condition] = grouped.get(run.condition, 0) + 1
-    assert set(grouped.values()) == {2}
+    runs = [ExperimentRunRecord(provenance=prov(run_id=f"{c.value}-{s}", condition=c, seed=s),
+                                predictions=[decision()], retrieved_evidence=[evidence()])
+            for c in CORE_CONDITIONS for s in (0, 1)]
+    assert {r.episode_id for r in runs} == {"ep-0001"} and len({r.provenance.run_id for r in runs}) == 10
 
 
-def test_incomplete_runs_are_representable() -> None:
+# decisions / evidence ------------------------------------------------------ #
+
+def test_mixed_episode_has_one_decision_per_test_with_different_actions() -> None:
+    ep = make_s3()
+    run = ExperimentRunRecord(provenance=prov(run_id="r3", episode_id=ep.episode_id),
+                              predictions=[decision(T_NORM, DecisionLabel.UPDATE_TEST),
+                                           decision(T_SLUG, DecisionLabel.FIX_CODE, cited_evidence_ids=[])],
+                              retrieved_evidence=[evidence()])
+    assert run.predicted_actions() == ep.gold_actions()
+    with pytest.raises(ValidationError, match="more than one decision"):
+        ExperimentRunRecord(provenance=prov(), predictions=[decision(), decision()])
+
+
+def test_hallucinated_citation_is_recorded_not_rejected() -> None:
+    run = ExperimentRunRecord(provenance=prov(), predictions=[decision(cited_evidence_ids=["ev-ghost", "ev-msg"])],
+                              retrieved_evidence=[evidence()])
+    assert run.unretrieved_citations() == {T_NORM: ["ev-ghost"]}
+    # also detected when retrieval returned nothing at all (A1 / B0 style)
+    assert ExperimentRunRecord(provenance=prov(), predictions=[decision()]).unretrieved_citations() == {T_NORM: ["ev-msg"]}
+
+
+def test_missing_evidence_score_is_not_zero() -> None:
+    e = RetrievedEvidence(evidence_id="e", source_type=EvidenceSourceType.DOCUMENTATION, source_ref="docs/a.md")
+    assert e.score is None and e != e.model_copy(update={"score": 0.0}) and e.support is SupportStatus.UNKNOWN
+
+
+# 11. unrun vs passed -------------------------------------------------------- #
+
+def test_final_test_status_must_match_test_runs() -> None:
+    assert ExperimentRunRecord(provenance=prov()).final_test_status is TestRunStatus.NOT_RUN
+    with pytest.raises(ValidationError, match="disagrees with the recorded test runs"):
+        ExperimentRunRecord(provenance=prov(), final_test_status=TestRunStatus.PASSED)  # claims pass, ran nothing
+    with pytest.raises(ValidationError, match="disagrees with the recorded test runs"):
+        ExperimentRunRecord(provenance=prov(), test_runs=[passed_run()])  # ran, but claims NOT_RUN
+    pre_only = TestRunResult(run_id="t", phase=TestRunPhase.PRE_REPAIR, status=TestRunStatus.FAILED, failed=1)
+    assert ExperimentRunRecord(provenance=prov(), test_runs=[pre_only]).final_test_status is TestRunStatus.NOT_RUN
+
+
+def test_last_post_repair_run_decides_final_status() -> None:
+    rev = TestRunResult(run_id="t3", phase=TestRunPhase.POST_REVISION, status=TestRunStatus.FAILED, failed=1)
+    run = ExperimentRunRecord(provenance=prov(), test_runs=[passed_run(), rev], final_test_status=TestRunStatus.FAILED)
+    assert run.final_test_status is TestRunStatus.FAILED
+
+
+def test_test_run_internal_consistency() -> None:
+    with pytest.raises(ValidationError, match="NOT_RUN must not carry counts"):
+        TestRunResult(run_id="t", phase=TestRunPhase.POST_REPAIR, failed=0)
+    with pytest.raises(ValidationError, match="PASSED contradicts"):
+        TestRunResult(run_id="t", phase=TestRunPhase.POST_REPAIR, status=TestRunStatus.PASSED, failed=2)
+    with pytest.raises(ValidationError, match="FAILED contradicts"):
+        TestRunResult(run_id="t", phase=TestRunPhase.POST_REPAIR, status=TestRunStatus.FAILED, failed=0)
+
+
+def test_unrun_checks_are_not_passing_checks() -> None:
+    w = TestWeakeningFindings()
+    assert w.checks_run is False and w.weakening_detected is None
+    with pytest.raises(ValidationError, match="all be None when checks_run is False"):
+        TestWeakeningFindings(checks_run=False, removed_assertions=0)
+    with pytest.raises(ValidationError, match="all be None"):
+        TestWeakeningFindings(checks_run=False, weakening_detected=False)
+    with pytest.raises(ValidationError, match="requires weakening_detected"):
+        TestWeakeningFindings(checks_run=True)
+    with pytest.raises(ValidationError, match="contradicts a positive weakening count"):
+        TestWeakeningFindings(checks_run=True, added_skip_markers=1, weakening_detected=False)
+
+
+def test_assertion_count_apparent_decrease_consistency() -> None:
+    with pytest.raises(ValidationError, match="weakening_detected=False contradicts an apparent decrease"):
+        TestWeakeningFindings(checks_run=True, assertions_before=5, assertions_after=3, weakening_detected=False)
+    with pytest.raises(ValidationError, match="removed_assertions=0 contradicts an apparent decrease"):
+        TestWeakeningFindings(checks_run=True, assertions_before=5, assertions_after=3, removed_assertions=0, weakening_detected=True)
+    valid = TestWeakeningFindings(checks_run=True, assertions_before=5, assertions_after=3, removed_assertions=1, weakening_detected=True)
+    assert valid.weakening_detected is True
+    equal = TestWeakeningFindings(checks_run=True, assertions_before=3, assertions_after=3, removed_assertions=0, weakening_detected=False)
+    assert equal.weakening_detected is False
+    increased = TestWeakeningFindings(checks_run=True, assertions_before=3, assertions_after=4, removed_assertions=0, weakening_detected=False)
+    assert increased.weakening_detected is False
+    with pytest.raises(ValidationError, match="edit lists must be empty"):
+        ProhibitedEditCheck(checks_run=False, files_modified=["a.py"])
+    with pytest.raises(ValidationError, match="NOT_RUN mutation result"):
+        MutationResult(killed_by_repaired_tests=0)
+    assert MutationResult().status is TestRunStatus.NOT_RUN and MutationResult().killed_by_repaired_tests is None
+
+
+def test_a3_guard_not_run_leaves_everything_unrun() -> None:
+    r = IntegrityReport()
+    assert r.guard_decision is GuardDecision.NOT_RUN and not r.guard_ran
+    with pytest.raises(ValidationError, match="Guard did not run"):
+        IntegrityReport(tests_untouched_for_fix_code=True)
+    with pytest.raises(ValidationError, match="guard_ran must be True exactly"):
+        IntegrityReport(guard_ran=True)
+
+
+# 12. integrity / mutation / repair ----------------------------------------- #
+
+def test_guard_rejection_and_contradictory_approval() -> None:
+    with pytest.raises(ValidationError, match="at least one reason"):
+        IntegrityReport(guard_ran=True, guard_decision=GuardDecision.REJECT)
+    assert IntegrityReport(guard_ran=True, guard_decision=GuardDecision.REJECT, rejection_reasons=["lost assertion"])
+    weak = TestWeakeningFindings(checks_run=True, removed_assertions=2, weakening_detected=True)
+    with pytest.raises(ValidationError, match="APPROVE contradicts"):
+        IntegrityReport(guard_ran=True, guard_decision=GuardDecision.APPROVE, weakening=weak)
+    with pytest.raises(ValidationError, match="APPROVE contradicts"):
+        IntegrityReport(guard_ran=True, guard_decision=GuardDecision.APPROVE, tests_untouched_for_fix_code=False)
+    edits = ProhibitedEditCheck(checks_run=True, files_modified=["tests/conftest.py"],
+                                out_of_scope_files=["tests/conftest.py"])
+    with pytest.raises(ValidationError, match="APPROVE contradicts"):
+        IntegrityReport(guard_ran=True, guard_decision=GuardDecision.APPROVE, prohibited_edits=edits)
+
+
+def test_mutation_counts_bounded() -> None:
+    with pytest.raises(ValidationError, match="exceeds mutants_total"):
+        MutationResult(status=TestRunStatus.PASSED, mutants_total=2, killed_by_repaired_tests=3)
+
+
+def test_green_suite_alone_is_not_a_successful_repair() -> None:
+    with pytest.raises(ValidationError, match="passing suite alone"):
+        RepairEvaluation(repair_attempted=True, repair_successful=True, verified_dimensions=[Dim.SUITE_PASSED],
+                         final_test_status=TestRunStatus.PASSED)
+    with pytest.raises(ValidationError, match="final_test_status PASSED"):
+        RepairEvaluation(repair_attempted=True, repair_successful=True,
+                         verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    ok = RepairEvaluation(repair_attempted=True, repair_successful=True, final_test_status=TestRunStatus.PASSED,
+                          verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    assert ok.repair_successful
+
+
+def test_repair_success_contradicting_integrity_findings_is_rejected() -> None:
+    ok = RepairEvaluation(repair_attempted=True, repair_successful=True, final_test_status=TestRunStatus.PASSED,
+                          verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    with pytest.raises(ValidationError, match="test_weakening_detected=True"):
+        RunEvaluation(repair=ok, integrity=IntegrityEvaluation(test_weakening_detected=True))
+    with pytest.raises(ValidationError, match="out-of-scope edits"):
+        RunEvaluation(repair=ok, integrity=IntegrityEvaluation(out_of_scope_edits=["pyproject.toml"]))
+
+
+def test_repair_successful_requires_harness_integrity_evaluation() -> None:
+    ok = RepairEvaluation(repair_attempted=True, repair_successful=True, final_test_status=TestRunStatus.PASSED,
+                          verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    with pytest.raises(ValidationError, match="independent harness integrity evaluation"):
+        RunEvaluation(repair=ok, integrity=None)
+
+
+def test_repair_successful_contradicting_integrity_dimensions_is_rejected() -> None:
+    ok = RepairEvaluation(repair_attempted=True, repair_successful=True, final_test_status=TestRunStatus.PASSED,
+                          verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    with pytest.raises(ValidationError, match="tests_touched_on_fix_code=True"):
+        RunEvaluation(repair=ok, integrity=IntegrityEvaluation(tests_touched_on_fix_code=True))
+    with pytest.raises(ValidationError, match="unapproved_memory_write=True"):
+        RunEvaluation(repair=ok, integrity=IntegrityEvaluation(unapproved_memory_write=True))
+    with pytest.raises(ValidationError, match="stale_memory_used_as_evidence=True"):
+        RunEvaluation(repair=ok, integrity=IntegrityEvaluation(stale_memory_used_as_evidence=True))
+
+
+def test_a3_successful_repair_without_guard_is_valid() -> None:
+    ok = RepairEvaluation(repair_attempted=True, repair_successful=True, final_test_status=TestRunStatus.PASSED,
+                          verified_dimensions=[Dim.DIRECTION_CORRECT, Dim.SUITE_PASSED, Dim.INTEGRITY_PRESERVED])
+    harness_integrity = IntegrityEvaluation(test_weakening_detected=False, out_of_scope_edits=[])
     run = ExperimentRunRecord(
-        provenance=provenance(run_id="run-x"),
-        outcome=RunOutcome(
-            status=RunStatus.BUDGET_EXHAUSTED,
-            terminated_by=StopReason.BUDGET_EXHAUSTED,
-        ),
-        budget=BudgetUsage(max_tool_calls=40, tool_calls_used=40, budget_exhausted=True),
+        provenance=prov(condition=ExperimentCondition.A3_NO_INTEGRITY_GUARD),
+        integrity=IntegrityReport(guard_ran=False, guard_decision=GuardDecision.NOT_RUN),
+        test_runs=[passed_run()],
+        final_test_status=TestRunStatus.PASSED,
+        outcome=RunOutcome(status=RunStatus.COMPLETED),
+        evaluation=RunEvaluation(repair=ok, integrity=harness_integrity),
     )
-    assert run.outcome.escalated is False
-    assert run.final_test_status is TestRunStatus.NOT_RUN
+    assert run.evaluation.repair.repair_successful is True
+    assert run.integrity.guard_ran is False
 
 
-# --------------------------------------------------------------------------- #
-# 18. Retries and recovered tool failures
-# --------------------------------------------------------------------------- #
+def test_correct_decision_is_separate_from_repair_success() -> None:
+    ev = RunEvaluation(
+        decisions=[UnitDecisionScore(test_id=T_NORM, predicted_action=DecisionLabel.UPDATE_TEST,
+                                     expected_action=DecisionLabel.UPDATE_TEST,
+                                     gold_direction=RepairDirection.UPDATE_TEST, correct=True, hypothesis_correct=True)],
+        repair=RepairEvaluation(repair_attempted=True, repair_successful=False, final_test_status=TestRunStatus.PASSED),
+        integrity=IntegrityEvaluation(test_weakening_detected=True, mutants_killed_after=2, mutants_killed_reference=4),
+        evidence=EvidenceEvaluation(unsupported_citation_ids=["ev-9"]))
+    assert ev.decisions[0].correct and ev.repair and ev.repair.repair_successful is False
 
 
-def test_injected_fault_retry_and_recovery() -> None:
-    failed = ToolEvent(
-        event_id="te-1",
-        step_index=3,
-        tool=ToolName.APPLY_PATCH,
-        status=ToolCallStatus.INJECTED_FAULT,
-        injected_fault=True,
-        fault_kind=ToolFaultKind.PATCH_DOES_NOT_APPLY,
-        fault_id="f-1",
-        error_type=ErrorCategory.INJECTED_TOOL_FAULT,
-        error_message="patch does not apply",
-        recovered=True,
-    )
-    retry = ToolEvent(
-        event_id="te-2",
-        step_index=4,
-        tool=ToolName.APPLY_PATCH,
-        status=ToolCallStatus.OK,
-        retry_index=1,
-        retry_of_event_id="te-1",
-    )
-    summary = ToolCallSummary(
-        total_calls=2,
-        calls_by_tool={"apply_patch": 2},
-        injected_faults=1,
-        retries=1,
-        recovered_failures=1,
-    )
-    run = ExperimentRunRecord(
-        provenance=provenance(run_id="run-fault"),
-        tool_events=[failed, retry],
-        tool_summary=summary,
-    )
-    assert run.tool_events[0].recovered is True
-    assert run.tool_events[1].retry_of_event_id == "te-1"
-    assert run.tool_summary.recovered_failures == 1
+def test_unit_score_consistency() -> None:
+    kw: dict[str, Any] = dict(test_id="t", gold_direction=RepairDirection.FIX_CODE, expected_action=DecisionLabel.FIX_CODE)
+    with pytest.raises(ValidationError, match="correct must equal"):
+        UnitDecisionScore(predicted_action=DecisionLabel.UPDATE_TEST, correct=True, **kw)
+    with pytest.raises(ValidationError, match="cannot also be a wrong-side"):
+        UnitDecisionScore(predicted_action=DecisionLabel.FIX_CODE, correct=True, wrong_side="masked_regression", **kw)
+    assert UnitDecisionScore(predicted_action=DecisionLabel.UPDATE_TEST, correct=False,
+                             wrong_side="masked_regression", **kw).wrong_side == "masked_regression"
+    assert UnitDecisionScore(predicted_action=None, correct=False, **kw).predicted_action is None  # no decision reached
 
 
-def test_failed_tool_call_requires_an_error_message() -> None:
-    with pytest.raises(ValidationError, match="must record an error_message"):
-        ToolEvent(
-            event_id="te",
-            step_index=0,
-            tool=ToolName.RUN_TESTS,
-            status=ToolCallStatus.TIMEOUT,
-        )
+def test_evaluation_must_agree_with_run_record() -> None:
+    score = UnitDecisionScore(test_id=T_NORM, predicted_action=DecisionLabel.FIX_CODE,
+                              expected_action=DecisionLabel.UPDATE_TEST, gold_direction=RepairDirection.UPDATE_TEST,
+                              correct=False)
+    with pytest.raises(ValidationError, match="disagrees with the recorded prediction"):
+        ExperimentRunRecord(provenance=prov(), predictions=[decision()], evaluation=RunEvaluation(decisions=[score]))
+    with pytest.raises(ValidationError, match="repair.final_test_status disagrees"):
+        ExperimentRunRecord(provenance=prov(), evaluation=RunEvaluation(
+            repair=RepairEvaluation(final_test_status=TestRunStatus.PASSED)))
 
 
-def test_injected_fault_is_distinguished_from_api_error() -> None:
-    with pytest.raises(ValidationError, match="logged separately"):
-        ToolEvent(
-            event_id="te",
-            step_index=0,
-            tool=ToolName.RUN_TESTS,
-            status=ToolCallStatus.ERROR,
-            injected_fault=True,
-            fault_kind=ToolFaultKind.TIMEOUT,
-            error_type=ErrorCategory.API_ERROR,
-            error_message="boom",
-        )
-    api_error = ErrorRecord(
-        error_id="e",
-        category=ErrorCategory.PROVIDER_OUTAGE,
-        message="503",
-        counted_against_agent=False,
-    )
-    assert api_error.counted_against_agent is False
-    with pytest.raises(ValidationError, match="must not be counted against the agent"):
-        ErrorRecord(error_id="e", category=ErrorCategory.RATE_LIMIT, message="429")
-
-
-# --------------------------------------------------------------------------- #
-# Required distinctions
-# --------------------------------------------------------------------------- #
-
+# patches -------------------------------------------------------------------- #
 
 def test_rejected_patch_differs_from_unapplicable_patch() -> None:
-    rejected = PatchRecord(
-        patch_id="p",
-        scope=PatchScope.TEST,
-        application_status=PatchApplicationStatus.REJECTED_BY_GUARD,
-    )
-    unapplicable = PatchRecord(
-        patch_id="p2",
-        scope=PatchScope.TEST,
-        application_status=PatchApplicationStatus.FAILED_TO_APPLY,
-        apply_error="hunk #1 failed",
-    )
-    assert rejected.application_status is not unapplicable.application_status
+    PatchRecord(patch_id="a", scope=PatchScope.TEST, application_status=PatchApplicationStatus.REJECTED_BY_GUARD)
     with pytest.raises(ValidationError, match="must record apply_error"):
-        PatchRecord(
-            patch_id="p3",
-            scope=PatchScope.SRC,
-            application_status=PatchApplicationStatus.FAILED_TO_APPLY,
-        )
-
-
-def test_out_of_scope_patch_must_list_offending_files() -> None:
+        PatchRecord(patch_id="b", scope=PatchScope.SRC, application_status=PatchApplicationStatus.FAILED_TO_APPLY)
     with pytest.raises(ValidationError, match="must list the offending files"):
-        PatchRecord(
-            patch_id="p",
-            scope=PatchScope.SRC,
-            application_status=PatchApplicationStatus.BLOCKED_OUT_OF_SCOPE,
-        )
-    blocked = PatchRecord(
-        patch_id="p",
-        scope=PatchScope.SRC,
-        application_status=PatchApplicationStatus.BLOCKED_OUT_OF_SCOPE,
-        out_of_scope_files=["tests/conftest.py"],
-    )
-    assert blocked.out_of_scope_files == ["tests/conftest.py"]
+        PatchRecord(patch_id="c", scope=PatchScope.SRC, application_status=PatchApplicationStatus.BLOCKED_OUT_OF_SCOPE)
+    assert PatchRecord(patch_id="d", scope=PatchScope.SRC, application_status=PatchApplicationStatus.BLOCKED_OUT_OF_SCOPE,
+                       out_of_scope_files=["tests/conftest.py"]).out_of_scope_files
 
 
-def test_escalation_is_not_a_tool_failure() -> None:
-    escalation = EscalationSummary(
-        trigger="insufficient_evidence",
-        failing_test_ids=["tests/test_synthlib.py::test_normalise"],
-        evidence_missing=["no commit message", "no changelog entry"],
-        summary="Neither side has positive evidence.",
-    )
-    ok = RunOutcome(
-        status=RunStatus.ESCALATED,
-        final_action=DecisionLabel.ESCALATE,
-        escalated=True,
-        escalation=escalation,
-        terminated_by=StopReason.ESCALATION,
-    )
-    assert ok.escalated
-    with pytest.raises(ValidationError, match="not an escalation"):
-        RunOutcome(
-            status=RunStatus.TOOL_FAILURE,
-            escalated=True,
-            escalation=escalation,
-            terminated_by=StopReason.TOOL_FAILURE,
-        )
+# 16. tokens ------------------------------------------------------------------ #
+
+def test_unreported_tokens_are_not_zero() -> None:
+    assert TokenUsage().input_tokens is None and TokenUsage() != TokenUsage(reported=True, input_tokens=0, output_tokens=0)
+    with pytest.raises(ValidationError, match="leave token counts None"):
+        TokenUsage(reported=False, input_tokens=0)
+    with pytest.raises(ValidationError, match="at least one token count"):
+        TokenUsage(reported=True)
 
 
-def test_escalate_decision_requires_an_escalation_reason() -> None:
-    with pytest.raises(ValidationError, match="escalation_reason"):
-        PredictedDecision(
-            decision_id="d",
-            test_ids=["t"],
-            predicted_action=DecisionLabel.ESCALATE,
-            rationale=DecisionRationale(summary="unclear"),
-        )
+# 18. tools / errors ---------------------------------------------------------- #
 
+def test_injected_fault_and_recovery() -> None:
+    failed = ToolEvent(event_id="te-1", step_index=3, tool=ToolName.APPLY_PATCH, status=ToolCallStatus.INJECTED_FAULT,
+                       fault_kind=ToolFaultKind.PATCH_DOES_NOT_APPLY, error_message="patch does not apply", recovered=True)
+    ok = ToolEvent(event_id="te-2", step_index=4, tool=ToolName.APPLY_PATCH)
+    run = ExperimentRunRecord(provenance=prov(), tool_events=[failed, ok])
+    assert [e.status for e in run.tool_events] == [ToolCallStatus.INJECTED_FAULT, ToolCallStatus.OK]
+
+
+def test_tool_event_rules() -> None:
+    with pytest.raises(ValidationError, match="fault_kind must be set exactly"):
+        ToolEvent(event_id="t", step_index=0, tool=ToolName.RUN_TESTS, status=ToolCallStatus.INJECTED_FAULT, error_message="x")
+    with pytest.raises(ValidationError, match="fault_kind must be set exactly"):
+        ToolEvent(event_id="t", step_index=0, tool=ToolName.RUN_TESTS, fault_kind=ToolFaultKind.TIMEOUT)
+    with pytest.raises(ValidationError, match="must record an error_message"):
+        ToolEvent(event_id="t", step_index=0, tool=ToolName.RUN_TESTS, status=ToolCallStatus.TIMEOUT)
+    with pytest.raises(ValidationError, match="failed calls only"):
+        ToolEvent(event_id="t", step_index=0, tool=ToolName.RUN_TESTS, recovered=True)
+
+
+def test_provider_errors_not_counted_against_agent() -> None:
+    assert ErrorRecord(error_id="e", category=ErrorCategory.PROVIDER_OUTAGE, message="503", counted_against_agent=False)
+    with pytest.raises(ValidationError, match="must not be counted against the agent"):
+        ErrorRecord(error_id="e", category=ErrorCategory.RATE_LIMIT, message="429")
+    with pytest.raises(ValidationError, match="both recovered and fatal"):
+        ErrorRecord(error_id="e", category=ErrorCategory.TOOL_ERROR, message="x", recovered=True, fatal=True)
+
+
+# outcomes -------------------------------------------------------------------- #
+
+def test_escalation_is_not_an_execution_failure() -> None:
+    esc = EscalationSummary(trigger="insufficient_evidence", failing_test_ids=[T_NORM],
+                            evidence_missing=["commit message"], competing_hypotheses=["outdated test", "regression"],
+                            summary="No evidence either way.")
+    run = ExperimentRunRecord(provenance=prov(), outcome=RunOutcome(status=RunStatus.ESCALATED, escalation=esc),
+                              predictions=[decision(action=DecisionLabel.ESCALATE, cited_evidence_ids=[])])
+    assert run.outcome.status is RunStatus.ESCALATED
+    with pytest.raises(ValidationError, match="requires an EscalationSummary"):
+        RunOutcome(status=RunStatus.ESCALATED)
+    with pytest.raises(ValidationError, match="every prediction to be ESCALATE"):
+        ExperimentRunRecord(provenance=prov(), predictions=[decision()], outcome=RunOutcome(status=RunStatus.ESCALATED, escalation=esc))
+    with pytest.raises(ValidationError, match="requires at least one ESCALATE prediction"):
+        ExperimentRunRecord(provenance=prov(), predictions=[decision()], outcome=RunOutcome(status=RunStatus.COMPLETED, escalation=esc))
+
+
+@pytest.mark.parametrize("status", [RunStatus.INCOMPLETE, RunStatus.BUDGET_EXHAUSTED, RunStatus.TOOL_FAILURE,
+                                    RunStatus.API_FAILURE, RunStatus.ORCHESTRATOR_ERROR])
+def test_failed_and_incomplete_runs_are_preserved(status: RunStatus) -> None:
+    run = ExperimentRunRecord(provenance=prov(), outcome=RunOutcome(status=status))
+    assert ExperimentRunRecord.model_validate_json(run.to_jsonl()).outcome.status is status
+
+
+# memory ---------------------------------------------------------------------- #
 
 def test_stale_memory_cannot_be_used_as_evidence() -> None:
     with pytest.raises(ValidationError, match="probe passed"):
-        MemoryReadEvent(
-            record_id="mem-1",
-            probe=ProbeRun(probe_id="p", status=ProbeStatus.FAILED),
-            used_as_evidence=True,
-        )
-    blocked = MemoryReadEvent(
-        record_id="mem-1",
-        probe=ProbeRun(probe_id="p", status=ProbeStatus.FAILED),
-        used_as_evidence=False,
-        blocked_reason="probe_failed",
-    )
-    assert blocked.blocked_reason == "probe_failed"
+        MemoryReadEvent(record_id="m", probe_status=ProbeStatus.FAILED, used_as_evidence=True)
+    with pytest.raises(ValidationError, match="probe passed"):
+        MemoryReadEvent(record_id="m", used_as_evidence=True)  # probe never run
+    assert MemoryReadEvent(record_id="m", probe_status=ProbeStatus.FAILED, blocked_reason="probe_failed")
 
 
-def test_memory_write_requires_approval_and_the_guard() -> None:
-    with pytest.raises(ValidationError, match="after maintainer approval"):
-        MemoryWriteAttempt(record_id="m", written=True, approved=False)
+def test_memory_write_needs_approval_and_the_guard() -> None:
+    with pytest.raises(ValidationError, match="only after maintainer approval"):
+        MemoryWriteAttempt(record_id="m", written=True)
     with pytest.raises(ValidationError, match="only the Integrity Guard"):
-        MemoryWriteAttempt(
-            record_id="m",
-            written=True,
-            approved=True,
-            approval_source="simulated_maintainer",
-            written_by=AgentRole.REPAIRER,
-        )
-    blocked = MemoryWriteAttempt(record_id="m", blocked_reason="memory_disabled")
-    assert blocked.written is False
+        MemoryWriteAttempt(record_id="m", approved=True, written=True, written_by=AgentRole.REPAIRER)
+    with pytest.raises(ValidationError, match="blocked_reason"):
+        MemoryWriteAttempt(record_id="m")
+    assert MemoryWriteAttempt(record_id="m", blocked_reason="not_approved").written is False
 
 
-def test_confidence_is_not_a_calibrated_probability() -> None:
-    report = ConfidenceReport(value=0.8, source="model_self_report")
-    assert report.calibrated is False
-    with pytest.raises(ValidationError, match="calibration_method"):
-        ConfidenceReport(value=0.8, source="model_self_report", calibrated=True)
-    with pytest.raises(ValidationError, match="explicit source"):
-        ConfidenceReport(value=0.8)
-
-
-def test_evidence_score_absence_is_not_zero() -> None:
-    no_score = RetrievedEvidence(
-        evidence_id="ev",
-        source_type=EvidenceSourceType.DOCUMENTATION,
-        source_ref="docs/api.md",
-        retrieval_method=RetrievalMethod.BM25,
-    )
-    assert no_score.score is None
-    assert no_score.support is SupportStatus.UNKNOWN
-    assert no_score != no_score.model_copy(update={"score": 0.0})
-
-
-def test_citation_must_be_marked_used() -> None:
-    with pytest.raises(ValidationError, match="must be marked used_by_agent"):
-        RetrievedEvidence(
-            evidence_id="ev",
-            source_type=EvidenceSourceType.CHANGELOG,
-            source_ref="CHANGELOG.md",
-            cited=True,
-        )
-
-
-def test_run_rejects_citations_of_unretrieved_evidence() -> None:
-    bad = decision()
-    with pytest.raises(ValidationError, match="cites evidence that is not in"):
-        ExperimentRunRecord(
-            provenance=provenance(),
-            predictions=[bad],
-            retrieved_evidence=[
-                RetrievedEvidence(
-                    evidence_id="ev-other",
-                    source_type=EvidenceSourceType.DOCUMENTATION,
-                    source_ref="docs/api.md",
-                )
-            ],
-        )
-
-
-# --------------------------------------------------------------------------- #
-# Mixed episode: several predictions with different actions
-# --------------------------------------------------------------------------- #
-
-
-def test_mixed_episode_predictions_expand_per_test(s3_episode: Episode) -> None:
-    tests = [t.test_id for t in s3_episode.agent_input.ci_event.failing_tests]
-    run = ExperimentRunRecord(
-        provenance=provenance(run_id="run-s3", episode_id="ep-s3"),
-        predictions=[
-            decision(DecisionLabel.UPDATE_TEST, tests[0], "d-1"),
-            decision(DecisionLabel.FIX_CODE, tests[1], "d-2"),
-        ],
-    )
-    predicted = run.predicted_action_by_test()
-    assert predicted == {
-        tests[0]: DecisionLabel.UPDATE_TEST,
-        tests[1]: DecisionLabel.FIX_CODE,
-    }
-    gold = s3_episode.gold_actions()
-    scores = [
-        UnitDecisionScore(
-            test_id=test_id,
-            predicted_action=predicted[test_id],
-            expected_action=gold[test_id],
-            gold_direction=RepairDirection(gold[test_id].value),
-            correct=predicted[test_id] is gold[test_id],
-        )
-        for test_id in tests
-    ]
-    assert all(score.correct for score in scores)
-
-
-def test_group_level_decision_expands_to_each_test() -> None:
-    group_decision = PredictedDecision(
-        decision_id="d-group",
-        unit_kind="group",
-        group_id="g-normalise",
-        test_ids=["tests/t.py::a", "tests/t.py::b"],
-        predicted_action=DecisionLabel.FIX_CODE,
-    )
-    run = ExperimentRunRecord(
-        provenance=provenance(run_id="run-g"), predictions=[group_decision]
-    )
-    assert set(run.predicted_action_by_test()) == {"tests/t.py::a", "tests/t.py::b"}
-
-
-def test_test_level_decision_must_name_exactly_one_test() -> None:
-    with pytest.raises(ValidationError, match="exactly one test_id"):
-        PredictedDecision(
-            decision_id="d",
-            unit_kind="test",
-            test_ids=["a", "b"],
-            predicted_action=DecisionLabel.FIX_CODE,
-        )
-
-
-# --------------------------------------------------------------------------- #
-# Evaluation dimensions stay separate
-# --------------------------------------------------------------------------- #
-
-
-def test_evaluation_dimensions_are_independent() -> None:
-    evaluation = RunEvaluation(
-        decisions=[
-            UnitDecisionScore(
-                test_id="t",
-                predicted_action=DecisionLabel.UPDATE_TEST,
-                expected_action=DecisionLabel.FIX_CODE,
-                gold_direction=RepairDirection.FIX_CODE,
-                correct=False,
-                wrong_side="masked_regression",
-            )
-        ],
-        evidence=EvidenceEvaluation(
-            gold_evidence_ids=["ev-1"],
-            retrieved_ranked_ids=["ev-9", "ev-1"],
-            cited_evidence_ids=["ev-9"],
-            unsupported_citation_ids=["ev-9"],
-            stale_evidence_used_ids=["ev-9"],
-            stale_evidence_caused_wrong_hypothesis=True,
-        ),
-        integrity=IntegrityEvaluation(memory_over_generalised=True),
-    )
-    assert evaluation.decisions[0].wrong_side == "masked_regression"
-    assert evaluation.evidence is not None
-    assert evaluation.evidence.retrieved_ranked_ids.index("ev-1") == 1
-
-
-def test_correct_decision_cannot_be_a_wrong_side_edit() -> None:
-    with pytest.raises(ValidationError, match="cannot also be a wrong-side edit"):
-        UnitDecisionScore(
-            test_id="t",
-            predicted_action=DecisionLabel.FIX_CODE,
-            expected_action=DecisionLabel.FIX_CODE,
-            gold_direction=RepairDirection.FIX_CODE,
-            correct=True,
-            wrong_side="masked_regression",
-        )
-
-
-def test_evaluation_must_agree_with_recorded_predictions() -> None:
-    run = full_run_record()
-    with pytest.raises(ValidationError, match="disagrees with the recorded prediction"):
-        run.evaluation = RunEvaluation(
-            decisions=[
-                UnitDecisionScore(
-                    test_id="tests/test_synthlib.py::test_normalise",
-                    predicted_action=DecisionLabel.FIX_CODE,
-                    expected_action=DecisionLabel.UPDATE_TEST,
-                    gold_direction=RepairDirection.UPDATE_TEST,
-                    correct=False,
-                )
-            ]
-        )
-
-
-def test_metric_support_map_covers_the_stated_metrics() -> None:
-    expected = {
-        "Per-test direction accuracy / macro-F1",
-        "Correct-repair rate",
-        "Masked-regression rate",
-        "Reverted-intent rate",
-        "Test-weakening rate",
-        "Mutant-kill retention",
-        "Out-of-scope-edit rate",
-        "Escalation precision / recall",
-        "Gold-evidence Recall@k and citation faithfulness",
-        "Stale-evidence error rate",
-        "Memory over-generalisation on decoys",
-        "Tool-call accuracy and error recovery",
-        "Tool calls and tokens per episode",
-    }
-    assert expected <= set(METRIC_SUPPORT)
-
-
-def test_trajectory_records_ordered_steps_with_stop_reasons() -> None:
-    run = full_run_record()
-    assert [s.index for s in run.trajectory] == [0, 1]
-    assert run.trajectory[0].stopping_reason is StopReason.SUFFICIENT_EVIDENCE
-    with pytest.raises(ValidationError, match="must record an error_type"):
-        TrajectoryStep(
-            step_id="s", index=0, operation=OperationType.RETRIEVAL, status="failed"
-        )
+def test_schemas_compatibility_alias() -> None:
+    from testorcode.schemas import schemas as compat_schemas
+    assert "testorcode.schemas.episode_schemas" in (compat_schemas.__doc__ or "")
+    assert hasattr(compat_schemas, "Episode")
+    assert hasattr(compat_schemas, "SCHEMA_VERSION")
