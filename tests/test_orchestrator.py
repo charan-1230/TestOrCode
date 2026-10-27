@@ -433,15 +433,38 @@ def test_default_stub_agents_fail_explicitly_not_as_escalation() -> None:
 
 
 def test_missing_retriever_fails_at_intent_analysis() -> None:
+    # A corpus that is not materialised cannot be indexed (building it from a worktree is deferred), so no
+    # retriever exists: an explicit failure, never a silent empty search.
+    episode = S1.model_copy(update={"corpus": S1.corpus.model_copy(update={"items": None})})
     fake = FakeAgents()
     er = EpisodeRun(
-        S1, worktree_path=WT, settings=SETTINGS, agents=fake.agents(),
+        episode, worktree_path=WT, settings=SETTINGS, agents=fake.agents(),
         llm=FakeLLMClient({AgentRole.TRIAGE: [triage_result(S1)]}), patch_tools=FakePatchTools().tools(),
     )
     record = er.execute()
     assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
     assert record.errors[0].operation == f"intent_analysis:{G1}"
+    assert "not implemented" in record.errors[0].message.lower()
     assert er.trace[-1] == (G1, Stage.FAILED)
+
+
+def test_default_retriever_is_built_from_the_episode_corpus() -> None:
+    seen: dict[str, list[str]] = {}
+    fake = FakeAgents()
+
+    def intent(context, group, *, retriever, memory, llm):
+        seen["hits"] = [h.evidence_id for h in retriever.search("normalise capitalised string", top_k=3)]
+        raise ToolError("stop after searching")
+
+    agents = Agents(triage=fake.triage, intent_analyst=intent, repairer=fake.repair, integrity_guard=fake.guard)
+    er = EpisodeRun(
+        S1, worktree_path=WT, settings=SETTINGS, agents=agents,
+        llm=FakeLLMClient({AgentRole.TRIAGE: [triage_result(S1)]}), patch_tools=FakePatchTools().tools(),
+    )
+    record = er.execute()
+    corpus_ids = {i.evidence_id for i in S1.corpus.items}
+    assert seen["hits"] and set(seen["hits"]) <= corpus_ids
+    assert {e.evidence_id for e in record.retrieved_evidence} == set(seen["hits"])  # logged for the run record
 
 
 def test_provider_failure_is_api_failure_not_counted_against_agent() -> None:

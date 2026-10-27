@@ -15,7 +15,7 @@ worktree at run time) raises `NotImplementedError`: deferred.
 ## API
 | Function | Purpose |
 |---|---|
-| `build_retriever(corpus, worktree_path=None) -> Retriever` | BM25Okapi, deterministic (score desc, then `evidence_id`), zero-score hits dropped |
+| `build_retriever(corpus, worktree_path=None) -> Retriever` | BM25Okapi, deterministic (score desc, then `evidence_id`); items sharing no query term are dropped |
 | `Retriever.search(query, *, top_k)` | `RetrievedEvidence` list, `rank` from 1, `retrieval_method=BM25` |
 | `naive_query(ci_event)` | B1 "standard RAG": the failing test's own text |
 | `intent_queries(ci_event, group=None, *, include_message=True, include_failure_text=False)` | Full/A2: changed functions + modules, behaviour words (changed identifiers); never test ids |

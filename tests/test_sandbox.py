@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import shutil
 import socket
+import sys
 import textwrap
 import time
 import uuid
@@ -187,6 +188,11 @@ def test_sandbox_blocks_network_host_files_secrets_and_worktree_writes(
     secret.write_text("top secret\n")
     escaped = tmp_path / "escaped.txt"
     home = Path.home()
+    # The interpreter's environment is mounted read-only so tests can run; if it lives under $HOME (a venv in
+    # the project folder), the directories leading to it exist inside the sandbox.  Nothing else may.
+    interpreter = {Path(sys.executable), Path(sys.executable).resolve(), Path(sys.prefix)}
+    interpreter_roots = sorted(str(p) for p in interpreter)
+    interpreter_chain = sorted({str(q) for p in interpreter for q in (p, *p.parents)})
     root = project(
         tmp_path,
         {
@@ -203,7 +209,14 @@ def test_sandbox_blocks_network_host_files_secrets_and_worktree_writes(
                     network = False
                 assert not network, "network reachable"
                 assert not Path({str(secret)!r}).exists(), "host file visible"
-                assert not Path({str(home)!r}).exists() or not any(Path({str(home)!r}).iterdir())
+                roots = {interpreter_roots!r}
+                allowed = set({interpreter_chain!r})
+                stray = []
+                for base, dirs, files in os.walk({str(home)!r}):
+                    dirs[:] = [d for d in dirs if os.path.join(base, d) not in roots]
+                    stray += [os.path.join(base, n) for n in dirs + files
+                              if os.path.join(base, n) not in allowed and os.path.join(base, n) not in roots]
+                assert not stray, f"host home content visible: {{stray[:5]}}"
                 assert not Path("/var/run/docker.sock").exists()
                 assert not Path("/run/docker.sock").exists()
                 assert "LLM_API_KEY" not in os.environ

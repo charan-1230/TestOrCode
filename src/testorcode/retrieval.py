@@ -84,11 +84,16 @@ def _evidence(item: EvidenceItem, query: str, rank: int, score: float, method: R
 
 
 class Bm25Retriever:
-    """BM25Okapi over ``text`` + ``source_ref`` of each item.  Deterministic; no network."""
+    """BM25Okapi over ``text`` + ``source_ref`` of each item.  Deterministic; no network.
+
+    Items sharing no query term are never returned; everything else is ranked by score, then ``evidence_id``.
+    """
 
     def __init__(self, items: Sequence[EvidenceItem]) -> None:
         self._items = list(items)
-        self._index = BM25Okapi([tokenize(f"{i.text or ''} {i.source_ref}") for i in self._items]) if self._items else None
+        docs = [tokenize(f"{i.text or ''} {i.source_ref}") for i in self._items]
+        self._token_sets = [set(d) for d in docs]
+        self._index = BM25Okapi(docs) if docs else None
 
     def __len__(self) -> int:
         return len(self._items)
@@ -101,7 +106,10 @@ class Bm25Retriever:
             return []
         scores = self._index.get_scores(tokens)
         order = sorted(range(len(self._items)), key=lambda i: (-scores[i], self._items[i].evidence_id))
-        hits = [i for i in order if scores[i] > 0][:top_k]
+        # Keep any item that shares a query term.  Do not drop by score: BM25Okapi gives a term found in half of the
+        # documents an IDF of exactly 0, which on a tiny corpus would turn a real match into "nothing found".
+        wanted = set(tokens)
+        hits = [i for i in order if self._token_sets[i] & wanted][:top_k]
         return [_evidence(self._items[i], query, rank, scores[i], RetrievalMethod.BM25) for rank, i in enumerate(hits, 1)]
 
 

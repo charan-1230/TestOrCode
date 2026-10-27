@@ -114,6 +114,12 @@ def test_no_match_empty_query_and_top_k() -> None:
     assert build_retriever(corpus([])).search("x", top_k=3) == []
 
 
+def test_tiny_corpus_still_returns_matches() -> None:
+    # BM25Okapi gives a term present in half of 2 documents an IDF of 0; that must not become "nothing found".
+    retriever = build_retriever(corpus([item("a", "normalise capitalised output"), item("b", "unrelated sockets text")]))
+    assert [h.evidence_id for h in retriever.search("normalise output", top_k=5)] == ["a"]
+
+
 def test_build_guards() -> None:
     with pytest.raises(NotImplementedError):
         build_retriever(corpus(None))
