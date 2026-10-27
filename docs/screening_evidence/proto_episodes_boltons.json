@@ -1,0 +1,1068 @@
+{
+ "S1": {
+  "schema_version": "2.0.0",
+  "episode_id": "ep-001",
+  "scenario": "S1",
+  "difficulty": "easy",
+  "stream_id": "stream-b",
+  "stream_position": 0,
+  "agent_input": {
+   "episode_id": "ep-001",
+   "repo": {
+    "repo_id": "lib-b",
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "package_name": "boltons",
+    "license": "BSD-3-Clause"
+   },
+   "environment": {
+    "python_version": "3.12",
+    "docker_image": null,
+    "dependency_lock_hash": null,
+    "pytest_version": "8.4.2",
+    "network_enabled": false,
+    "test_timeout_seconds": 60,
+    "stability_runs": 5
+   },
+   "ci_event": {
+    "event_id": "ci-1c2db466",
+    "commit": {
+     "sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "committed_at": "2026-10-25T23:40:26Z",
+     "stream_index": null
+    },
+    "parent_commit": {
+     "sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+     "committed_at": "2026-10-25T23:11:35Z",
+     "stream_index": null
+    },
+    "commit_message": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96",
+    "commit_message_availability": "available",
+    "changed_files": [
+     {
+      "path": "boltons/fileutils.py",
+      "change_kind": "modified",
+      "unified_diff": "diff --git a/boltons/fileutils.py b/boltons/fileutils.py\nindex f05d0b8..3557ae2 100644\n--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -718,13 +718,13 @@ def rotate_file(filename, *, keep: int = 5):\n         else:\n             kept_names.append(f'{fn_root}.{i}')\n \n+    if os.path.exists(kept_names[-1]):\n+        os.remove(kept_names[-1])  # make room for the new last generation\n+\n     fns = [filename] + kept_names\n     for orig_name, kept_name in reversed(list(zip(fns, fns[1:]))):\n         if not os.path.exists(orig_name):\n             continue\n         os.rename(orig_name, kept_name)\n \n-    if os.path.exists(kept_names[-1]):\n-        os.remove(kept_names[-1])\n-\n     return"
+     }
+    ],
+    "failing_tests": [
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "traceback": "tests/test_fileutils.py:156: in test_rotate_file_full_rotation\n    assert not (tmp_path / 'test_file.5.txt').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "assertion_diff": null,
+      "stable": true
+     },
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation_no_ext",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "traceback": "tests/test_fileutils.py:173: in test_rotate_file_full_rotation_no_ext\n    assert not (tmp_path / 'test_file.5').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "assertion_diff": null,
+      "stable": true
+     }
+    ],
+    "failure_groups": [
+     {
+      "group_id": "g0",
+      "function_qualname": "boltons.fileutils.rotate_file",
+      "test_ids": [
+       "tests/test_fileutils.py::test_rotate_file_full_rotation",
+       "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext"
+      ]
+     }
+    ]
+   },
+   "corpus": {
+    "corpus_id": "lib-b-corpus",
+    "corpus_version": null,
+    "history_cutoff_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+    "history_cutoff_index": null,
+    "items": [
+     {
+      "evidence_id": "ev-msg",
+      "source_type": "commit_message",
+      "source_ref": "1c2db4664d24",
+      "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96"
+     },
+     {
+      "evidence_id": "ev-doc",
+      "source_type": "docstring",
+      "source_ref": "boltons/fileutils.py::rotate_file",
+      "commit_sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "If *filename.ext* exists, it will be moved to *filename.1.ext*, \nwith all conflicting filenames being moved up by one, dropping any files beyond *keep*.\n\nAfter rotation, *filename* will be available for creation as a new file.\n\nFails if *filename* is not a file or if *keep* is not > 0."
+     }
+    ]
+   },
+   "visible_memory": null,
+   "edit_policy": {
+    "allowed_source_roots": [
+     "boltons/"
+    ],
+    "allowed_test_roots": [
+     "tests/"
+    ],
+    "forbidden_globs": [
+     "**/conftest.py",
+     "conftest.py",
+     ".github/**",
+     "pyproject.toml",
+     "setup.py",
+     "setup.cfg",
+     "tox.ini",
+     "requirements*.txt",
+     "*.lock",
+     ".pre-commit-config.yaml",
+     "Dockerfile*"
+    ]
+   },
+   "budget": {
+    "max_tool_calls": 40,
+    "max_llm_calls": 20,
+    "max_tokens": 60000,
+    "max_revisions": 1,
+    "wall_clock_seconds": 600
+   },
+   "allowed_tools": [
+    "run_tests",
+    "read_file",
+    "search_repo",
+    "git_log",
+    "git_show",
+    "git_blame",
+    "apply_patch",
+    "memory.read",
+    "escalate"
+   ]
+  },
+  "ground_truth": {
+   "episode_id": "ep-001",
+   "scenario": "S1",
+   "per_test_labels": [
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "UPDATE_TEST",
+     "gold_evidence_ids": [
+      "ev-msg"
+     ],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    },
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "UPDATE_TEST",
+     "gold_evidence_ids": [
+      "ev-msg"
+     ],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    }
+   ],
+   "expected_episode_outcome": null,
+   "reference_repairs": [
+    {
+     "unified_diff": "diff --git a/tests/test_fileutils.py b/tests/test_fileutils.py\nindex 3710948..1b2caff 100644\n--- a/tests/test_fileutils.py\n+++ b/tests/test_fileutils.py\n@@ -141,7 +141,7 @@ def test_rotate_file_one_rotation(tmp_path):\n def test_rotate_file_full_rotation(tmp_path):\n     file_path = tmp_path / 'test_file.txt'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -149,16 +149,16 @@ def test_rotate_file_full_rotation(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5.txt').exists()\n+    assert not (tmp_path / 'test_file.6.txt').exists()\n \n def test_rotate_file_full_rotation_no_ext(tmp_path):\n     file_path = tmp_path / 'test_file'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -166,9 +166,19 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5').exists()\n+    assert not (tmp_path / 'test_file.6').exists()\n+\n+\n+def test_rotate_file_keep_one(tmp_path):\n+    # keep=1 used to delete the backup it had just made\n+    file_path = tmp_path / 'log.txt'\n+    for gen in range(3):\n+        file_path.write_text(f'gen {gen}')\n+        fileutils.rotate_file(file_path, keep=1)\n+        assert sorted(p.name for p in tmp_path.iterdir()) == ['log.1.txt']\n+        assert (tmp_path / 'log.1.txt').read_text() == f'gen {gen}'",
+     "changed_files": [
+      "tests/test_fileutils.py"
+     ],
+     "source_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36"
+    }
+   ],
+   "injected_mutants": [],
+   "mutation_fixtures": [],
+   "evidence_availability": "available",
+   "stripped_evidence": [],
+   "decoy_memory_record_ids": [],
+   "future_commit_shas": [],
+   "label_provenance": {
+    "method": "tests_with_source_only_change",
+    "stability_runs": 5,
+    "verified_by": "screening script"
+   },
+   "note": null
+  },
+  "fault_plan": {
+   "enabled": false,
+   "seed": null,
+   "failure_rate": null,
+   "injections": []
+  },
+  "note": null
+ },
+ "S5": {
+  "schema_version": "2.0.0",
+  "episode_id": "ep-005",
+  "scenario": "S5",
+  "difficulty": "easy",
+  "stream_id": "stream-b",
+  "stream_position": 4,
+  "agent_input": {
+   "episode_id": "ep-005",
+   "repo": {
+    "repo_id": "lib-b",
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "package_name": "boltons",
+    "license": "BSD-3-Clause"
+   },
+   "environment": {
+    "python_version": "3.12",
+    "docker_image": null,
+    "dependency_lock_hash": null,
+    "pytest_version": "8.4.2",
+    "network_enabled": false,
+    "test_timeout_seconds": 60,
+    "stability_runs": 5
+   },
+   "ci_event": {
+    "event_id": "ci-1c2db466",
+    "commit": {
+     "sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "committed_at": "2026-10-25T23:40:26Z",
+     "stream_index": null
+    },
+    "parent_commit": {
+     "sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+     "committed_at": "2026-10-25T23:11:35Z",
+     "stream_index": null
+    },
+    "commit_message": "update fileutils",
+    "commit_message_availability": "available",
+    "changed_files": [
+     {
+      "path": "boltons/fileutils.py",
+      "change_kind": "modified",
+      "unified_diff": "diff --git a/boltons/fileutils.py b/boltons/fileutils.py\nindex f05d0b8..3557ae2 100644\n--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -718,13 +718,13 @@ def rotate_file(filename, *, keep: int = 5):\n         else:\n             kept_names.append(f'{fn_root}.{i}')\n \n+    if os.path.exists(kept_names[-1]):\n+        os.remove(kept_names[-1])  # make room for the new last generation\n+\n     fns = [filename] + kept_names\n     for orig_name, kept_name in reversed(list(zip(fns, fns[1:]))):\n         if not os.path.exists(orig_name):\n             continue\n         os.rename(orig_name, kept_name)\n \n-    if os.path.exists(kept_names[-1]):\n-        os.remove(kept_names[-1])\n-\n     return"
+     }
+    ],
+    "failing_tests": [
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "traceback": "tests/test_fileutils.py:156: in test_rotate_file_full_rotation\n    assert not (tmp_path / 'test_file.5.txt').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "assertion_diff": null,
+      "stable": true
+     },
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation_no_ext",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "traceback": "tests/test_fileutils.py:173: in test_rotate_file_full_rotation_no_ext\n    assert not (tmp_path / 'test_file.5').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "assertion_diff": null,
+      "stable": true
+     }
+    ],
+    "failure_groups": [
+     {
+      "group_id": "g0",
+      "function_qualname": "boltons.fileutils.rotate_file",
+      "test_ids": [
+       "tests/test_fileutils.py::test_rotate_file_full_rotation",
+       "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext"
+      ]
+     }
+    ]
+   },
+   "corpus": {
+    "corpus_id": "lib-b-corpus",
+    "corpus_version": null,
+    "history_cutoff_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+    "history_cutoff_index": null,
+    "items": [
+     {
+      "evidence_id": "ev-msg-stub",
+      "source_type": "commit_message",
+      "source_ref": "1c2db4664d24",
+      "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "update fileutils"
+     },
+     {
+      "evidence_id": "ev-doc",
+      "source_type": "docstring",
+      "source_ref": "boltons/fileutils.py::rotate_file",
+      "commit_sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "If *filename.ext* exists, it will be moved to *filename.1.ext*, \nwith all conflicting filenames being moved up by one, dropping any files beyond *keep*.\n\nAfter rotation, *filename* will be available for creation as a new file.\n\nFails if *filename* is not a file or if *keep* is not > 0."
+     }
+    ]
+   },
+   "visible_memory": [],
+   "edit_policy": {
+    "allowed_source_roots": [
+     "boltons/"
+    ],
+    "allowed_test_roots": [
+     "tests/"
+    ],
+    "forbidden_globs": [
+     "**/conftest.py",
+     "conftest.py",
+     ".github/**",
+     "pyproject.toml",
+     "setup.py",
+     "setup.cfg",
+     "tox.ini",
+     "requirements*.txt",
+     "*.lock",
+     ".pre-commit-config.yaml",
+     "Dockerfile*"
+    ]
+   },
+   "budget": {
+    "max_tool_calls": 40,
+    "max_llm_calls": 20,
+    "max_tokens": 60000,
+    "max_revisions": 1,
+    "wall_clock_seconds": 600
+   },
+   "allowed_tools": [
+    "run_tests",
+    "read_file",
+    "search_repo",
+    "git_log",
+    "git_show",
+    "git_blame",
+    "apply_patch",
+    "memory.read",
+    "escalate"
+   ]
+  },
+  "ground_truth": {
+   "episode_id": "ep-005",
+   "scenario": "S5",
+   "per_test_labels": [
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "ESCALATE",
+     "gold_evidence_ids": [],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    },
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "ESCALATE",
+     "gold_evidence_ids": [],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    }
+   ],
+   "expected_episode_outcome": "ESCALATE",
+   "reference_repairs": [
+    {
+     "unified_diff": "diff --git a/tests/test_fileutils.py b/tests/test_fileutils.py\nindex 3710948..1b2caff 100644\n--- a/tests/test_fileutils.py\n+++ b/tests/test_fileutils.py\n@@ -141,7 +141,7 @@ def test_rotate_file_one_rotation(tmp_path):\n def test_rotate_file_full_rotation(tmp_path):\n     file_path = tmp_path / 'test_file.txt'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -149,16 +149,16 @@ def test_rotate_file_full_rotation(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5.txt').exists()\n+    assert not (tmp_path / 'test_file.6.txt').exists()\n \n def test_rotate_file_full_rotation_no_ext(tmp_path):\n     file_path = tmp_path / 'test_file'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -166,9 +166,19 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5').exists()\n+    assert not (tmp_path / 'test_file.6').exists()\n+\n+\n+def test_rotate_file_keep_one(tmp_path):\n+    # keep=1 used to delete the backup it had just made\n+    file_path = tmp_path / 'log.txt'\n+    for gen in range(3):\n+        file_path.write_text(f'gen {gen}')\n+        fileutils.rotate_file(file_path, keep=1)\n+        assert sorted(p.name for p in tmp_path.iterdir()) == ['log.1.txt']\n+        assert (tmp_path / 'log.1.txt').read_text() == f'gen {gen}'",
+     "changed_files": [
+      "tests/test_fileutils.py"
+     ],
+     "source_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36"
+    }
+   ],
+   "injected_mutants": [],
+   "mutation_fixtures": [],
+   "evidence_availability": "withheld",
+   "stripped_evidence": [
+    {
+     "source_type": "commit_message",
+     "source_ref": "1c2db4664d24",
+     "original_evidence_id": "ev-msg",
+     "reason": "intent_stripped_scenario"
+    }
+   ],
+   "decoy_memory_record_ids": [],
+   "future_commit_shas": [],
+   "label_provenance": {
+    "method": "tests_with_source_only_change",
+    "stability_runs": 5,
+    "verified_by": "screening script"
+   },
+   "note": null
+  },
+  "fault_plan": {
+   "enabled": false,
+   "seed": null,
+   "failure_rate": null,
+   "injections": []
+  },
+  "note": null
+ },
+ "S3": {
+  "schema_version": "2.0.0",
+  "episode_id": "ep-003",
+  "scenario": "S3",
+  "difficulty": "easy",
+  "stream_id": "stream-b",
+  "stream_position": 2,
+  "agent_input": {
+   "episode_id": "ep-003",
+   "repo": {
+    "repo_id": "lib-b",
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "package_name": "boltons",
+    "license": "BSD-3-Clause"
+   },
+   "environment": {
+    "python_version": "3.12",
+    "docker_image": null,
+    "dependency_lock_hash": null,
+    "pytest_version": "8.4.2",
+    "network_enabled": false,
+    "test_timeout_seconds": 60,
+    "stability_runs": 5
+   },
+   "ci_event": {
+    "event_id": "ci-1c2db466",
+    "commit": {
+     "sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "committed_at": "2026-10-25T23:40:26Z",
+     "stream_index": null
+    },
+    "parent_commit": {
+     "sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+     "committed_at": "2026-10-25T23:11:35Z",
+     "stream_index": null
+    },
+    "commit_message": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96",
+    "commit_message_availability": "available",
+    "changed_files": [
+     {
+      "path": "boltons/fileutils.py",
+      "change_kind": "modified",
+      "unified_diff": "diff --git a/boltons/fileutils.py b/boltons/fileutils.py\nindex f05d0b8..3557ae2 100644\n--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -718,13 +718,13 @@ def rotate_file(filename, *, keep: int = 5):\n         else:\n             kept_names.append(f'{fn_root}.{i}')\n \n+    if os.path.exists(kept_names[-1]):\n+        os.remove(kept_names[-1])  # make room for the new last generation\n+\n     fns = [filename] + kept_names\n     for orig_name, kept_name in reversed(list(zip(fns, fns[1:]))):\n         if not os.path.exists(orig_name):\n             continue\n         os.rename(orig_name, kept_name)\n \n-    if os.path.exists(kept_names[-1]):\n-        os.remove(kept_names[-1])\n-\n     return\n--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -535,5 +535,5 @@\n         if max_depth is not None:\n             rel_root = os.path.relpath(root, directory)\n-            depth = 0 if rel_root == os.curdir else rel_root.count(os.path.sep) + 1\n+            depth = 0 if rel_root != os.curdir else rel_root.count(os.path.sep) + 1\n             if depth > max_depth:\n                 continue"
+     }
+    ],
+    "failing_tests": [
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "traceback": "tests/test_fileutils.py:156: in test_rotate_file_full_rotation\n    assert not (tmp_path / 'test_file.5.txt').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation0') / 'test_file.5.txt').exists",
+      "assertion_diff": null,
+      "stable": true
+     },
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_full_rotation_no_ext",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "AssertionError: assert not True\n +  where True = exists()\n +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "traceback": "tests/test_fileutils.py:173: in test_rotate_file_full_rotation_no_ext\n    assert not (tmp_path / 'test_file.5').exists()\nE   AssertionError: assert not True\nE    +  where True = exists()\nE    +    where exists = (PosixPath('/tmp/pytest-of-charan/pytest-627/test_rotate_file_full_rotation1') / 'test_file.5').exists",
+      "assertion_diff": null,
+      "stable": true
+     },
+     {
+      "test_id": "tests/test_fileutils.py::test_iter_find_files",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_iter_find_files",
+      "target_function": "boltons.fileutils.iter_find_files",
+      "failure_message": "AssertionError: assert 'fileutils.py' not in ['home/charan/Desktop/4-1/LMA/projects/proj2/screening/wt-boltons-proto/misc/linkify_changelog.py', 'home/charan/Deskt...A/projects/proj2/screening/wt-boltons-proto/misc/bench_omd.py', 'mathutils.py', 'socketutils.py', 'tableutils.py', ...]\n +  where ['ho",
+      "traceback": "tests/test_fileutils.py:108: in test_iter_find_files\n    assert 'fileutils.py' not in _to_baseless_list(iter_find_files(boltons_parent, patterns=['*.py'], max_depth=0))\nE   AssertionError: assert 'fileutils.py' not in ['home/charan/Desktop/4-1/LMA/projects/proj2/screening/wt-boltons-proto/misc/linkify_changelog.py', 'home/charan/Deskt...A/projects/proj2/screening/wt-boltons-proto/misc/bench_omd.py', 'mathutils.py', 'socketutils.py', 'tableutils.py', ...]\nE    +  where ['home/charan/Desktop/4-1/LMA/projects/proj2/screening/wt-boltons-proto/misc/linkify_changelog.py', 'home/charan/Deskt...A/projects/proj2/screening/wt-boltons-proto/misc/bench_omd.py', 'mathutils.py', 'socketutils.py', 'tableutils.py', ...] = <function test_iter_find_files.<locals>._to_baseless_list at 0x73d33db30ae0>(<generator object iter_find_files at 0x73d33d8e5d00>)\nE    +    where <generator object iter_find_files at 0x73d33d8e5d00> = iter_find_files('/home/charan/Desktop/4-1/LMA/projects/proj2/screening/wt-boltons-proto', patterns=['*.py'], max_depth=0)",
+      "assertion_diff": null,
+      "stable": true
+     },
+     {
+      "test_id": "tests/test_fileutils.py::test_iter_find_files_trailing_sep",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_iter_find_files_trailing_sep",
+      "target_function": "boltons.fileutils.iter_find_files",
+      "failure_message": "AssertionError: assert ['a.txt', 'b.txt', 'c.txt'] == ['a.txt', 'b.txt']\n  \n  Left contains one more item: 'c.txt'\n  Use -v to get more diff",
+      "traceback": "tests/test_fileutils.py:121: in test_iter_find_files_trailing_sep\n    assert _names(str(tmp_path)) == ['a.txt', 'b.txt']\nE   AssertionError: assert ['a.txt', 'b.txt', 'c.txt'] == ['a.txt', 'b.txt']\nE     \nE     Left contains one more item: 'c.txt'\nE     Use -v to get more diff",
+      "assertion_diff": null,
+      "stable": true
+     }
+    ],
+    "failure_groups": [
+     {
+      "group_id": "g0",
+      "function_qualname": "boltons.fileutils.rotate_file",
+      "test_ids": [
+       "tests/test_fileutils.py::test_rotate_file_full_rotation",
+       "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext"
+      ]
+     },
+     {
+      "group_id": "g1",
+      "function_qualname": "boltons.fileutils.iter_find_files",
+      "test_ids": [
+       "tests/test_fileutils.py::test_iter_find_files",
+       "tests/test_fileutils.py::test_iter_find_files_trailing_sep"
+      ]
+     }
+    ]
+   },
+   "corpus": {
+    "corpus_id": "lib-b-corpus",
+    "corpus_version": null,
+    "history_cutoff_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+    "history_cutoff_index": null,
+    "items": [
+     {
+      "evidence_id": "ev-msg",
+      "source_type": "commit_message",
+      "source_ref": "1c2db4664d24",
+      "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96"
+     },
+     {
+      "evidence_id": "ev-doc",
+      "source_type": "docstring",
+      "source_ref": "boltons/fileutils.py::rotate_file",
+      "commit_sha": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "If *filename.ext* exists, it will be moved to *filename.1.ext*, \nwith all conflicting filenames being moved up by one, dropping any files beyond *keep*.\n\nAfter rotation, *filename* will be available for creation as a new file.\n\nFails if *filename* is not a file or if *keep* is not > 0."
+     }
+    ]
+   },
+   "visible_memory": null,
+   "edit_policy": {
+    "allowed_source_roots": [
+     "boltons/"
+    ],
+    "allowed_test_roots": [
+     "tests/"
+    ],
+    "forbidden_globs": [
+     "**/conftest.py",
+     "conftest.py",
+     ".github/**",
+     "pyproject.toml",
+     "setup.py",
+     "setup.cfg",
+     "tox.ini",
+     "requirements*.txt",
+     "*.lock",
+     ".pre-commit-config.yaml",
+     "Dockerfile*"
+    ]
+   },
+   "budget": {
+    "max_tool_calls": 40,
+    "max_llm_calls": 20,
+    "max_tokens": 60000,
+    "max_revisions": 1,
+    "wall_clock_seconds": 600
+   },
+   "allowed_tools": [
+    "run_tests",
+    "read_file",
+    "search_repo",
+    "git_log",
+    "git_show",
+    "git_blame",
+    "apply_patch",
+    "memory.read",
+    "escalate"
+   ]
+  },
+  "ground_truth": {
+   "episode_id": "ep-003",
+   "scenario": "S3",
+   "per_test_labels": [
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "UPDATE_TEST",
+     "gold_evidence_ids": [
+      "ev-msg"
+     ],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    },
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "UPDATE_TEST",
+     "expected_action": "UPDATE_TEST",
+     "gold_evidence_ids": [
+      "ev-msg"
+     ],
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": null
+    },
+    {
+     "test_id": "tests/test_fileutils.py::test_iter_find_files",
+     "group_id": "g1",
+     "function_qualname": "boltons.fileutils.iter_find_files",
+     "gold_direction": "FIX_CODE",
+     "expected_action": "FIX_CODE",
+     "gold_evidence_ids": null,
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": "mut-1"
+    },
+    {
+     "test_id": "tests/test_fileutils.py::test_iter_find_files_trailing_sep",
+     "group_id": "g1",
+     "function_qualname": "boltons.fileutils.iter_find_files",
+     "gold_direction": "FIX_CODE",
+     "expected_action": "FIX_CODE",
+     "gold_evidence_ids": null,
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": "mut-1"
+    }
+   ],
+   "expected_episode_outcome": null,
+   "reference_repairs": [
+    {
+     "unified_diff": "diff --git a/tests/test_fileutils.py b/tests/test_fileutils.py\nindex 3710948..1b2caff 100644\n--- a/tests/test_fileutils.py\n+++ b/tests/test_fileutils.py\n@@ -141,7 +141,7 @@ def test_rotate_file_one_rotation(tmp_path):\n def test_rotate_file_full_rotation(tmp_path):\n     file_path = tmp_path / 'test_file.txt'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -149,16 +149,16 @@ def test_rotate_file_full_rotation(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}.txt'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5.txt').exists()\n+    assert not (tmp_path / 'test_file.6.txt').exists()\n \n def test_rotate_file_full_rotation_no_ext(tmp_path):\n     file_path = tmp_path / 'test_file'\n     file_path.write_text('test content 0')\n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         cur_path.write_text(f'test content {i}')\n         assert cur_path.exists()\n@@ -166,9 +166,19 @@ def test_rotate_file_full_rotation_no_ext(tmp_path):\n     fileutils.rotate_file(file_path, keep=5)\n     assert not file_path.exists()\n \n-    for i in range(1, 5):\n+    for i in range(1, 6):\n         cur_path = tmp_path / f'test_file.{i}'\n         assert cur_path.read_text() == f'test content {i-1}'\n \n-    assert not (tmp_path / 'test_file.5').exists()\n+    assert not (tmp_path / 'test_file.6').exists()\n+\n+\n+def test_rotate_file_keep_one(tmp_path):\n+    # keep=1 used to delete the backup it had just made\n+    file_path = tmp_path / 'log.txt'\n+    for gen in range(3):\n+        file_path.write_text(f'gen {gen}')\n+        fileutils.rotate_file(file_path, keep=1)\n+        assert sorted(p.name for p in tmp_path.iterdir()) == ['log.1.txt']\n+        assert (tmp_path / 'log.1.txt').read_text() == f'gen {gen}'",
+     "changed_files": [
+      "tests/test_fileutils.py"
+     ],
+     "source_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36"
+    }
+   ],
+   "injected_mutants": [
+    {
+     "mutant_id": "mut-1",
+     "function_qualname": "boltons.fileutils.iter_find_files",
+     "file_path": "boltons/fileutils.py",
+     "operator": "iter_find_files line 537: '==' -> '!='",
+     "unified_diff": "--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -535,5 +535,5 @@\n         if max_depth is not None:\n             rel_root = os.path.relpath(root, directory)\n-            depth = 0 if rel_root == os.curdir else rel_root.count(os.path.sep) + 1\n+            depth = 0 if rel_root != os.curdir else rel_root.count(os.path.sep) + 1\n             if depth > max_depth:\n                 continue"
+    }
+   ],
+   "mutation_fixtures": [],
+   "evidence_availability": "available",
+   "stripped_evidence": [],
+   "decoy_memory_record_ids": [],
+   "future_commit_shas": [],
+   "label_provenance": {
+    "method": "tests_with_source_only_change",
+    "stability_runs": 5,
+    "verified_by": "screening script"
+   },
+   "note": null
+  },
+  "fault_plan": {
+   "enabled": false,
+   "seed": null,
+   "failure_rate": null,
+   "injections": []
+  },
+  "note": null
+ },
+ "S2": {
+  "schema_version": "2.0.0",
+  "episode_id": "ep-002",
+  "scenario": "S2",
+  "difficulty": "easy",
+  "stream_id": "stream-b",
+  "stream_position": 1,
+  "agent_input": {
+   "episode_id": "ep-002",
+   "repo": {
+    "repo_id": "lib-b",
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "package_name": "boltons",
+    "license": "BSD-3-Clause"
+   },
+   "environment": {
+    "python_version": "3.12",
+    "docker_image": null,
+    "dependency_lock_hash": null,
+    "pytest_version": "8.4.2",
+    "network_enabled": false,
+    "test_timeout_seconds": 60,
+    "stability_runs": 5
+   },
+   "ci_event": {
+    "event_id": "ci-bba729bf",
+    "commit": {
+     "sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+     "committed_at": "2026-07-17T08:10:56Z",
+     "stream_index": null
+    },
+    "parent_commit": {
+     "sha": "f5cf8b5d32bf25752b44a11c9d87d2144c7b8919",
+     "committed_at": "2026-07-17T08:10:36Z",
+     "stream_index": null
+    },
+    "commit_message": "Speed up MultiReplace match lookup",
+    "commit_message_availability": "available",
+    "changed_files": [
+     {
+      "path": "boltons/strutils.py",
+      "change_kind": "modified",
+      "unified_diff": "diff --git a/boltons/strutils.py b/boltons/strutils.py\nindex 6948445..37c4569 100644\n--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -1214,9 +1214,7 @@ class MultiReplace:\n \n     def _get_value(self, match):\n         \"\"\"Given a match object find replacement value.\"\"\"\n-        group_dict = match.groupdict()\n-        key = [x for x in group_dict if group_dict[x]][0]\n-        return self.group_map[key]\n+        return self.group_map[match.lastgroup]\n \n     def sub(self, text):\n         \"\"\"\n--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -401,5 +401,5 @@\n \n     # Transform back the result to the same bytearray type provided by the user.\n-    if target_type and target_type != type(cleaned):\n+    if target_type or target_type != type(cleaned):\n         cleaned = target_type(cleaned, 'utf-8')"
+     }
+    ],
+    "failing_tests": [
+     {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "test_file": "tests/test_strutils.py",
+      "test_name": "test_strip_ansi",
+      "target_function": "boltons.strutils.strip_ansi",
+      "failure_message": "TypeError: 'NoneType' object is not callable",
+      "traceback": "tests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "assertion_diff": null,
+      "stable": true
+     }
+    ],
+    "failure_groups": [
+     {
+      "group_id": "g0",
+      "function_qualname": "boltons.strutils.strip_ansi",
+      "test_ids": [
+       "tests/test_strutils.py::test_strip_ansi"
+      ]
+     }
+    ]
+   },
+   "corpus": {
+    "corpus_id": "lib-b-corpus",
+    "corpus_version": null,
+    "history_cutoff_commit": "bba729bf4539afc993a6410bdf8074b28707004a",
+    "history_cutoff_index": null,
+    "items": [
+     {
+      "evidence_id": "ev-msg2",
+      "source_type": "commit_message",
+      "source_ref": "bba729bf4539",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "Speed up MultiReplace match lookup"
+     }
+    ]
+   },
+   "visible_memory": null,
+   "edit_policy": {
+    "allowed_source_roots": [
+     "boltons/"
+    ],
+    "allowed_test_roots": [
+     "tests/"
+    ],
+    "forbidden_globs": [
+     "**/conftest.py",
+     "conftest.py",
+     ".github/**",
+     "pyproject.toml",
+     "setup.py",
+     "setup.cfg",
+     "tox.ini",
+     "requirements*.txt",
+     "*.lock",
+     ".pre-commit-config.yaml",
+     "Dockerfile*"
+    ]
+   },
+   "budget": {
+    "max_tool_calls": 40,
+    "max_llm_calls": 20,
+    "max_tokens": 60000,
+    "max_revisions": 1,
+    "wall_clock_seconds": 600
+   },
+   "allowed_tools": [
+    "run_tests",
+    "read_file",
+    "search_repo",
+    "git_log",
+    "git_show",
+    "git_blame",
+    "apply_patch",
+    "memory.read",
+    "escalate"
+   ]
+  },
+  "ground_truth": {
+   "episode_id": "ep-002",
+   "scenario": "S2",
+   "per_test_labels": [
+    {
+     "test_id": "tests/test_strutils.py::test_strip_ansi",
+     "group_id": "g0",
+     "function_qualname": "boltons.strutils.strip_ansi",
+     "gold_direction": "FIX_CODE",
+     "expected_action": "FIX_CODE",
+     "gold_evidence_ids": null,
+     "related_memory_record_id": null,
+     "memory_applies": null,
+     "injected_mutant_id": "mut-2"
+    }
+   ],
+   "expected_episode_outcome": null,
+   "reference_repairs": [],
+   "injected_mutants": [
+    {
+     "mutant_id": "mut-2",
+     "function_qualname": "boltons.strutils.strip_ansi",
+     "file_path": "boltons/strutils.py",
+     "operator": "strip_ansi line 403: 'and' -> 'or'",
+     "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -401,5 +401,5 @@\n \n     # Transform back the result to the same bytearray type provided by the user.\n-    if target_type and target_type != type(cleaned):\n+    if target_type or target_type != type(cleaned):\n         cleaned = target_type(cleaned, 'utf-8')"
+    }
+   ],
+   "mutation_fixtures": [],
+   "evidence_availability": "available",
+   "stripped_evidence": [],
+   "decoy_memory_record_ids": [],
+   "future_commit_shas": [],
+   "label_provenance": {
+    "method": "tests_with_mutant_applied",
+    "stability_runs": 5,
+    "verified_by": "screening script"
+   },
+   "note": null
+  },
+  "fault_plan": {
+   "enabled": false,
+   "seed": null,
+   "failure_rate": null,
+   "injections": []
+  },
+  "note": null
+ },
+ "S4": {
+  "schema_version": "2.0.0",
+  "episode_id": "ep-004",
+  "scenario": "S4",
+  "difficulty": "easy",
+  "stream_id": "stream-b",
+  "stream_position": 3,
+  "agent_input": {
+   "episode_id": "ep-004",
+   "repo": {
+    "repo_id": "lib-b",
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "package_name": "boltons",
+    "license": "BSD-3-Clause"
+   },
+   "environment": {
+    "python_version": "3.12",
+    "docker_image": null,
+    "dependency_lock_hash": null,
+    "pytest_version": "8.4.2",
+    "network_enabled": false,
+    "test_timeout_seconds": 60,
+    "stability_runs": 5
+   },
+   "ci_event": {
+    "event_id": "ci-bd46e5ab",
+    "commit": {
+     "sha": "bd46e5abaccddbe5e663b83b00e61b8966c6e719",
+     "committed_at": "2026-10-25T23:40:26Z",
+     "stream_index": null
+    },
+    "parent_commit": {
+     "sha": "73838fc27f1ee99f84fce7ab5ad52fb07cc4524c",
+     "committed_at": "2026-10-25T23:40:26Z",
+     "stream_index": null
+    },
+    "commit_message": "timeutils: stop isoparse's dateutil link colliding with the module's (#608)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96",
+    "commit_message_availability": "available",
+    "changed_files": [
+     {
+      "path": "boltons/timeutils.py",
+      "change_kind": "modified",
+      "unified_diff": "diff --git a/boltons/timeutils.py b/boltons/timeutils.py\nindex d102fb5..2584cc1 100644\n--- a/boltons/timeutils.py\n+++ b/boltons/timeutils.py\n@@ -115,11 +115,11 @@ def isoparse(iso_str):\n     True\n \n     For further datetime parsing, see the `iso8601`_ package for strict\n-    ISO parsing and `dateutil`_ package for loose parsing and more.\n+    ISO parsing and `dateutil <https://pypi.python.org/pypi/python-dateutil>`__\n+    package for loose parsing and more.\n \n     .. _ISO8601-formatted time: https://en.wikipedia.org/wiki/ISO_8601\n     .. _iso8601: https://pypi.python.org/pypi/iso8601\n-    .. _dateutil: https://pypi.python.org/pypi/python-dateutil\n \n     >>> isoparse('1970-01-01T00:00:00.851')\n     datetime.datetime(1970, 1, 1, 0, 0, 0, 851000)\n--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -704,5 +704,5 @@\n     Fails if *filename* is not a file or if *keep* is not > 0.\n     \"\"\"\n-    if keep < 1:\n+    if keep <= 1:\n         raise ValueError(f'expected \"keep\" to be >=1, not {keep}')\n     if not os.path.exists(filename):"
+     }
+    ],
+    "failing_tests": [
+     {
+      "test_id": "tests/test_fileutils.py::test_rotate_file_keep_one",
+      "test_file": "tests/test_fileutils.py",
+      "test_name": "test_rotate_file_keep_one",
+      "target_function": "boltons.fileutils.rotate_file",
+      "failure_message": "ValueError: expected \"keep\" to be >=1, not 1",
+      "traceback": "tests/test_fileutils.py:181: in test_rotate_file_keep_one\n    fileutils.rotate_file(file_path, keep=1)\nboltons/fileutils.py:707: in rotate_file\n    raise ValueError(f'expected \"keep\" to be >=1, not {keep}')\nE   ValueError: expected \"keep\" to be >=1, not 1",
+      "assertion_diff": null,
+      "stable": true
+     }
+    ],
+    "failure_groups": [
+     {
+      "group_id": "g0",
+      "function_qualname": "boltons.fileutils.rotate_file",
+      "test_ids": [
+       "tests/test_fileutils.py::test_rotate_file_keep_one"
+      ]
+     }
+    ]
+   },
+   "corpus": {
+    "corpus_id": "lib-b-corpus",
+    "corpus_version": null,
+    "history_cutoff_commit": "bd46e5abaccddbe5e663b83b00e61b8966c6e719",
+    "history_cutoff_index": null,
+    "items": [
+     {
+      "evidence_id": "ev-msg",
+      "source_type": "commit_message",
+      "source_ref": "1c2db4664d24",
+      "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96"
+     },
+     {
+      "evidence_id": "ev-msg4",
+      "source_type": "commit_message",
+      "source_ref": "bd46e5abaccd",
+      "commit_sha": "bd46e5abaccddbe5e663b83b00e61b8966c6e719",
+      "commit_index": null,
+      "line_start": null,
+      "line_end": null,
+      "text": "timeutils: stop isoparse's dateutil link colliding with the module's (#608)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96"
+     }
+    ]
+   },
+   "visible_memory": [
+    {
+     "record_id": "mem-rotate-1",
+     "repo_id": "lib-b",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "behaviour_signature": "rotate_file(keep=N) retains N generations",
+     "direction": "UPDATE_TEST",
+     "probe": {
+      "probe_id": "probe-1",
+      "probe_code": "assert generations_after_rotate(keep=5) == 5",
+      "probe_selector": null
+     },
+     "evidence_ids": [
+      "ev-msg"
+     ],
+     "approved_at_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "scope": "function",
+     "supersedes": null,
+     "flagged_stale": false
+    }
+   ],
+   "edit_policy": {
+    "allowed_source_roots": [
+     "boltons/"
+    ],
+    "allowed_test_roots": [
+     "tests/"
+    ],
+    "forbidden_globs": [
+     "**/conftest.py",
+     "conftest.py",
+     ".github/**",
+     "pyproject.toml",
+     "setup.py",
+     "setup.cfg",
+     "tox.ini",
+     "requirements*.txt",
+     "*.lock",
+     ".pre-commit-config.yaml",
+     "Dockerfile*"
+    ]
+   },
+   "budget": {
+    "max_tool_calls": 40,
+    "max_llm_calls": 20,
+    "max_tokens": 60000,
+    "max_revisions": 1,
+    "wall_clock_seconds": 600
+   },
+   "allowed_tools": [
+    "run_tests",
+    "read_file",
+    "search_repo",
+    "git_log",
+    "git_show",
+    "git_blame",
+    "apply_patch",
+    "memory.read",
+    "escalate"
+   ]
+  },
+  "ground_truth": {
+   "episode_id": "ep-004",
+   "scenario": "S4",
+   "per_test_labels": [
+    {
+     "test_id": "tests/test_fileutils.py::test_rotate_file_keep_one",
+     "group_id": "g0",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "gold_direction": "FIX_CODE",
+     "expected_action": "FIX_CODE",
+     "gold_evidence_ids": null,
+     "related_memory_record_id": "mem-rotate-1",
+     "memory_applies": false,
+     "injected_mutant_id": "mut-4"
+    }
+   ],
+   "expected_episode_outcome": null,
+   "reference_repairs": [],
+   "injected_mutants": [
+    {
+     "mutant_id": "mut-4",
+     "function_qualname": "boltons.fileutils.rotate_file",
+     "file_path": "boltons/fileutils.py",
+     "operator": "rotate_file line 706: '<' -> '<='",
+     "unified_diff": "--- a/boltons/fileutils.py\n+++ b/boltons/fileutils.py\n@@ -704,5 +704,5 @@\n     Fails if *filename* is not a file or if *keep* is not > 0.\n     \"\"\"\n-    if keep < 1:\n+    if keep <= 1:\n         raise ValueError(f'expected \"keep\" to be >=1, not {keep}')\n     if not os.path.exists(filename):"
+    }
+   ],
+   "mutation_fixtures": [],
+   "evidence_availability": "available",
+   "stripped_evidence": [],
+   "decoy_memory_record_ids": [
+    "mem-rotate-1"
+   ],
+   "future_commit_shas": [],
+   "label_provenance": {
+    "method": "tests_with_mutant_applied",
+    "stability_runs": 5,
+    "verified_by": "screening script"
+   },
+   "note": null
+  },
+  "fault_plan": {
+   "enabled": false,
+   "seed": null,
+   "failure_rate": null,
+   "injections": []
+  },
+  "note": null
+ }
+}

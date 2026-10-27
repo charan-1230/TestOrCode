@@ -1,0 +1,37 @@
+{
+  "_comment": "Declarative pilot episode specs. IDs (dev-01, test-01, ...) are assigned by the builder in chronological order of the CI commit. Commits are short shas in the pinned boltons clone.",
+  "pin": {
+    "repo_url": "https://github.com/mahmoud/boltons",
+    "head": "d31d821d56c8f7756af9c30a864077f2e5855321",
+    "python": "3.12",
+    "pytest": "8.4.2",
+    "test_command": "python -m pytest tests --import-mode=importlib",
+    "stability_runs": 5
+  },
+  "pools": {
+    "dev": ["tbutils", "cacheutils", "strutils", "iterutils", "listutils", "queueutils", "funcutils", "dictutils", "tableutils"],
+    "test": ["fileutils", "pathutils", "setutils", "mathutils", "timeutils", "urlutils", "statsutils", "ioutils", "ecoutils"]
+  },
+  "episodes": [
+    {"key": "dev-s1-tbutils", "split": "dev", "scenario": "S1", "commit": "7b577b0f", "function": "ParsedException.from_string",
+     "fault_plan": [{"tool": "apply_patch", "fault_kind": "patch_does_not_apply", "call_index": 0}]},
+    {"key": "dev-s1-cacheutils", "split": "dev", "scenario": "S1", "commit": "8408ab57", "function": "CachedFunction.__call__"},
+    {"key": "dev-s3-strutils", "split": "dev", "scenario": "S3", "commit": "f387b64c", "function": "bytes2human",
+     "mutant": {"paths": ["boltons/listutils.py", "boltons/queueutils.py", "boltons/dictutils.py", "boltons/tableutils.py"], "max_failing": 3}},
+    {"key": "dev-s5-iterutils", "split": "dev", "scenario": "S5", "commit": "6270b5e3", "function": "default_enter",
+     "generic_message": "iterutils: update"},
+    {"key": "dev-s4-cacheutils", "split": "dev", "scenario": "S4", "commit": "2061906", "memory_from": "dev-s1-cacheutils",
+     "mutant": {"max_failing": 3}},
+    {"key": "dev-s2-a", "split": "dev", "scenario": "S2", "candidates": ["bba729bf", "e745b482"], "mutant": {"max_failing": 3},
+     "fault_plan": [{"tool": "run_tests", "fault_kind": "invalid_test_selector", "call_index": 1}]},
+    {"key": "dev-s2-b", "split": "dev", "scenario": "S2", "candidates": ["c0d580df"], "mutant": {"max_failing": 3}},
+    {"key": "dev-s2-c", "split": "dev", "scenario": "S2", "candidates": ["0c88f253", "471dad1c"], "mutant": {"max_failing": 3}},
+
+    {"key": "test-s3-fileutils", "split": "test", "scenario": "S3", "commit": "1c2db466", "function": "rotate_file",
+     "mutant": {"paths": ["boltons/pathutils.py", "boltons/setutils.py", "boltons/mathutils.py", "boltons/urlutils.py", "boltons/statsutils.py"], "max_failing": 3}},
+    {"key": "test-s4-fileutils", "split": "test", "scenario": "S4", "commit": "bd46e5ab", "memory_from": "test-s3-fileutils",
+     "mutant": {"max_failing": 3}},
+    {"key": "test-s2-a", "split": "test", "scenario": "S2", "candidates": ["ee3c660a"], "mutant": {"max_failing": 3}},
+    {"key": "test-s2-b", "split": "test", "scenario": "S2", "candidates": ["827f1937", "21dc968d"], "mutant": {"max_failing": 3}}
+  ]
+}

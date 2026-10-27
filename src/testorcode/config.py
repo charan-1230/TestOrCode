@@ -72,7 +72,7 @@ class Settings(BaseModel):
     # Experiment.
     experiment_condition: ExperimentCondition = ExperimentCondition.B1
     random_seed: int = 42
-    dataset_path: Path = Path("datasets/pilot_episodes.jsonl")
+    dataset_path: Path = Path("datasets/pilot_dev.jsonl")
     results_path: Path = Path("results/")
 
     # Limits.

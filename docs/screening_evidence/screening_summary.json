@@ -1,0 +1,270 @@
+{
+ "generated": "2026-10-27",
+ "environment": {
+  "python": "3.12.15",
+  "pytest_primary": "9.1.1",
+  "pytest_sensitivity": "8.4.2",
+  "os": "Linux 6.8 x86_64",
+  "docker": "daemon not accessible (permission denied); isolation checked with `unshare -rn` only"
+ },
+ "baseline_runs_head": {
+  "toolz": [
+   "192 passed, 1 skipped in 0.60s",
+   "192 passed, 1 skipped in 0.20s",
+   "192 passed, 1 skipped in 0.21s",
+   "192 passed, 1 skipped in 0.21s",
+   "192 passed, 1 skipped in 0.20s"
+  ],
+  "boltons": [
+   "775 passed, 22 subtests passed in 2.82s",
+   "775 passed, 22 subtests passed in 2.24s",
+   "775 passed, 22 subtests passed in 2.24s",
+   "775 passed, 22 subtests passed in 2.24s",
+   "775 passed, 22 subtests passed in 2.23s"
+  ]
+ },
+ "history_verdicts": {
+  "toolz_s1": {
+   "source_only_still_green": 11,
+   "s2_base_ok": 17,
+   "env_or_red": 337,
+   "baseline_not_green_on_py312": 183,
+   "failures_not_in_changed_tests": 2,
+   "root_commit": 1
+  },
+  "toolz8_s1": {
+   "baseline_not_green_on_py312": 187,
+   "env_or_red": 340,
+   "source_only_still_green": 7,
+   "s2_base_ok": 14,
+   "failures_not_in_changed_tests": 2,
+   "root_commit": 1
+  },
+  "toolz310_s1": {
+   "baseline_not_green_on_py312": 158,
+   "source_only_still_green": 31,
+   "failures_not_in_changed_tests": 7
+  },
+  "boltons_s1": {
+   "s2_base_ok": 32,
+   "source_only_still_green": 70,
+   "S1_VALID": 6,
+   "S1_PARTIAL": 1,
+   "env_or_red": 762,
+   "baseline_not_green_on_py312": 191,
+   "failures_not_in_changed_tests": 1
+  },
+  "boltons8_s1": {
+   "s2_base_ok": 52,
+   "source_only_still_green": 88,
+   "S1_VALID": 6,
+   "S1_PARTIAL": 1,
+   "env_or_red": 742,
+   "baseline_not_green_on_py312": 173,
+   "failures_not_in_changed_tests": 1
+  }
+ },
+ "static_commit_classes": {
+  "toolz": {
+   "test_only": 130,
+   "both": 196,
+   "src_only": 358,
+   "other": 265
+  },
+  "boltons": {
+   "other": 378,
+   "src_only": 835,
+   "both": 269,
+   "test_only": 93
+  }
+ },
+ "boltons_s1_bases": [
+  {
+   "sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+   "date": "2026-10-26",
+   "subject": "fileutils: keep the requested number of rotate_file generations (#483)",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/fileutils.py"
+   ],
+   "tests": [
+    "tests/test_fileutils.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_fileutils.py::test_rotate_file_full_rotation",
+    "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext"
+   ]
+  },
+  {
+   "sha": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+   "date": "2026-10-26",
+   "subject": "iterutils: fix remap namedtuples, chunk_ranges edges, iterator bucketize, falsey keys, key-once unty",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/iterutils.py"
+   ],
+   "tests": [
+    "tests/test_iterutils.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_iterutils.py::TestRemap::test_namedtuple"
+   ]
+  },
+  {
+   "sha": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+   "date": "2026-10-26",
+   "subject": "strutils: fix backslash punctuation, non-UTF-8 strip_ansi, html2text tail, z plurals, multi-member g",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/strutils.py"
+   ],
+   "tests": [
+    "tests/test_strutils.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_strutils.py::test_bytes2human"
+   ]
+  },
+  {
+   "sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+   "date": "2026-10-26",
+   "subject": "cacheutils: honor scoped caching, falsey on_miss, method keys, copy, |=, eq, ThresholdCounter width ",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/cacheutils.py"
+   ],
+   "tests": [
+    "tests/test_cacheutils.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_cacheutils.py::test_unscoped_cached_dec"
+   ]
+  },
+  {
+   "sha": "289edfcd20474b92850ec0f982032c4e79e72432",
+   "date": "2026-07-18",
+   "subject": "funcutils: forward defaulted and kw-only args as keywords in wraps invocations (#343)",
+   "verdict": "S1_PARTIAL",
+   "src": [
+    "boltons/funcutils.py"
+   ],
+   "tests": [
+    "tests/test_funcutils_fb.py",
+    "tests/test_funcutils_fb_py3.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_funcutils_fb.py::test_wraps_expected",
+    "tests/test_funcutils_fb_py3.py::test_wraps_inner_kwarg_only"
+   ]
+  },
+  {
+   "sha": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
+   "date": "2026-07-18",
+   "subject": "tbutils: round-trip traceback anchor lines in ParsedException (#333)",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/tbutils.py"
+   ],
+   "tests": [
+    "tests/test_tbutils_parsed_exc.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/test_tbutils_parsed_exc.py::test_parsed_exc_with_anchor"
+   ]
+  },
+  {
+   "sha": "353f6befb4739f1d3583a8ce0ab5db761babd411",
+   "date": "2015-04-21",
+   "subject": "Exception message should not start with whitespace",
+   "verdict": "S1_VALID",
+   "src": [
+    "boltons/tbutils.py"
+   ],
+   "tests": [
+    "tests/tbutils_test.py"
+   ],
+   "failing_tests_under_source_only": [
+    "tests/tbutils_test.py::test_multiline_exception_message",
+    "tests/tbutils_test.py::test_normal_tb"
+   ]
+  }
+ ],
+ "meaningful_green_baseline_commits_by_year": {
+  "toolz_s1": {
+   "2026": 2,
+   "2025": 3,
+   "2013": 9
+  },
+  "toolz8_s1": {
+   "2013": 9
+  },
+  "boltons_s1": {
+   "2026": 68,
+   "2015": 12
+  },
+  "boltons8_s1": {
+   "2026": 68,
+   "2025": 3,
+   "2024": 19,
+   "2023": 8,
+   "2015": 12
+  }
+ },
+ "mutation_probe_30_per_module_seed7": {
+  "toolz/dicttoolz.py": {
+   "summary": {
+    "killed": 28,
+    "survived": 2
+   },
+   "kill_rate_excl_timeouts": 0.93,
+   "mean_secs_per_mutant": 0.37,
+   "mutation_sites": 32
+  },
+  "boltons/dictutils.py": {
+   "summary": {
+    "killed": 23,
+    "survived": 7
+   },
+   "kill_rate_excl_timeouts": 0.77,
+   "mean_secs_per_mutant": 0.4,
+   "mutation_sites": 190
+  },
+  "toolz/functoolz.py": {
+   "summary": {
+    "killed": 22,
+    "survived": 8
+   },
+   "kill_rate_excl_timeouts": 0.73,
+   "mean_secs_per_mutant": 0.47,
+   "mutation_sites": 238
+  },
+  "toolz/itertoolz.py": {
+   "summary": {
+    "killed": 27,
+    "survived": 1,
+    "timeout": 2
+   },
+   "kill_rate_excl_timeouts": 0.96,
+   "mean_secs_per_mutant": 4.55,
+   "mutation_sites": 161
+  },
+  "boltons/iterutils.py": {
+   "summary": {
+    "killed": 20,
+    "survived": 10
+   },
+   "kill_rate_excl_timeouts": 0.67,
+   "mean_secs_per_mutant": 0.48,
+   "mutation_sites": 308
+  },
+  "boltons/strutils.py": {
+   "summary": {
+    "killed": 12,
+    "survived": 18
+   },
+   "kill_rate_excl_timeouts": 0.4,
+   "mean_secs_per_mutant": 0.36,
+   "mutation_sites": 258
+  }
+ }
+}

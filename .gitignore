@@ -16,3 +16,6 @@ __pycache__/
 results/*
 !results/.gitkeep
 *.log
+
+# docs
+docs/TestOrCode_5-day_emergency_execution_plan.pdf

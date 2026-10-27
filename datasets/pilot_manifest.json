@@ -1,0 +1,132 @@
+{
+ "pin": {
+  "repo_url": "https://github.com/mahmoud/boltons",
+  "head": "d31d821d56c8f7756af9c30a864077f2e5855321",
+  "python": "3.12",
+  "pytest": "8.4.2",
+  "test_command": "python -m pytest tests --import-mode=importlib",
+  "stability_runs": 5
+ },
+ "dependency_lock_hash": "912081a0c76469b883eac802e68e82d7af4f0d08fa2f07130c71a360a73df95c",
+ "splits": {
+  "dev": [
+   {
+    "id": "dev-01",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "0c88f25323de3ff85bcca844b9ce6cd171a80392",
+    "key": "dev-s2-c"
+   },
+   {
+    "id": "dev-02",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "c0d580df13d3d2d3d99a7769828afc7176127d90",
+    "key": "dev-s2-b"
+   },
+   {
+    "id": "dev-03",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "bba729bf4539afc993a6410bdf8074b28707004a",
+    "key": "dev-s2-a"
+   },
+   {
+    "id": "dev-04",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
+    "key": "dev-s1-tbutils"
+   },
+   {
+    "id": "dev-05",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+    "key": "dev-s1-cacheutils"
+   },
+   {
+    "id": "dev-06",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "2061906940c5630f459c22fb18d1165113361fa7",
+    "key": "dev-s4-cacheutils"
+   },
+   {
+    "id": "dev-07",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+    "key": "dev-s3-strutils"
+   },
+   {
+    "id": "dev-08",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+    "key": "dev-s5-iterutils"
+   }
+  ],
+  "test": [
+   {
+    "id": "test-01",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "827f193775a793716bc2615e939340c398ecd042",
+    "key": "test-s2-b"
+   },
+   {
+    "id": "test-02",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "ee3c660a6811acd5408d28a5da44fe0a94278834",
+    "key": "test-s2-a"
+   },
+   {
+    "id": "test-03",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+    "key": "test-s3-fileutils"
+   },
+   {
+    "id": "test-04",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "bd46e5abaccddbe5e663b83b00e61b8966c6e719",
+    "key": "test-s4-fileutils"
+   }
+  ]
+ },
+ "module_pools": {
+  "dev": [
+   "cacheutils",
+   "dictutils",
+   "funcutils",
+   "iterutils",
+   "listutils",
+   "queueutils",
+   "strutils",
+   "tableutils",
+   "tbutils"
+  ],
+  "test": [
+   "ecoutils",
+   "fileutils",
+   "ioutils",
+   "mathutils",
+   "pathutils",
+   "setutils",
+   "statsutils",
+   "timeutils",
+   "urlutils"
+  ]
+ },
+ "files_sha256": {
+  "pilot_dev.jsonl": "6d3a59a5a04c7f76739e2e8dc2971e437fc720acfb0eb50bb2b1099d7e0dffad",
+  "pilot_dev_agent_view.jsonl": "8d1e905f554c19248596c06abaaa8699379e5b36d09ba380a1ed1f07a7b39c64",
+  "pilot_test.jsonl": "e0bc94fb291f0733343277158fd475a44e8c5244161cfe3bde43795410b162be",
+  "pilot_test_agent_view.jsonl": "6ea7f9c60df62e6d4c99ed8b8e0bac064b9ec85e5fa17cae36aa362417084cb3"
+ },
+ "frozen_test_split": "datasets/pilot_test*.jsonl: do not tune on it; regenerate only deliberately"
+}

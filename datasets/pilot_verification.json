@@ -1,0 +1,334 @@
+{
+ "dev-01": {
+  "key": "dev-s2-c",
+  "scenario": "S2",
+  "ci_commit": "0c88f25323de3ff85bcca844b9ce6cd171a80392",
+  "parent_commit": "d70669ac4b1b31d1455a388270cb47b075c44cc0",
+  "failing_tests": [
+   "tests/test_tableutils.py::test_table_dicts"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.tableutils.to_text"
+  ],
+  "modules": [
+   "tableutils"
+  ],
+  "corpus_items": 120,
+  "notes": {
+   "mutant": "to_text line 92: 'and' -> 'or'",
+   "mutant_in_changed_function": false,
+   "restored_green": true
+  }
+ },
+ "dev-02": {
+  "key": "dev-s2-b",
+  "scenario": "S2",
+  "ci_commit": "c0d580df13d3d2d3d99a7769828afc7176127d90",
+  "parent_commit": "f7cbf1971022b3910c93aaeef7a3478d0a6eacd6",
+  "failing_tests": [
+   "tests/test_funcutils.py::test_once_executes_only_once",
+   "tests/test_funcutils.py::test_once_thread_safety"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.funcutils.once"
+  ],
+  "modules": [
+   "funcutils"
+  ],
+  "corpus_items": 134,
+  "notes": {
+   "mutant": "once line 1040: 'is not' -> 'is'",
+   "mutant_in_changed_function": true,
+   "restored_green": true
+  }
+ },
+ "dev-03": {
+  "key": "dev-s2-a",
+  "scenario": "S2",
+  "ci_commit": "bba729bf4539afc993a6410bdf8074b28707004a",
+  "parent_commit": "f5cf8b5d32bf25752b44a11c9d87d2144c7b8919",
+  "failing_tests": [
+   "tests/test_strutils.py::test_strip_ansi"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.strutils.strip_ansi"
+  ],
+  "modules": [
+   "strutils"
+  ],
+  "corpus_items": 148,
+  "notes": {
+   "mutant": "strip_ansi line 403: 'and' -> 'or'",
+   "mutant_in_changed_function": false,
+   "restored_green": true
+  }
+ },
+ "dev-04": {
+  "key": "dev-s1-tbutils",
+  "scenario": "S1",
+  "ci_commit": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
+  "parent_commit": "8c3fc2850693eacd2f2f8c95e7581adbb65b1269",
+  "failing_tests": [
+   "tests/test_tbutils_parsed_exc.py::test_parsed_exc_with_anchor"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.tbutils.ParsedException.from_string"
+  ],
+  "modules": [
+   "tbutils"
+  ],
+  "corpus_items": 143,
+  "notes": {
+   "reference_repair_green": true
+  }
+ },
+ "dev-05": {
+  "key": "dev-s1-cacheutils",
+  "scenario": "S1",
+  "ci_commit": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+  "parent_commit": "bbadc7ae1dcfbb0e71ec3a852e8bca3a6f75199b",
+  "failing_tests": [
+   "tests/test_cacheutils.py::test_unscoped_cached_dec"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.cacheutils.CachedFunction.__call__"
+  ],
+  "modules": [
+   "cacheutils"
+  ],
+  "corpus_items": 132,
+  "notes": {
+   "reference_repair_green": true
+  }
+ },
+ "dev-06": {
+  "key": "dev-s4-cacheutils",
+  "scenario": "S4",
+  "ci_commit": "2061906940c5630f459c22fb18d1165113361fa7",
+  "parent_commit": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+  "failing_tests": [
+   "tests/test_cacheutils.py::test_cached_dec",
+   "tests/test_cacheutils.py::test_callable_cached_dec",
+   "tests/test_cacheutils.py::test_scoped_cached_dec"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.cacheutils.CachedFunction.__call__"
+  ],
+  "modules": [
+   "cacheutils",
+   "queueutils"
+  ],
+  "corpus_items": 143,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "boltons.cacheutils.CachedFunction.__call__",
+   "mutant": "CachedFunction.__call__ line 462: '+' -> '-'"
+  }
+ },
+ "dev-07": {
+  "key": "dev-s3-strutils",
+  "scenario": "S3",
+  "ci_commit": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+  "parent_commit": "6e0ab7b09acb71ba9d8f2412d6a01a3bda98af5f",
+  "failing_tests": [
+   "tests/test_listutils.py::test_barrel_list",
+   "tests/test_listutils.py::test_barrel_list_del_stepped_slice_matches_list",
+   "tests/test_queueutils.py::test_sorted_queue",
+   "tests/test_strutils.py::test_bytes2human"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.listutils.BarrelList._cur_size_limit",
+   "boltons.strutils.bytes2human"
+  ],
+  "modules": [
+   "listutils",
+   "strutils"
+  ],
+  "corpus_items": 149,
+  "notes": {
+   "reference_repair_green": true,
+   "mixed_verified": true,
+   "mutant": "BarrelList._cur_size_limit line 105: '+' -> '-'"
+  }
+ },
+ "dev-08": {
+  "key": "dev-s5-iterutils",
+  "scenario": "S5",
+  "ci_commit": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+  "parent_commit": "37ba6b2a3adde5795dee9195b255a4cb1d342a7b",
+  "failing_tests": [
+   "tests/test_iterutils.py::TestRemap::test_namedtuple"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.iterutils.default_enter"
+  ],
+  "modules": [
+   "iterutils"
+  ],
+  "corpus_items": 151,
+  "notes": {
+   "reference_repair_green": true
+  }
+ },
+ "test-01": {
+  "key": "test-s2-b",
+  "scenario": "S2",
+  "ci_commit": "827f193775a793716bc2615e939340c398ecd042",
+  "parent_commit": "6a363e6c4837a2cca606eba5903ea6f4ae83d745",
+  "failing_tests": [
+   "tests/test_timeutils.py::test_daterange_with_same_start_stop"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.timeutils.daterange"
+  ],
+  "modules": [
+   "timeutils"
+  ],
+  "corpus_items": 122,
+  "notes": {
+   "mutant": "daterange line 372: '<=' -> '<'",
+   "mutant_in_changed_function": false,
+   "restored_green": true
+  }
+ },
+ "test-02": {
+  "key": "test-s2-a",
+  "scenario": "S2",
+  "ci_commit": "ee3c660a6811acd5408d28a5da44fe0a94278834",
+  "parent_commit": "9381c52b800a5eb85ab8549887987656c96efb16",
+  "failing_tests": [
+   "tests/test_fileutils.py::test_fileperms"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.fileutils.FilePerms._FilePermProperty.__set__"
+  ],
+  "modules": [
+   "fileutils"
+  ],
+  "corpus_items": 123,
+  "notes": {
+   "mutant": "FilePerms._FilePermProperty.__set__ line 129: '==' -> '!='",
+   "mutant_in_changed_function": false,
+   "restored_green": true
+  }
+ },
+ "test-03": {
+  "key": "test-s3-fileutils",
+  "scenario": "S3",
+  "ci_commit": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+  "parent_commit": "fe1ce8bcc4df6f76cba8fbcd1559fa774c34b334",
+  "failing_tests": [
+   "tests/test_fileutils.py::test_rotate_file_full_rotation",
+   "tests/test_fileutils.py::test_rotate_file_full_rotation_no_ext",
+   "tests/test_pathutils.py::test_augpath_multidot"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.fileutils.rotate_file",
+   "boltons.pathutils.augpath"
+  ],
+  "modules": [
+   "fileutils",
+   "pathutils"
+  ],
+  "corpus_items": 124,
+  "notes": {
+   "reference_repair_green": true,
+   "mixed_verified": true,
+   "mutant": "augpath line 117: '==' -> '!='"
+  }
+ },
+ "test-04": {
+  "key": "test-s4-fileutils",
+  "scenario": "S4",
+  "ci_commit": "bd46e5abaccddbe5e663b83b00e61b8966c6e719",
+  "parent_commit": "73838fc27f1ee99f84fce7ab5ad52fb07cc4524c",
+  "failing_tests": [
+   "tests/test_fileutils.py::test_rotate_file_keep_one"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "boltons.fileutils.rotate_file"
+  ],
+  "modules": [
+   "fileutils",
+   "timeutils"
+  ],
+  "corpus_items": 137,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "boltons.fileutils.rotate_file",
+   "mutant": "rotate_file line 706: '<' -> '<='"
+  }
+ }
+}

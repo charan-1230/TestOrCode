@@ -21,8 +21,9 @@ src/testorcode/
 │   └── schemas.py           alias of episode_schemas (existing)
 ├── llm_client.py        LLMClient protocol, create_llm_client     stub
 ├── orchestrator.py      run_episode                               stub
-├── retrieval.py         Retriever, build_retriever                stub
+├── retrieval.py         Retriever, build_retriever                implemented (BM25)
 ├── memory.py            MemoryStore                               stub
+├── conditions.py        ConditionProfile, episode_for_condition    implemented
 ├── evaluation.py        evaluate_run, summarize                   stub
 ├── agents/              triage, intent_analyst, repairer,
 │                        integrity_guard                           stub
@@ -92,7 +93,7 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 | `tools.pytest_runner` | `run_tests(worktree_path, selectors, *, timeout_seconds) -> PytestExecution` | sandbox |
 | `tools.git_tools` | `git_log`, `git_show`, `git_blame` (every call takes `cutoff_commit`) | sandbox |
 | `tools.patch_tools` | `validate_patch`, `apply_patch`, `revert_patch` | sandbox |
-| `retrieval` | `build_retriever(corpus, worktree_path) -> Retriever`; `Retriever.search(query, *, top_k) -> list[RetrievedEvidence]` | agent-core |
+| `retrieval` | `build_retriever(corpus, worktree_path=None) -> Retriever`; `Retriever.search(query, *, top_k)`; implemented (BM25), see `docs/retrieval.md` | agent-core |
 | `memory` | `MemoryStore.read(context, function_qualname) -> MemoryReadResult`; `MemoryStore.write(record, approval)` | agent-core |
 | `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes) -> list[ConditionSummary]` | evaluation |
 
@@ -179,7 +180,7 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** every body in `llm_client`, `orchestrator`, `retrieval`, `memory`, `evaluation`,
+**Deferred (raise `NotImplementedError`):** every body in `llm_client`, `orchestrator`, `memory`, `evaluation`,
 `agents/*` and `tools/*`; `ConditionSummary` is provisional.
 
 ## 9. Open decisions for the team
@@ -189,3 +190,11 @@ section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 3. Whether `Settings.log_file` should default to a per-run file under `results/`.
 4. `ConditionSummary` shape (evaluation branch).
 5. `requirements-lock.txt` is both tracked and listed in `.gitignore`; the README says to commit it.
+
+## 10. Pilot dataset
+
+`datasets/pilot_{dev,test}_agent_view.jsonl` hold `EpisodeInput` records for the system under test; `pilot_{dev,test}.jsonl` hold full
+`Episode` records for the evaluation harness only. Load with `testorcode.dataset` (`load_agent_inputs`, `load_episodes`). Splits,
+rules, the frozen test split and limitations: `datasets/README.md`.
+
+`retrieval` and `conditions` are implemented: BM25 retrieval, the A1/A2/B1 switches, the `search_repo` tool wrapper and metric helpers (`docs/retrieval.md`).
