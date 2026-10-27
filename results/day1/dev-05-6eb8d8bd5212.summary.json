@@ -1,0 +1,84 @@
+{
+  "run_id": "dev-05-6eb8d8bd5212",
+  "episode_id": "dev-05",
+  "scenario": "S1",
+  "condition": "A2",
+  "model_id": "gemini-3.5-flash",
+  "run_status": "escalated",
+  "final_test_status": "not_run",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 1,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 9303,
+    "output_tokens": 585,
+    "total_tokens": 21355,
+    "llm_calls": 4
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_cacheutils.py::test_unscoped_cached_dec"
+      ]
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "g1-r0",
+      "scope": "test",
+      "files": [
+        "tests/test_cacheutils.py"
+      ],
+      "status": "failed_to_apply",
+      "apply_error": "hunk is truncated (fewer lines than its header says); malformed diff: error: corrupt patch at line 10"
+    },
+    {
+      "patch_id": "g1-r1",
+      "scope": "test",
+      "files": [
+        "tests/test_cacheutils.py"
+      ],
+      "status": "failed_to_apply",
+      "apply_error": "hunk is truncated (fewer lines than its header says); malformed diff: error: corrupt patch at line 10"
+    }
+  ],
+  "predictions": [
+    {
+      "test_id": "tests/test_cacheutils.py::test_unscoped_cached_dec",
+      "predicted": "ESCALATE",
+      "hypothesis": "outdated_test",
+      "cited": [
+        "msg:8408ab57e6c9"
+      ],
+      "decided_by": "orchestrator",
+      "gold": "UPDATE_TEST",
+      "match": false
+    }
+  ],
+  "escalation": {
+    "trigger": "guard_rejection_after_revision",
+    "failing_test_ids": [
+      "tests/test_cacheutils.py::test_unscoped_cached_dec"
+    ],
+    "evidence_found_ids": [
+      "msg:8408ab57e6c9"
+    ],
+    "evidence_missing": [],
+    "competing_hypotheses": [
+      "The commit message msg:8408ab57e6c9 explicitly states that the change was intended to 'honor scoped caching'. Previously, CachedFunction ignored the scoped attribute, causing cached functions sharing a cache instance to share cache entries regardless of scoping settings. Now that scoped caching is honored by default, `test_unscoped_cached_dec` fails because it does not explicitly set `scoped=False` when instantiating the cached decorator."
+    ],
+    "summary": "g1: repair rejected after 1 revision(s)"
+  },
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/cacheutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/cacheutils.py"
+  ]
+}

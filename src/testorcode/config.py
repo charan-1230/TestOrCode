@@ -18,7 +18,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 from dotenv import dotenv_values
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
@@ -34,6 +34,9 @@ ENV_VARS: Final[dict[str, str]] = {
     "llm_api_key": "LLM_API_KEY",
     "llm_base_url": "LLM_BASE_URL",
     "llm_model": "LLM_MODEL",
+    "llm_structured_mode": "LLM_STRUCTURED_MODE",
+    "llm_max_retries": "LLM_MAX_RETRIES",
+    "llm_timeout_seconds": "LLM_TIMEOUT_SECONDS",
     "voyage_api_key": "VOYAGE_API_KEY",
     "voyage_embedding_model": "VOYAGE_EMBEDDING_MODEL",
     "voyage_rerank_model": "VOYAGE_RERANK_MODEL",
@@ -42,6 +45,7 @@ ENV_VARS: Final[dict[str, str]] = {
     "random_seed": "RANDOM_SEED",
     "dataset_path": "DATASET_PATH",
     "results_path": "RESULTS_PATH",
+    "test_python": "TEST_PYTHON",
     "test_timeout_seconds": "TEST_TIMEOUT_SECONDS",
     "retrieval_top_k": "RETRIEVAL_TOP_K",
     "max_repair_revisions": "MAX_REPAIR_REVISIONS",
@@ -62,6 +66,11 @@ class Settings(BaseModel):
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
     llm_model: str | None = None
+    llm_structured_mode: Literal["json_schema", "json_object", "prompt"] = Field(
+        default="json_schema", description="What the provider is asked for; replies are always validated client-side."
+    )
+    llm_max_retries: int = Field(default=2, ge=0, le=10, description="Retries for rate limits, timeouts and 5xx.")
+    llm_timeout_seconds: float = Field(default=60.0, gt=0, description="Per-request timeout.")
 
     # Optional integrations.
     voyage_api_key: SecretStr | None = None
@@ -74,6 +83,10 @@ class Settings(BaseModel):
     random_seed: int = 42
     dataset_path: Path = Path("datasets/pilot_dev.jsonl")
     results_path: Path = Path("results/")
+
+    # Target repository: interpreter that runs its tests (None = the current one).
+    # Keep it an unresolved venv path: resolving the symlink loses the venv.
+    test_python: Path | None = None
 
     # Limits.
     test_timeout_seconds: int = Field(default=120, gt=0)

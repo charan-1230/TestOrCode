@@ -1,0 +1,67 @@
+{
+  "run_id": "dev-03-35d28101bd01",
+  "episode_id": "dev-03",
+  "scenario": "S2",
+  "condition": "A2",
+  "model_id": "gemini-3.5-flash",
+  "run_status": "escalated",
+  "final_test_status": "not_run",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 8321,
+    "output_tokens": 426,
+    "total_tokens": 11715,
+    "llm_calls": 3
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "patches": [],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "predicted": "ESCALATE",
+      "hypothesis": "regression",
+      "direction": "FIX_CODE",
+      "cited": [
+        "msg:bba729bf4539"
+      ],
+      "decided_by": "repairer",
+      "gold": "FIX_CODE",
+      "match": false,
+      "direction_match": true
+    }
+  ],
+  "escalation": {
+    "trigger": "insufficient_evidence",
+    "failing_test_ids": [
+      "tests/test_strutils.py::test_strip_ansi"
+    ],
+    "evidence_found_ids": [
+      "msg:bba729bf4539"
+    ],
+    "evidence_missing": [],
+    "competing_hypotheses": [
+      "The diff accidentally changed `if target_type and target_type != type(cleaned):` to `if target_type or target_type != type(cleaned):` in `strip_ansi`. When passed a standard `str`, `target_type` is `None`, causing `target_type != type(cleaned)` to evaluate to `True` and leading to a `TypeError` when attempting to call `None`. The commit message [msg:bba729bf4539] confirms the commit was intended for `MultiReplace` performance improvements, making this change an unintended regression."
+    ],
+    "summary": "g1: repairer could not produce an applicable edit: no edits were given"
+  },
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/strutils.py"
+  ]
+}

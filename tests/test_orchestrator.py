@@ -183,7 +183,7 @@ class FakePatchTools:
         self.applied.append(diff)
         return PatchValidation(valid=True, allowed=True)
 
-    def revert(self, worktree_path, diff):
+    def revert(self, worktree_path, diff, *, policy=None):
         self.reverted.append(diff)
 
     def tools(self) -> PatchTools:
@@ -424,11 +424,12 @@ def test_agents_cannot_write_memory() -> None:
 # --------------------------------------------------------------------------- #
 
 
-def test_default_stub_agents_fail_explicitly_not_as_escalation() -> None:
+def test_default_agents_tool_failure_is_not_an_escalation() -> None:
+    # The real Triage runs pytest; WT does not exist, so the run fails as a tool failure, never an escalation.
     record = run_episode(S1, worktree_path=WT, settings=SETTINGS, llm=FakeLLMClient())
-    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert record.outcome.status is RunStatus.TOOL_FAILURE
     [err] = record.errors
-    assert err.fatal and "not implemented" in err.message and err.operation == "triage"
+    assert err.fatal and err.operation == "triage"
     assert record.predictions == [] and record.outcome.escalation is None
 
 

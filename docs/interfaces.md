@@ -26,7 +26,7 @@ src/testorcode/
 ├── conditions.py        ConditionProfile, episode_for_condition    implemented
 ├── evaluation.py        evaluate_run, summarize                   stub
 ├── agents/              triage, intent_analyst, repairer,
-│                        integrity_guard                           stub
+│                        integrity_guard                           implemented (Day-1 level, see below)
 └── tools/               pytest_runner, patch_tools, sandbox,
                          patch_content, verification               implemented
                          git_tools (run_git helpers only;
@@ -184,13 +184,24 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** every body in `llm_client`, `orchestrator`, `memory`, `evaluation`,
-`agents/*` and `tools/*`; `ConditionSummary` is provisional.
+**Deferred (raise `NotImplementedError`):** `memory.MemoryStore`, `evaluation`, `tools.git_tools.git_log/git_show/
+git_blame`, and building a retrieval corpus from a worktree; `ConditionSummary` is provisional. `run_episode` does not
+read `conditions.PROFILES` yet (callers pass the condition's episode view and `memory=None`).
+
+**Agents (Day 1).** Signatures are unchanged. `run_triage` is deterministic (no model call): it reruns the CI's failing
+tests and groups them by `target_function`, falling back to the test file. `analyse_intent` and `propose_repair` each
+make one model call. The Repairer returns snippet edits, and the module turns them into a unified diff. `verify_repair`
+is deterministic and takes three optional keyword-only arguments (`python_executable`, `timeout_seconds`,
+`probe: TrustedProbe | None`); the CLI binds them through `Agents(integrity_guard=partial(...))`. Without a probe, the
+best verdict it can give is `ESCALATE`. Configuration added: `TEST_PYTHON`, `LLM_STRUCTURED_MODE`, `LLM_MAX_RETRIES`,
+`LLM_TIMEOUT_SECONDS`. Integration fixes: `patch_tools` restores the final newline that contract stripping removes,
+and the orchestrator reverts with the episode's `EditPolicy`.
 
 ## 9. Open decisions for the team
 
 1. `EXPERIMENT_CONDITION` defaults to `B1` to match `.env.example`; confirm that is the intended default.
-2. Where agent prompts and the tool-call loop live (inside each agent, or a shared helper in `llm_client`).
+2. ~~Where agent prompts and the tool-call loop live~~ Resolved: each agent module holds its own `SYSTEM_PROMPT`
+   and `PROMPT_VERSION`; shared prompt/file helpers are in `agents/_common.py`.
 3. Whether `Settings.log_file` should default to a per-run file under `results/`.
 4. `ConditionSummary` shape (evaluation branch).
 5. `requirements-lock.txt` is both tracked and listed in `.gitignore`; the README says to commit it.

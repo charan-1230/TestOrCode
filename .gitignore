@@ -15,6 +15,7 @@ __pycache__/
 # Generated experiment output and logs (the directory itself is kept via .gitkeep)
 results/*
 !results/.gitkeep
+!results/day1/
 *.log
 
 # docs

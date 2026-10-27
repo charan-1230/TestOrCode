@@ -361,7 +361,12 @@ def create_llm_client(settings: Settings) -> LLMClient:
         ConfigError: ``settings.require_llm()`` fails.
     """
     settings.require_llm()
-    return OpenAICompatibleClient(settings)
+    return OpenAICompatibleClient(
+        settings,
+        timeout_seconds=settings.llm_timeout_seconds,
+        max_retries=settings.llm_max_retries,
+        structured_mode=settings.llm_structured_mode,
+    )
 
 
 # --------------------------------------------------------------------------- #

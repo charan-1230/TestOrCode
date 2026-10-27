@@ -523,7 +523,7 @@ class EpisodeRun:
     def _revert(self) -> None:
         if self._applied_diff is not None:
             diff, self._applied_diff = self._applied_diff, None
-            self.tools.revert(self.context.worktree_path, diff)
+            self.tools.revert(self.context.worktree_path, diff, policy=self.context.edit_policy)
 
     def _known_evidence_ids(self) -> set[str]:
         known = {e.evidence_id for e in self.retriever.evidence} if self.retriever else set()

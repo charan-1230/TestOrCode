@@ -509,6 +509,15 @@ def _read_record(root: Path, unified_diff: str) -> PatchScope | None:
 # --------------------------------------------------------------------------- #
 
 
+def _with_final_newline(unified_diff: str) -> str:
+    """Contracts strip edge whitespace (``PatchProposal.unified_diff`` loses its final
+    newline), and ``git apply`` calls such a diff corrupt.  Non-strings pass through
+    so ``_inspect`` reports them."""
+    if isinstance(unified_diff, str) and unified_diff and not unified_diff.endswith("\n"):
+        return unified_diff + "\n"
+    return unified_diff
+
+
 def validate_patch(
     worktree_path: Path, unified_diff: str, *, policy: EditPolicy, scope: PatchScope
 ) -> PatchValidation:
@@ -522,6 +531,7 @@ def validate_patch(
     """
     scope = _coerce_scope(scope)
     root = require_worktree_root(worktree_path)
+    unified_diff = _with_final_newline(unified_diff)
     validation = _inspect(root, unified_diff, policy=policy, scope=scope).to_validation()
     logger.info(
         "validate_patch: %d paths, valid=%s, allowed=%s, %d reasons",
@@ -548,6 +558,7 @@ def apply_patch(
     """
     scope = _coerce_scope(scope)
     root = require_worktree_root(worktree_path)
+    unified_diff = _with_final_newline(unified_diff)
     inspection = _inspect(root, unified_diff, policy=policy, scope=scope)
     if inspection.scope_problems:
         raise ScopeViolationError("patch rejected: " + "; ".join(inspection.reasons()))
@@ -593,6 +604,7 @@ def revert_patch(
     if scope is not None:
         scope = _coerce_scope(scope)
     root = require_worktree_root(worktree_path)
+    unified_diff = _with_final_newline(unified_diff)
     recorded = _read_record(root, unified_diff) if isinstance(unified_diff, str) else None
     if scope is not None and recorded is not None and scope is not recorded:
         raise ScopeViolationError(
