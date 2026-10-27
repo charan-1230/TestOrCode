@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from testorcode.config import Settings
+from testorcode.errors import ConfigError
 from testorcode.llm_client import OpenAICompatibleClient, create_llm_client
 from testorcode.schemas.contracts import EpisodeContext
 from testorcode.schemas.episode_schemas import RepoRef
@@ -68,5 +69,5 @@ def test_llm_client_needs_credentials_only_when_created() -> None:
     with pytest.raises(Exception, match="LLM_MODEL"):
         create_llm_client(settings)
     client = OpenAICompatibleClient(settings)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ConfigError, match="LLM_MODEL"):
         client.complete_structured(role=None, system="", user="", response_model=Settings)  # type: ignore[arg-type]

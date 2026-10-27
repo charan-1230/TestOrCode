@@ -19,8 +19,8 @@ src/testorcode/
 │   ├── result_schemas.py    run-log side (existing)               implemented
 │   ├── contracts.py         agent/tool messages (new)             implemented
 │   └── schemas.py           alias of episode_schemas (existing)
-├── llm_client.py        LLMClient protocol, create_llm_client     stub
-├── orchestrator.py      run_episode                               stub
+├── llm_client.py        LLMClient, OpenAICompatibleClient, Fake   implemented
+├── orchestrator.py      run_episode (state-machine scaffolding)   scaffolding
 ├── retrieval.py         Retriever, build_retriever                stub
 ├── memory.py            MemoryStore                               stub
 ├── evaluation.py        evaluate_run, summarize                   stub
@@ -86,7 +86,7 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 
 | Module | Signature | Owner branch |
 |---|---|---|
-| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None) -> ExperimentRunRecord` | agent-core |
+| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None, retriever=None, agents=None, patch_tools=None) -> ExperimentRunRecord` (the last three are optional injections for tests) | agent-core |
 | `llm_client` | `LLMClient.complete_structured(*, role, system, user, response_model) -> LLMResponse[T]`; `create_llm_client(settings)` | agent-core |
 | `agents.triage` | `run_triage(context, ci_event, *, llm, settings) -> TriageResult` | agent-core |
 | `agents.intent_analyst` | `analyse_intent(context, group, *, retriever, memory, llm) -> IntentAnalysis` | agent-core |
