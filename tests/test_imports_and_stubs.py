@@ -11,7 +11,7 @@ import pytest
 from testorcode.config import Settings
 from testorcode.llm_client import OpenAICompatibleClient, create_llm_client
 from testorcode.schemas.contracts import EpisodeContext
-from testorcode.schemas.episode_schemas import EditPolicy, PatchScope, RepoRef
+from testorcode.schemas.episode_schemas import RepoRef
 
 MODULES = [
     "testorcode",
@@ -55,14 +55,12 @@ def test_import_does_not_configure_logging() -> None:
 
 
 def test_deferred_functions_raise_not_implemented() -> None:
-    from testorcode.tools import git_tools, patch_tools, pytest_runner
+    from testorcode.tools import git_tools
 
-    with pytest.raises(NotImplementedError):
-        pytest_runner.run_tests(Path("."), ["tests"], timeout_seconds=1)
+    # pytest_runner and patch_tools are implemented (tests/test_pytest_runner.py,
+    # tests/test_patch_tools.py); the git history tools are still deferred.
     with pytest.raises(NotImplementedError):
         git_tools.git_log(Path("."), cutoff_commit="a1b2c3d4")
-    with pytest.raises(NotImplementedError):
-        patch_tools.validate_patch(Path("."), "", policy=EditPolicy(), scope=PatchScope.SRC)
 
 
 def test_llm_client_needs_credentials_only_when_created() -> None:

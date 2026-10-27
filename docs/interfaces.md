@@ -26,7 +26,10 @@ src/testorcode/
 ├── evaluation.py        evaluate_run, summarize                   stub
 ├── agents/              triage, intent_analyst, repairer,
 │                        integrity_guard                           stub
-└── tools/               pytest_runner, git_tools, patch_tools     stub
+└── tools/               pytest_runner, patch_tools, sandbox,
+                         patch_content, verification               implemented
+                         git_tools (run_git helpers only;
+                         git_log/show/blame)                       stub
 ```
 
 Import graph (no cycles): `schemas.*` → `errors` → `config` → `llm_client`, `retrieval`, `memory`, `tools.*` →
@@ -89,9 +92,10 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 | `agents.intent_analyst` | `analyse_intent(context, group, *, retriever, memory, llm) -> IntentAnalysis` | agent-core |
 | `agents.repairer` | `propose_repair(context, group, analysis, *, llm, previous_rejection=None) -> RepairerOutput` | agent-core |
 | `agents.integrity_guard` | `verify_repair(context, group, analysis, proposal, *, llm=None) -> GuardResult`; `authorize_memory_write(result, record, *, maintainer_approved) -> MemoryApproval` | agent-core |
-| `tools.pytest_runner` | `run_tests(worktree_path, selectors, *, timeout_seconds) -> PytestExecution` | sandbox |
+| `tools.pytest_runner` | `run_tests(worktree_path, selectors, *, timeout_seconds, python_executable=None, isolation="auto", docker_image=None) -> PytestExecution`; `run_pytest(...)` also returns bounded stdout/stderr and the isolation used. `auto` = Docker (image + reachable daemon) else bubblewrap else `ToolError`; `"trusted-host"` only for trusted fixtures | sandbox |
 | `tools.git_tools` | `git_log`, `git_show`, `git_blame` (every call takes `cutoff_commit`) | sandbox |
-| `tools.patch_tools` | `validate_patch`, `apply_patch`, `revert_patch` | sandbox |
+| `tools.patch_tools` | `validate_patch`, `apply_patch(worktree_path, diff, *, policy, scope) -> PatchValidation`, `revert_patch(worktree_path, diff, *, policy=None, scope=None)` (only undoes the exact diff `apply_patch` applied in that worktree, with the recorded scope); `scope_for_decision(decision)`; `is_protected_path(path)` (config, CI, dependency, generated and backup files at any depth, rejected on top of `EditPolicy`; the Integrity Guard should reuse it). `tools.patch_content`: a test-only patch may change **only expected literal values in existing `assert <expr> ==/!= <literal>` statements** (AST comparison; no new/deleted/renamed/non-Python test files); anything else is rejected and should be escalated | sandbox |
+| `tools.verification` | `verify_behaviour(worktree_path, probe: TrustedProbe | None, *, timeout_seconds, policy=None, isolation="auto", docker_image=None) -> TrustedVerification`; `trusted_outcome(post_repair_run, verification) -> TrustedVerification`. A raw `PytestExecution.PASSED` is never approval: only `TrustedVerification.verified` (`ProbeStatus.PASSED` from a harness-supplied probe run in a fresh sandbox) may recommend `GuardDecision.APPROVE`; no/failed/unverifiable probe → `ESCALATE`/`REJECT`. The Integrity Guard itself is not implemented | sandbox |
 | `retrieval` | `build_retriever(corpus, worktree_path) -> Retriever`; `Retriever.search(query, *, top_k) -> list[RetrievedEvidence]` | agent-core |
 | `memory` | `MemoryStore.read(context, function_qualname) -> MemoryReadResult`; `MemoryStore.write(record, approval)` | agent-core |
 | `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes) -> list[ConditionSummary]` | evaluation |
