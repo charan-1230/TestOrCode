@@ -14,12 +14,15 @@ import argparse
 import ast
 import difflib
 import hashlib
+import io
 import json
 import os
 import re
 import subprocess
 import sys
 import tempfile
+import textwrap
+import tokenize
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -30,7 +33,7 @@ ROOT = HERE.parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(HERE))
 
-from materialize_episode import materialize
+from materialize_episode import WorktreeSafetyError, materialize, prepare_worktree
 
 from testorcode.schemas.episode_schemas import (
     Availability,
@@ -101,16 +104,17 @@ class BuildError(RuntimeError):
 
 
 class Ctx:
-    def __init__(self, repo: Path, python: Path, work: Path) -> None:
-        self.repo, self.work = repo.resolve(), work.resolve()
+    def __init__(self, repo: Path, python: Path, work: Path, *, force: bool = False) -> None:
+        # The worktree is reset with checkout -f / clean -fdx: validate (and create) it first.
+        # Raises WorktreeSafetyError for the main clone, a real checkout, or anything outside the safe rules.
+        self.repo = repo.resolve()
+        self.work = prepare_worktree(self.repo, work, "HEAD", force=force)
         self.python = Path(os.path.abspath(python))
         env = {
             k: v for k, v in os.environ.items() if k not in ("FORCE_COLOR", "PY_COLORS", "GIT_DIR")
         }
         env.update(PYTHONPATH=str(self.work), PYTHONDONTWRITEBYTECODE="1", NO_COLOR="1")
         self.env = env
-        if not (self.work / ".git").exists():
-            self.git("worktree", "add", "-q", "--detach", str(self.work), "HEAD", cwd=self.repo)
 
     def git(self, *args: str, cwd: Path | None = None) -> str:
         done = subprocess.run(
@@ -415,6 +419,221 @@ def build_corpus(
 # --------------------------------------------------------------------------- #
 
 
+# --------------------------------------------------------------------------- #
+# Source-comment evidence (corpus policy "pilot-2")
+# --------------------------------------------------------------------------- #
+
+CORPUS_VERSION = "pilot-2"
+COMMENT_RULE = (
+    "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI "
+    "state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; "
+    "an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments "
+    "outside functions, and every comment or docstring in test files. No relevance filter and no rewriting."
+)
+_PRAGMA = re.compile(
+    r"#\s*(?:noqa|type:|pragma|fmt:|pylint:|flake8:|isort:|-\*-)|#!|coding[:=]", re.IGNORECASE
+)
+_HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@", re.MULTILINE)
+
+
+def _added_lines(diff_u0: str) -> set[int]:
+    """Line numbers (new file) added or modified by a ``git diff -U0`` of one file."""
+    added: set[int] = set()
+    for m in _HUNK.finditer(diff_u0):
+        start, count = int(m.group(3)), int(m.group(4) if m.group(4) is not None else 1)
+        added.update(range(start, start + count))
+    return added
+
+
+def _hunk_header(agent_diff: str, line: int) -> str | None:
+    """Header of the agent-visible diff hunk whose new-file range contains ``line`` (None if outside every hunk)."""
+    for m in _HUNK.finditer(agent_diff):
+        start, count = int(m.group(3)), int(m.group(4) if m.group(4) is not None else 1)
+        if start <= line < start + max(count, 1):
+            return agent_diff[m.start() : agent_diff.index("\n", m.start())]
+    return None
+
+
+def extract_comment_groups(old_src: str | None, new_src: str, added: set[int]) -> list[dict]:
+    """Comment items of ``new_src`` that the policy makes eligible (pure function, unit-testable offline)."""
+
+    # A qualname can be defined more than once (conditional definitions): key by (qualname, occurrence).
+    def keyed(src: str) -> list[tuple[tuple[str, int], int, int, str]]:
+        seen: dict[str, int] = {}
+        out = []
+        for q, n in iter_funcs(ast.parse(src)):
+            seen[q] = seen.get(q, 0) + 1
+            out.append(((q, seen[q]), n.lineno, n.end_lineno, ast.dump(n)))
+        return out
+
+    new_funcs = [(key[0], a, b, d, key) for key, a, b, d in keyed(new_src)]
+    old_dump = {key: d for key, _, _, d in keyed(old_src)} if old_src else {}
+    changed = [(a, b) for _, a, b, d, key in new_funcs if old_dump.get(key) != d]
+    lines = new_src.splitlines()
+    tokens = []
+    for tok in tokenize.generate_tokens(io.StringIO(new_src).readline):
+        if tok.type == tokenize.COMMENT and not _PRAGMA.search(tok.string):
+            row = tok.start[0]
+            if any(a <= row <= b for a, b in changed):
+                tokens.append((row, tok.string.rstrip(), lines[row - 1].strip().startswith("#")))
+
+    def innermost(row: int) -> str:
+        inside = [(b - a, q) for q, a, b, _, _ in new_funcs if a <= row <= b]
+        return min(inside)[1]
+
+    groups: list[dict] = []
+    for row, string, own_line in tokens:
+        fn = innermost(row)
+        last = groups[-1] if groups else None
+        if (
+            own_line
+            and last
+            and last["own_line"]
+            and last["end"] == row - 1
+            and last["function"] == fn
+        ):
+            last["end"] = row
+            last["rows"].append(row)
+            continue
+        groups.append(
+            {
+                "start": row,
+                "end": row,
+                "rows": [row],
+                "function": fn,
+                "own_line": own_line,
+                "inline": string,
+            }
+        )
+    out = []
+    for g in groups:
+        if g["own_line"]:
+            text = textwrap.dedent("\n".join(lines[r - 1] for r in g["rows"])).strip("\n")
+            verified = all(
+                t.strip() == lines[r - 1].strip()
+                for t, r in zip(text.splitlines(), g["rows"], strict=True)
+            )
+        else:
+            text = g["inline"]
+            verified = text in lines[g["start"] - 1]
+        out.append(
+            {
+                "start": g["start"],
+                "end": g["end"],
+                "function": g["function"],
+                "text": text,
+                "origin": "added_by_ci_diff"
+                if any(r in added for r in g["rows"])
+                else "pre_existing",
+                "text_verified": verified,
+            }
+        )
+    return out
+
+
+def _blame_commits(ctx: Ctx, path: str, start: int, end: int, ci_commit: str) -> list[str]:
+    """Commits that introduced lines start..end in the CI-state worktree (uncommitted lines -> the CI commit)."""
+    out = ctx.git("blame", "--line-porcelain", "-L", f"{start},{end}", "--", path)
+    shas = re.findall(r"^([0-9a-f]{40}) \d+ \d+", out, flags=re.MULTILINE)
+    return [ci_commit if set(sha) == {"0"} else sha for sha in shas]
+
+
+def add_source_comments(ctx: Ctx, draft: Draft) -> None:
+    """Append the eligible source-comment items to ``draft.corpus`` (idempotent). Call while the worktree is the CI state."""
+    draft.corpus = [i for i in draft.corpus if not i.evidence_id.startswith("comment:")]
+    total = draft.cutoff_index + 1
+    records = []
+    for path in sorted(draft.diffs):
+        if not (path.startswith("boltons/") and path.endswith(".py")):
+            continue
+        new_src = (ctx.work / path).read_text()
+        added = _added_lines(ctx.git("diff", "-U0", draft.parent, "--", path))
+        agent_diff = draft.diffs[path][1]
+        module = module_of(path)
+        for g in extract_comment_groups(ctx.show(draft.parent, path), new_src, added):
+            if not g["text_verified"]:
+                msg = f"{draft.key}: comment text at {path}:{g['start']} does not match the file"
+                raise BuildError(msg)
+            blame = _blame_commits(ctx, path, g["start"], g["end"], draft.ci_commit)
+            sha = draft.ci_commit if g["origin"] == "added_by_ci_diff" else blame[0]
+            index = (
+                draft.cutoff_index
+                if sha == draft.ci_commit
+                else min(int(ctx.rg("rev-list", "--count", sha).strip()) - 1, total - 1)
+            )
+            eid = f"comment:{module}.{g['function']}#L{g['start']}"
+            draft.corpus.append(
+                EvidenceItem(
+                    evidence_id=eid,
+                    source_type=EvidenceSourceType.SOURCE_FILE,
+                    source_ref=f"{path}::{g['function']}",  # same convention as docstring items
+                    commit_sha=sha,
+                    commit_index=index,
+                    line_start=g["start"],
+                    line_end=g["end"],
+                    text=g["text"],
+                )
+            )
+            records.append(
+                {
+                    "evidence_id": eid,
+                    "path": path,
+                    "lines": [g["start"], g["end"]],
+                    "function": f"{module}.{g['function']}",
+                    "origin": g["origin"],
+                    "commit_sha": sha,
+                    "blame_commits": sorted({c[:12] for c in blame}),
+                    "diff_hunk": _hunk_header(agent_diff, g["start"]),
+                    "text_verified": True,
+                }
+            )
+    draft.notes["source_comment_rule"] = COMMENT_RULE
+    draft.notes["source_comments"] = records
+
+
+def apply_gold(draft: Draft, spec: dict) -> None:
+    """Set gold evidence on the UPDATE_TEST labels from manifest selectors; every selector must resolve to exactly one item."""
+    selectors = spec.get("gold_evidence") or [{"type": "message"}]
+    by_id = {i.evidence_id: i for i in draft.corpus}
+    function = (draft.source_function or "").removeprefix("boltons.")
+    ids: list[str] = []
+    for sel in selectors:
+        if sel["type"] == "message":
+            eid = f"msg:{draft.ci_commit[:12]}"
+            item = by_id.get(eid)
+            if item is None or sel.get("contains", "") not in (item.text or ""):
+                msg = f"{draft.key}: message selector {sel} does not match {eid}"
+                raise BuildError(msg)
+        elif sel["type"] == "comment":
+            hits = [
+                i
+                for i in draft.corpus
+                if i.evidence_id.startswith("comment:") and sel["contains"] in (i.text or "")
+            ]
+            if len(hits) != 1:
+                msg = f"{draft.key}: comment selector {sel} resolved to {len(hits)} items, expected exactly 1"
+                raise BuildError(msg)
+            eid = hits[0].evidence_id
+            if not eid.startswith(f"comment:{function}#"):
+                msg = f"{draft.key}: gold comment {eid} is not inside the labelled function {function}"
+                raise BuildError(msg)
+        else:
+            msg = f"{draft.key}: unknown gold selector {sel}"
+            raise BuildError(msg)
+        ids.append(eid)
+    for lbl in draft.labels:
+        if not lbl.get("fix"):
+            lbl["gold_evidence_ids"] = list(ids)
+    draft.notes["gold_evidence"] = [
+        {
+            "evidence_id": i,
+            "source_type": by_id[i].source_type.value,
+            "text": (by_id[i].text or "")[:300],
+        }
+        for i in ids
+    ]
+
+
 @dataclass
 class Draft:
     key: str
@@ -446,6 +665,9 @@ class Draft:
     source_function: str | None = None
     source_commit: str | None = None
     source_subject: str | None = None
+    note: str | None = None
+    # S5 only: kept in memory for the leak check, never written to disk (only its hash is, in notes).
+    withheld_message: str | None = None
 
 
 def split_diff_paths(ctx: Ctx, parent: str) -> dict[str, tuple[str, str]]:
@@ -584,7 +806,6 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
         message_override=override,
         drop_docs={d for d in docs if spec["scenario"] == "S5"},
     )
-    short = commit[:12]
     labels = [{"test_id": t, "group_id": "g1", "function_qualname": fq} for t in sorted(fails)]
     test_diff = ctx.rg("diff", parent, commit, "--", *tst)
     draft = Draft(
@@ -607,10 +828,18 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
     if spec["scenario"] == "S5":
         draft.availability = Availability.WITHHELD
         draft.memory = []
+        draft.withheld_message = message
+        # Only a hash is stored: an authorised reviewer re-computes it from the pinned clone (datasets/README.md).
+        draft.notes["withheld_message_sha256"] = hashlib.sha256(message.encode("utf-8")).hexdigest()
+        draft.notes["withheld_message_chars"] = len(message)
+        draft.note = (
+            "PROVISIONAL (S5): ESCALATE is a judgement and the history-leak check is not possible yet: "
+            "git_log/git_show/git_blame are unimplemented stubs, and their contract ('reachable from the cutoff "
+            "commit', cutoff = the CI commit) would expose the withheld commit message and the developer's test diff. "
+            "Not a validated S5 until a history-access regression test passes with the cutoff at the parent commit."
+        )
     else:
         draft.availability = Availability.AVAILABLE
-        for lbl in labels:
-            lbl["gold_evidence_ids"] = [f"msg:{short}"]
     # label check: the developer's tests repair exactly this failure set
     ctx.git("checkout", "-q", commit, "--", *tst)
     rc, left, _ = ctx.pytest(["tests"])
@@ -620,6 +849,9 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
     draft.notes["reference_repair_green"] = True
     ctx.checkout(parent)
     ctx.git("checkout", "-q", commit, "--", *src)
+    add_source_comments(ctx, draft)
+    if spec["scenario"] != "S5":
+        apply_gold(draft, spec)
     return draft, {"function": fq, "tests": tst, "src": src, "parent_pass": parent_pass}
 
 
@@ -711,6 +943,8 @@ def build_s3(ctx: Ctx, spec: dict, pool: set[str]) -> Draft:
     mutant_labels(draft, mutant, sorted(new), "mut-1", "g2")
     draft.provenance = "tests_with_source_only_change"
     draft.notes.update(mixed_verified=True, mutant=mutant.desc)
+    add_source_comments(ctx, draft)  # the injected mutant is part of the CI diff: recompute with it
+    apply_gold(draft, spec)
     return draft
 
 
@@ -801,6 +1035,7 @@ def build_s4(ctx: Ctx, spec: dict, pool: set[str], source: Draft) -> Draft:
     draft.notes.update(
         probe_passes_on_mutated_state=True, decoy_function=src_fn, mutant=mutant.desc
     )
+    add_source_comments(ctx, draft)
     apply_back(ctx, commit)
     return draft
 
@@ -883,6 +1118,7 @@ def _build_s2(ctx: Ctx, spec: dict, pool: set[str], cand: str) -> Draft:
         mutant_in_changed_function=mutant.qualname in preferred.get(mutant.path, set()),
         restored_green=True,
     )
+    add_source_comments(ctx, draft)
     apply_back(ctx, commit)
     return draft
 
@@ -953,7 +1189,7 @@ def finalize(ctx: Ctx, draft: Draft, ep_id: str, position: int, env: Environment
         ci_event=ci,
         corpus=RetrievalCorpusSpec(
             corpus_id=f"corpus-{ep_id}",
-            corpus_version="pilot-1",
+            corpus_version=CORPUS_VERSION,
             history_cutoff_commit=draft.ci_commit,
             history_cutoff_index=draft.cutoff_index,
             items=draft.corpus,
@@ -980,7 +1216,7 @@ def finalize(ctx: Ctx, draft: Draft, ep_id: str, position: int, env: Environment
             verified_by="build_dataset.py: 5 identical runs + executed reference repair; "
             "gold_evidence_ids and the S5/S4 constructions pending human review",
         ),
-        note=None,
+        note=draft.note,
     )
     return Episode(
         episode_id=ep_id,
@@ -1023,6 +1259,53 @@ def leak_audit(ep: Episode) -> dict:
     return {"problems": problems, "clean": not problems}
 
 
+PILOT_REQUIREMENTS = HERE / "requirements-pilot.txt"
+
+
+def _pins(lines: list[str]) -> tuple[dict[str, str], list[str]]:
+    """``name==version`` lines -> {normalised name: version}; anything else is returned as unparseable."""
+    pins: dict[str, str] = {}
+    odd: list[str] = []
+    for raw in lines:
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        name, sep, version = line.partition("==")
+        if not sep or not version or " " in line:
+            odd.append(line)
+        else:
+            pins[re.sub(r"[-_.]+", "-", name).lower()] = version
+    return pins, odd
+
+
+def check_pilot_environment(freeze: str, pins_text: str) -> None:
+    """Abort unless ``pip freeze`` output equals the pins file exactly (same packages, same versions).
+
+    The dependency hash recorded in the dataset manifest is the hash of this freeze, so any drift (a new transitive
+    version, an extra package, an editable install) would silently produce a different environment.
+
+    Raises:
+        BuildError: the environment differs from ``requirements-pilot.txt``.
+    """
+    want, bad_pins = _pins(pins_text.splitlines())
+    have, odd = _pins(freeze.splitlines())
+    problems = [f"unparseable pin: {x}" for x in bad_pins] + [
+        f"unexpected freeze line: {x}" for x in odd
+    ]
+    problems += [
+        f"{n}: installed {have[n]}, pinned {want[n]}"
+        for n in sorted(want)
+        if n in have and have[n] != want[n]
+    ]
+    problems += [f"{n}: pinned {want[n]} but not installed" for n in sorted(set(want) - set(have))]
+    problems += [f"{n}=={have[n]}: installed but not pinned" for n in sorted(set(have) - set(want))]
+    if problems:
+        msg = "pilot environment differs from scripts/pilot/requirements-pilot.txt: " + "; ".join(
+            problems
+        )
+        raise BuildError(msg)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
@@ -1037,10 +1320,27 @@ def main() -> int:
     )
     parser.add_argument("--manifest", default=str(HERE / "manifest.json"))
     parser.add_argument("--out", default=str(ROOT / "datasets"))
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="adopt and reset an EXISTING linked worktree of --repo that this tool did not create (it is reset with "
+        "checkout -f / clean -fdx). Never overrides the refusal for the main clone, a standalone repository, another "
+        "repository's worktree, or a path containing/inside the clone or this project.",
+    )
     args = parser.parse_args()
 
     manifest = json.loads(Path(args.manifest).read_text())
-    ctx = Ctx(Path(args.repo), Path(args.python), Path(args.work))
+    try:
+        ctx = Ctx(Path(args.repo), Path(args.python), Path(args.work), force=args.force)
+        rt_ctx = Ctx(
+            Path(args.repo),
+            Path(args.python),
+            Path(args.rt_work or f"{args.work}-rt"),
+            force=args.force,
+        )
+    except WorktreeSafetyError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 2
     head = ctx.full("HEAD")
     if head != manifest["pin"]["head"]:
         msg = f"repo HEAD {head} != pinned {manifest['pin']['head']}"
@@ -1055,6 +1355,7 @@ def main() -> int:
     if pytest_version != manifest["pin"]["pytest"]:
         msg = f"pytest {pytest_version} != pinned {manifest['pin']['pytest']}"
         raise BuildError(msg)
+    check_pilot_environment(freeze, PILOT_REQUIREMENTS.read_text())
     env = EnvironmentSpec(
         python_version=manifest["pin"]["python"],
         docker_image=None,
@@ -1082,6 +1383,8 @@ def main() -> int:
             draft = build_s2(ctx, spec, pool)
         else:
             draft = build_s4(ctx, spec, pool, drafts[spec["memory_from"]])
+        if spec.get("note"):
+            draft.note = spec["note"]
         if not draft.modules <= pool:
             msg = f"{spec['key']}: modules {sorted(draft.modules - pool)} outside the {spec['split']} pool"
             raise BuildError(msg)
@@ -1095,7 +1398,6 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
     episodes: dict[str, list[Episode]] = {"dev": [], "test": []}
     verification: dict[str, dict] = {}
-    rt_ctx = Ctx(Path(args.repo), Path(args.python), Path(args.rt_work or f"{args.work}-rt"))
     ids: dict[str, str] = {}
     for split in ("dev", "test"):
         mine = sorted(
@@ -1137,6 +1439,13 @@ def main() -> int:
                 "corpus_items": len(draft.corpus),
                 "notes": draft.notes,
             }
+            if draft.scenario == "S5":
+                real = draft.withheld_message or ""
+                audit["real_message_absent_from_agent_view"] = real not in json.dumps(
+                    payload, ensure_ascii=False
+                )
+                verification[ep_id]["leak_audit"] = audit
+                audit["clean"] = audit["clean"] and audit["real_message_absent_from_agent_view"]
             if not audit["clean"] or sorted(fails) != expected:
                 msg = f"{ep_id} ({draft.key}) failed verification: {verification[ep_id]}"
                 raise BuildError(msg)
@@ -1186,6 +1495,8 @@ def main() -> int:
             for s, eps in episodes.items()
         },
         "module_pools": {k: sorted(v) for k, v in pools.items()},
+        "corpus_version": CORPUS_VERSION,
+        "source_comment_policy": COMMENT_RULE,
         "files_sha256": files,
         "frozen_test_split": "datasets/pilot_test*.jsonl: do not tune on it; regenerate only deliberately",
     }

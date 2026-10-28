@@ -1,5 +1,102 @@
 {
  "dev-01": {
+  "key": "dev-s5-tbutils",
+  "scenario": "S5",
+  "ci_commit": "353f6befb4739f1d3583a8ce0ab5db761babd411",
+  "parent_commit": "c4a489d853b9130744ce2794be4a1cb79331b4b3",
+  "failing_tests": [
+   "tests/tbutils_test.py::test_multiline_exception_message",
+   "tests/tbutils_test.py::test_normal_tb"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "boltons.tbutils.ParsedException.from_string"
+  ],
+  "modules": [
+   "tbutils"
+  ],
+  "corpus_items": 141,
+  "notes": {
+   "withheld_message_sha256": "d6a334fb701d85ebdf318f16784bf9ac135adff457268d9948b02b06ea94d4c1",
+   "withheld_message_chars": 50,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L704",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      704,
+      706
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "e16a2b4bc595859cce9721e71ec7be925e628279",
+     "blame_commits": [
+      "e16a2b4bc595",
+      "e2a0868f742f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L717",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      717,
+      719
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "e16a2b4bc595859cce9721e71ec7be925e628279",
+     "blame_commits": [
+      "e16a2b4bc595"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L735",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      735,
+      735
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "8ac05a509dd8f9c69ad9bccf0aa05bebfceb3723",
+     "blame_commits": [
+      "8ac05a509dd8"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L740",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      740,
+      743
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "078a215bfd37da5045ec6302bcba9505a11582dc",
+     "blame_commits": [
+      "078a215bfd37"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "dev-02": {
   "key": "dev-s2-c",
   "scenario": "S2",
   "ci_commit": "0c88f25323de3ff85bcca844b9ce6cd171a80392",
@@ -19,14 +116,33 @@
   "modules": [
    "tableutils"
   ],
-  "corpus_items": 120,
+  "corpus_items": 121,
   "notes": {
    "mutant": "to_text line 92: 'and' -> 'or'",
    "mutant_in_changed_function": false,
-   "restored_green": true
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tableutils.to_text#L94",
+     "path": "boltons/tableutils.py",
+     "lines": [
+      94,
+      94
+     ],
+     "function": "tableutils.to_text",
+     "origin": "pre_existing",
+     "commit_sha": "ffd6abd1d27c2899c4f868dd9a6eb9de17f614a3",
+     "blame_commits": [
+      "ffd6abd1d27c"
+     ],
+     "diff_hunk": "@@ -89,7 +89,7 @@ def to_text(obj, maxlen=None):",
+     "text_verified": true
+    }
+   ]
   }
  },
- "dev-02": {
+ "dev-03": {
   "key": "dev-s2-b",
   "scenario": "S2",
   "ci_commit": "c0d580df13d3d2d3d99a7769828afc7176127d90",
@@ -51,10 +167,12 @@
   "notes": {
    "mutant": "once line 1040: 'is not' -> 'is'",
    "mutant_in_changed_function": true,
-   "restored_green": true
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
   }
  },
- "dev-03": {
+ "dev-04": {
   "key": "dev-s2-a",
   "scenario": "S2",
   "ci_commit": "bba729bf4539afc993a6410bdf8074b28707004a",
@@ -74,14 +192,81 @@
   "modules": [
    "strutils"
   ],
-  "corpus_items": 148,
+  "corpus_items": 152,
   "notes": {
    "mutant": "strip_ansi line 403: 'and' -> 'or'",
    "mutant_in_changed_function": false,
-   "restored_green": true
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L390",
+     "path": "boltons/strutils.py",
+     "lines": [
+      390,
+      390
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "657cf027b8b66332eec130f807317d0cf9d10e57",
+     "blame_commits": [
+      "657cf027b8b6"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L392",
+     "path": "boltons/strutils.py",
+     "lines": [
+      392,
+      393
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L395",
+     "path": "boltons/strutils.py",
+     "lines": [
+      395,
+      395
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L402",
+     "path": "boltons/strutils.py",
+     "lines": [
+      402,
+      402
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": "@@ -400,7 +400,7 @@ def strip_ansi(text):",
+     "text_verified": true
+    }
+   ]
   }
  },
- "dev-04": {
+ "dev-05": {
   "key": "dev-s1-tbutils",
   "scenario": "S1",
   "ci_commit": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
@@ -101,12 +286,103 @@
   "modules": [
    "tbutils"
   ],
-  "corpus_items": 143,
+  "corpus_items": 148,
   "notes": {
-   "reference_repair_green": true
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L761",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      761,
+      763
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "e16a2b4bc595859cce9721e71ec7be925e628279",
+     "blame_commits": [
+      "e16a2b4bc595",
+      "e2a0868f742f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L774",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      774,
+      776
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "e16a2b4bc595859cce9721e71ec7be925e628279",
+     "blame_commits": [
+      "e16a2b4bc595"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L792",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      792,
+      792
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "8ac05a509dd8f9c69ad9bccf0aa05bebfceb3723",
+     "blame_commits": [
+      "8ac05a509dd8"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L797",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      797,
+      800
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "pre_existing",
+     "commit_sha": "078a215bfd37da5045ec6302bcba9505a11582dc",
+     "blame_commits": [
+      "078a215bfd37"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tbutils.ParsedException.from_string#L809",
+     "path": "boltons/tbutils.py",
+     "lines": [
+      809,
+      811
+     ],
+     "function": "tbutils.ParsedException.from_string",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
+     "blame_commits": [
+      "7b577b0f3cc7"
+     ],
+     "diff_hunk": "@@ -802,7 +806,13 @@ class ParsedException:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:7b577b0f3cc7",
+     "source_type": "commit_message",
+     "text": "tbutils: round-trip traceback anchor lines in ParsedException (#333)"
+    }
+   ]
   }
  },
- "dev-05": {
+ "dev-06": {
   "key": "dev-s1-cacheutils",
   "scenario": "S1",
   "ci_commit": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
@@ -128,10 +404,19 @@
   ],
   "corpus_items": 132,
   "notes": {
-   "reference_repair_green": true
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:8408ab57e6c9",
+     "source_type": "commit_message",
+     "text": "cacheutils: honor scoped caching, falsey on_miss, method keys, copy, |=, eq, ThresholdCounter width (#498, #593, #541, #506, #490, #580, #598)"
+    }
+   ]
   }
  },
- "dev-06": {
+ "dev-07": {
   "key": "dev-s4-cacheutils",
   "scenario": "S4",
   "ci_commit": "2061906940c5630f459c22fb18d1165113361fa7",
@@ -158,10 +443,12 @@
   "notes": {
    "probe_passes_on_mutated_state": true,
    "decoy_function": "boltons.cacheutils.CachedFunction.__call__",
-   "mutant": "CachedFunction.__call__ line 462: '+' -> '-'"
+   "mutant": "CachedFunction.__call__ line 462: '+' -> '-'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
   }
  },
- "dev-07": {
+ "dev-08": {
   "key": "dev-s3-strutils",
   "scenario": "S3",
   "ci_commit": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
@@ -186,16 +473,170 @@
    "listutils",
    "strutils"
   ],
-  "corpus_items": 149,
+  "corpus_items": 158,
   "notes": {
    "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L398",
+     "path": "boltons/strutils.py",
+     "lines": [
+      398,
+      398
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "657cf027b8b66332eec130f807317d0cf9d10e57",
+     "blame_commits": [
+      "657cf027b8b6"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L400",
+     "path": "boltons/strutils.py",
+     "lines": [
+      400,
+      401
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L403",
+     "path": "boltons/strutils.py",
+     "lines": [
+      403,
+      403
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": "@@ -402,19 +403,19 @@ def strip_ansi(text):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.strip_ansi#L410",
+     "path": "boltons/strutils.py",
+     "lines": [
+      410,
+      410
+     ],
+     "function": "strutils.strip_ansi",
+     "origin": "pre_existing",
+     "commit_sha": "3d55169c278299854e9d083dfb9cb2a9a6faacd4",
+     "blame_commits": [
+      "3d55169c2782"
+     ],
+     "diff_hunk": "@@ -402,19 +403,19 @@ def strip_ansi(text):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.bytes2human#L574",
+     "path": "boltons/strutils.py",
+     "lines": [
+      574,
+      574
+     ],
+     "function": "strutils.bytes2human",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+     "blame_commits": [
+      "f387b64c4b7c"
+     ],
+     "diff_hunk": "@@ -572,9 +568,12 @@ def bytes2human(nbytes, ndigits=0):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.html2text#L619",
+     "path": "boltons/strutils.py",
+     "lines": [
+      619,
+      619
+     ],
+     "function": "strutils.html2text",
+     "origin": "pre_existing",
+     "commit_sha": "7f526fac832595bb72053c54a1bd3a573b86a884",
+     "blame_commits": [
+      "7f526fac8325"
+     ],
+     "diff_hunk": "@@ -620,6 +619,7 @@ def html2text(html):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.MultiReplace.__init__#L1214",
+     "path": "boltons/strutils.py",
+     "lines": [
+      1214,
+      1214
+     ],
+     "function": "strutils.MultiReplace.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "f7e1cb8111e8b956d166862dc714f603e2f8aacd",
+     "blame_commits": [
+      "f7e1cb8111e8"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.MultiReplace.__init__#L1220",
+     "path": "boltons/strutils.py",
+     "lines": [
+      1220,
+      1221
+     ],
+     "function": "strutils.MultiReplace.__init__",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+     "blame_commits": [
+      "f387b64c4b7c"
+     ],
+     "diff_hunk": "@@ -1212,7 +1217,17 @@ class MultiReplace:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:strutils.MultiReplace.__init__#L1228",
+     "path": "boltons/strutils.py",
+     "lines": [
+      1228,
+      1228
+     ],
+     "function": "strutils.MultiReplace.__init__",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
+     "blame_commits": [
+      "f387b64c4b7c"
+     ],
+     "diff_hunk": "@@ -1212,7 +1217,17 @@ class MultiReplace:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "comment:strutils.bytes2human#L574",
+     "source_type": "source_file",
+     "text": "# pick the unit after rounding, so e.g. 1023.99K displays as 1M"
+    }
+   ],
    "mixed_verified": true,
    "mutant": "BarrelList._cur_size_limit line 105: '+' -> '-'"
   }
  },
- "dev-08": {
-  "key": "dev-s5-iterutils",
-  "scenario": "S5",
+ "dev-09": {
+  "key": "dev-s1-iterutils",
+  "scenario": "S1",
   "ci_commit": "6270b5e35ed902859df6188970eec5bee5ab73d1",
   "parent_commit": "37ba6b2a3adde5795dee9195b255a4cb1d342a7b",
   "failing_tests": [
@@ -213,9 +654,184 @@
   "modules": [
    "iterutils"
   ],
-  "corpus_items": 151,
+  "corpus_items": 164,
   "notes": {
-   "reference_repair_green": true
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:iterutils.split_iter#L181",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      181,
+      182
+     ],
+     "function": "iterutils.split_iter",
+     "origin": "pre_existing",
+     "commit_sha": "0ee86d9827d390f816dca98321ed228bf0ea0f3b",
+     "blame_commits": [
+      "0ee86d9827d3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.redundant#L957",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      957,
+      957
+     ],
+     "function": "iterutils.redundant",
+     "origin": "pre_existing",
+     "commit_sha": "3584ac9399f227a2a11b74153140ee171fd49783",
+     "blame_commits": [
+      "3584ac9399f2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_enter#L1105",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1105,
+      1105
+     ],
+     "function": "iterutils.default_enter",
+     "origin": "pre_existing",
+     "commit_sha": "6c56663fa6a6b43c7fc2be5445fa5c7ba7633fd6",
+     "blame_commits": [
+      "6c56663fa6a6"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_enter#L1115",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1115,
+      1116
+     ],
+     "function": "iterutils.default_enter",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+     "blame_commits": [
+      "6270b5e35ed9"
+     ],
+     "diff_hunk": "@@ -1063,7 +1108,15 @@ def default_enter(path, key, value):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_enter#L1118",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1118,
+      1118
+     ],
+     "function": "iterutils.default_enter",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+     "blame_commits": [
+      "6270b5e35ed9"
+     ],
+     "diff_hunk": "@@ -1063,7 +1108,15 @@ def default_enter(path, key, value):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_enter#L1123",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1123,
+      1124
+     ],
+     "function": "iterutils.default_enter",
+     "origin": "pre_existing",
+     "commit_sha": "80813c77be925a8e49cd36dad0ab13e303c12376",
+     "blame_commits": [
+      "80813c77be92"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_exit#L1129",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1129,
+      1130
+     ],
+     "function": "iterutils.default_exit",
+     "origin": "pre_existing",
+     "commit_sha": "6cecb926da7e922423a9d7657e22c635307cfd8a",
+     "blame_commits": [
+      "6cecb926da7e"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_exit#L1137",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1137,
+      1137
+     ],
+     "function": "iterutils.default_exit",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "6270b5e35ed902859df6188970eec5bee5ab73d1",
+     "blame_commits": [
+      "6270b5e35ed9"
+     ],
+     "diff_hunk": "@@ -1080,6 +1133,8 @@ def default_exit(path, key, old_parent, new_parent, new_items):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_exit#L1141",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1141,
+      1141
+     ],
+     "function": "iterutils.default_exit",
+     "origin": "pre_existing",
+     "commit_sha": "ed9f74ea4312cf1945a60e2e080ad4c429936838",
+     "blame_commits": [
+      "ed9f74ea4312"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:iterutils.default_exit#L1147",
+     "path": "boltons/iterutils.py",
+     "lines": [
+      1147,
+      1147
+     ],
+     "function": "iterutils.default_exit",
+     "origin": "pre_existing",
+     "commit_sha": "ed9f74ea4312cf1945a60e2e080ad4c429936838",
+     "blame_commits": [
+      "ed9f74ea4312"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:6270b5e35ed9",
+     "source_type": "commit_message",
+     "text": "iterutils: fix remap namedtuples, chunk_ranges edges, iterator bucketize, falsey keys, key-once untyped_sorted, negative maxsplit, fractional backoff; add chunked_filter (#585, #569, #563, #554, #552, #502, #496, #491)"
+    },
+    {
+     "evidence_id": "comment:iterutils.default_enter#L1118",
+     "source_type": "source_file",
+     "text": "# namedtuple, rebuilt in default_exit"
+    }
+   ]
   }
  },
  "test-01": {
@@ -242,7 +858,9 @@
   "notes": {
    "mutant": "daterange line 372: '<=' -> '<'",
    "mutant_in_changed_function": false,
-   "restored_green": true
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
   }
  },
  "test-02": {
@@ -269,7 +887,9 @@
   "notes": {
    "mutant": "FilePerms._FilePermProperty.__set__ line 129: '==' -> '!='",
    "mutant_in_changed_function": false,
-   "restored_green": true
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
   }
  },
  "test-03": {
@@ -296,9 +916,115 @@
    "fileutils",
    "pathutils"
   ],
-  "corpus_items": 124,
+  "corpus_items": 130,
   "notes": {
    "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:fileutils.rotate_file#L722",
+     "path": "boltons/fileutils.py",
+     "lines": [
+      722,
+      722
+     ],
+     "function": "fileutils.rotate_file",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "blame_commits": [
+      "1c2db4664d24"
+     ],
+     "diff_hunk": "@@ -718,13 +718,13 @@ def rotate_file(filename, *, keep: int = 5):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:pathutils.augpath#L111",
+     "path": "boltons/pathutils.py",
+     "lines": [
+      111,
+      111
+     ],
+     "function": "pathutils.augpath",
+     "origin": "pre_existing",
+     "commit_sha": "3e4f4119b5bba5289973a87088f1fce07804892b",
+     "blame_commits": [
+      "3e4f4119b5bb"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:pathutils.augpath#L114",
+     "path": "boltons/pathutils.py",
+     "lines": [
+      114,
+      114
+     ],
+     "function": "pathutils.augpath",
+     "origin": "pre_existing",
+     "commit_sha": "3e4f4119b5bba5289973a87088f1fce07804892b",
+     "blame_commits": [
+      "3e4f4119b5bb"
+     ],
+     "diff_hunk": "@@ -114,7 +114,7 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:pathutils.augpath#L119",
+     "path": "boltons/pathutils.py",
+     "lines": [
+      119,
+      119
+     ],
+     "function": "pathutils.augpath",
+     "origin": "pre_existing",
+     "commit_sha": "3e4f4119b5bba5289973a87088f1fce07804892b",
+     "blame_commits": [
+      "3e4f4119b5bb"
+     ],
+     "diff_hunk": "@@ -114,7 +114,7 @@ def augpath(path, suffix='', prefix='', ext=None, base=None, dpath=None,",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:pathutils.augpath#L121",
+     "path": "boltons/pathutils.py",
+     "lines": [
+      121,
+      121
+     ],
+     "function": "pathutils.augpath",
+     "origin": "pre_existing",
+     "commit_sha": "3e4f4119b5bba5289973a87088f1fce07804892b",
+     "blame_commits": [
+      "3e4f4119b5bb"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:pathutils.augpath#L128",
+     "path": "boltons/pathutils.py",
+     "lines": [
+      128,
+      128
+     ],
+     "function": "pathutils.augpath",
+     "origin": "pre_existing",
+     "commit_sha": "3e4f4119b5bba5289973a87088f1fce07804892b",
+     "blame_commits": [
+      "3e4f4119b5bb"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:1c2db4664d24",
+     "source_type": "commit_message",
+     "text": "fileutils: keep the requested number of rotate_file generations (#483)\n\nWorkstream-Session-Id: 01a1743e-7af6-7000-999f-e3695b3279ef\nWorkstream-Plan-Id: 2026-10-25-7167a83d96"
+    }
+   ],
    "mixed_verified": true,
    "mutant": "augpath line 117: '==' -> '!='"
   }
@@ -324,11 +1050,46 @@
    "fileutils",
    "timeutils"
   ],
-  "corpus_items": 137,
+  "corpus_items": 139,
   "notes": {
    "probe_passes_on_mutated_state": true,
    "decoy_function": "boltons.fileutils.rotate_file",
-   "mutant": "rotate_file line 706: '<' -> '<='"
+   "mutant": "rotate_file line 706: '<' -> '<='",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:fileutils.rotate_file#L722",
+     "path": "boltons/fileutils.py",
+     "lines": [
+      722,
+      722
+     ],
+     "function": "fileutils.rotate_file",
+     "origin": "pre_existing",
+     "commit_sha": "1c2db4664d24cea0f3f466772c730a5f78919b36",
+     "blame_commits": [
+      "1c2db4664d24"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:timeutils.isoparse#L155",
+     "path": "boltons/timeutils.py",
+     "lines": [
+      155,
+      157
+     ],
+     "function": "timeutils.isoparse",
+     "origin": "pre_existing",
+     "commit_sha": "1f37cce42f8d3146342ccbd45492d3b3d9c52698",
+     "blame_commits": [
+      "1f37cce42f8d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
   }
  }
 }

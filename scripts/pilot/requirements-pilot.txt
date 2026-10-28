@@ -1,0 +1,13 @@
+# Environment used to run the boltons tests when building the pilot dataset (scripts/pilot/build_dataset.py).
+# Python 3.12. Exact versions of the verified pilot environment, transitive dependencies included, so the environment
+# (and the dependency_lock_hash recorded in datasets/pilot_manifest.json) can be reproduced:
+#
+#   python3.12 -m venv <venv> && <venv>/bin/python -m pip install -r scripts/pilot/requirements-pilot.txt
+#
+# The builder refuses to run if `pip freeze` of the chosen interpreter differs from this file.
+# This is separate from the main project's requirements-lock.txt (which pins pytest 9.x for TestOrCode itself).
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+Pygments==2.21.0
+pytest==8.4.2

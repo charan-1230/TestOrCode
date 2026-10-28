@@ -1,14 +1,22 @@
 # Repository selection: toolz vs boltons
 
-Date: 2026-10-27. Status: **screening complete, decision conditional** (see section 1).
+Date: 2026-10-27 (pilot configuration superseded on 2026-10-28, see the notice below). Status: **screening complete, decision conditional** (see section 1).
 Raw numbers: `docs/screening_evidence/screening_summary.json`. Prototype episodes: `docs/screening_evidence/proto_episodes_boltons.json`.
 Scripts (re-runnable, one-off tooling): `scripts/screening/`. Candidate clones were kept outside this repo (`../../screening/`).
+
+> **Supersession notice (2026-10-28).** The pilot size and episode plan written in this record (**"6-12 episodes"** in sections 1 and 10 and the
+> manifest plan in section 10, item 1) are **superseded by the approved pilot: 13 episodes, 9 dev + 4 frozen test**
+> (dev: S1 x3, S2 x3, S3, S4, S5; test: S2 x2, S3, S4). 13 exceeds the 5-day plan's 6-12 target; the project team accepted that deviation.
+> The authoritative description is `datasets/README.md`, with the old-to-new changes in `docs/dataset_revision_audit.md`. Of the 7 verified S1
+> bases below, 6 are used (`353f6bef` as the S5, `7b577b0f`, `8408ab57`, `6270b5e3`, `f387b64c` as the S3, and `1c2db466` as the test S3);
+> `289edfcd` (partial) is unused. **What still stands:** the screening evidence, the scoring, and the decision to use boltons.
+> Nothing else in this record has been re-assessed.
 
 ## 1. Decision
 
 **`BOLTONS PRIMARY / TOOLZ BACKUP`, with a strong qualification: toolz is not an approved backup.**
 
-- **boltons is approved for the pilot** (6-12 episodes) and for S1-S5 construction. It is **not yet approved for the full 24-episodes-per-library scale**: it has 7 verified S1 bases against about 17 needed.
+- **boltons is approved for the pilot** (6-12 episodes *in this record; superseded by the 13-episode pilot, see the notice above*) and for S1-S5 construction. It is **not yet approved for the full 24-episodes-per-library scale**: it has 7 verified S1 bases against about 17 needed.
 - **toolz fails an essential requirement.** It has **0 verified S1 bases** (S1 is the foundation of S1, S3, S4 and S5, about 20 of every 24 episodes per library). Its aggregate score (59%) hides that blocker, so it is listed as backup only because the task format needs a second name. It can serve S2 alone.
 - **The proposal needs 3 evaluation libraries plus 1 dev library**, so no single repository is enough. The cheapest next step is to run the same harness (`scripts/screening/`) on 1-2 further candidates (the proposal names `tabulate`, `humanize`) to find a real backup and the other libraries.
 
@@ -154,6 +162,9 @@ Prototype shortcuts (shape-only): the S4 episode lists one changed file path wit
 7. **Selection bias in the audit**: S1 was verified exhaustively for `both` commits, but S2/S3/S4 base counts are upper-bound style (green baseline + code change, not each with a killed mutant).
 
 ## 10. Next actions (priority order, for the remaining days)
+
+> *Historical, written on 2026-10-27.* Item 1 (the 6-12 episode manifest from 7 S1 bases plus 3-4 S2 bases) is **superseded** by the delivered
+> 13-episode pilot (see the notice at the top and `datasets/README.md`). Items 2-5 were **not re-assessed** in this update and stand as written.
 
 1. **Today:** pin `boltons` at `d31d821d56c8f7756af9c30a864077f2e5855321`; build the pilot manifest from the 7 verified S1 bases plus 3-4 S2 bases (e.g. `bba729bf` and others from `docs/screening_evidence`), targeting 6-12 episodes, 5-run stability per episode.
 2. **Decide the base-reuse and relaxation policy** (section 9.1) before scaling.

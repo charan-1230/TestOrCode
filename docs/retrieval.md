@@ -7,9 +7,10 @@ Code: `src/testorcode/retrieval.py`, `src/testorcode/conditions.py`; check: `scr
 
 ## What is indexed
 The episode's materialised corpus (`EpisodeInput.corpus.items`, see `datasets/README.md`): last 100 non-merge commit messages, README,
-last 3 CHANGELOG sections, `docs/<module>.rst` and docstrings of the affected modules, all at or before the CI commit. Items beyond
+last 3 CHANGELOG sections, `docs/<module>.rst`, docstrings of the affected modules and (corpus `pilot-2`) source comments inside functions
+changed by the CI diff, all at or before the CI commit. Items beyond
 `history_cutoff_index` raise `HistoryCutoffError`. Evidence ids are the corpus ids (`msg:<sha12>`, `doc:<path>#<n>`, `changelog:<n>`,
-`docstring:<module>.<qualname>`); results carry only corpus ids and refs, so a citation is traceable. `corpus.items is None` (build from a
+`docstring:<module>.<qualname>`, `comment:<module>.<qualname>#L<line>`); results carry only corpus ids and refs, so a citation is traceable. `corpus.items is None` (build from a
 worktree at run time) raises `NotImplementedError`: deferred.
 
 ## API
@@ -40,22 +41,30 @@ Numbering follows the 5-day plan (A3 = no Integrity Guard).
 "disabled"; `[]` means enabled but empty); A1 -> commit message withheld. Assumption to confirm: A1 hides the message (detailed document:
 "Analyst sees only failing output and diff").
 
-## Measured on the pilot dev split (smoke test: 3 episodes with gold ids)
-Rank of the gold evidence (the CI commit's message), `python scripts/eval_retrieval.py`:
+## Measured on the pilot dev split (smoke test: 4 episodes with gold ids; corpus `pilot-2`)
+Rank of the best gold item, `python scripts/eval_retrieval.py` (ids as of dataset revision 2; gold types in brackets):
 
-| Episode | naive (B1) | intent | intent, per group (oracle) |
-|---|---:|---:|---:|
-| dev-04 | 9 | 2 | 2 |
-| dev-05 | 48 | 1 | 10 |
-| dev-07 | not in top 50 | 1 | 1 |
+| Episode | gold | naive (B1) | intent | intent, per group (oracle) |
+|---|---|---:|---:|---:|
+| dev-05 (S1, tbutils) | message | 10 | 2 | 4 |
+| dev-06 (S1, cacheutils) | message | 48 | 1 | 10 |
+| dev-08 (S3, strutils) | source comment only | not in top 50 | not in top 50 | 33 |
+| dev-09 (S1, iterutils) | message + source comment | 14 | 1 | 13 |
+
+Mean Recall@k over the 4 episodes (dev-09 has two gold ids): naive 0.00 at k = 1, 3, 5, 8; intent 0.38 / 0.62 / 0.62 / 0.62.
 
 - The naive result reproduces the proposal's claim: the failing test's text retrieves tests and docstrings, not intent.
-- Caveats: only 3 episodes; the query design (drop failure text from intent queries, group function names) was chosen on exactly these
-  dev episodes, so treat the intent numbers as optimistic until checked once on the frozen test split (`--final`).
-- **The gold item is the CI commit's own message, which the agent already receives in `ci_event.commit_message`.** Querying with that
-  message is degenerate (rank 1 by construction), so all numbers above are message-free. Where gold evidence is a docs/changelog item the
-  measurement will be more meaningful.
-- Per-group numbers assume Triage groups failures correctly (oracle grouping from gold function names).
+- Caveats: only 4 episodes; the query design (drop failure text from intent queries, group function names) was chosen on the first three
+  dev episodes of the earlier revision, so treat the intent numbers as optimistic until checked once on the frozen test split (`--final`).
+- **Message gold is degenerate:** the gold item is the CI commit's own message, which the agent already receives in
+  `ci_event.commit_message`. Querying with that message is rank 1 by construction, so all numbers above are message-free.
+- **Source-comment gold (dataset revision 2):** comments are indexed by their text plus `<path>::<qualname>`. A comment added by the CI diff
+  is also visible verbatim in the diff, so it is not independent of the input either. dev-08's comment gold ("pick the unit after
+  rounding...") shares few words with function-name and diff-identifier queries, so keyword retrieval misses it (best rank 33, not in
+  the top 8). This is a consequence of the evidence policy, not a tuning target: report Recall@k per gold type (`msg:` / `comment:`).
+  Aligning `source_ref` with the docstring convention (`<path>::<qualname>`) improved that rank from 49 (when it was `<path>` only) to 33.
+- Per-group numbers assume Triage groups failures correctly (oracle grouping from gold function names); for dev-06 and dev-09 grouping
+  made ranks worse than ungrouped.
 
 ## Not done (hooks only)
 Embeddings or Voyage reranking (add as another `Retriever` and fuse with `reciprocal_rank_fusion`; `sentence-transformers` is an optional

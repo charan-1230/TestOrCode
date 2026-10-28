@@ -12,59 +12,66 @@
   "dev": [
    {
     "id": "dev-01",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "353f6befb4739f1d3583a8ce0ab5db761babd411",
+    "key": "dev-s5-tbutils"
+   },
+   {
+    "id": "dev-02",
     "scenario": "S2",
     "difficulty": "easy",
     "ci_commit": "0c88f25323de3ff85bcca844b9ce6cd171a80392",
     "key": "dev-s2-c"
    },
    {
-    "id": "dev-02",
+    "id": "dev-03",
     "scenario": "S2",
     "difficulty": "medium",
     "ci_commit": "c0d580df13d3d2d3d99a7769828afc7176127d90",
     "key": "dev-s2-b"
    },
    {
-    "id": "dev-03",
+    "id": "dev-04",
     "scenario": "S2",
     "difficulty": "easy",
     "ci_commit": "bba729bf4539afc993a6410bdf8074b28707004a",
     "key": "dev-s2-a"
    },
    {
-    "id": "dev-04",
+    "id": "dev-05",
     "scenario": "S1",
     "difficulty": "easy",
     "ci_commit": "7b577b0f3cc7adc2418733ce5c7dcdf6af82187d",
     "key": "dev-s1-tbutils"
    },
    {
-    "id": "dev-05",
+    "id": "dev-06",
     "scenario": "S1",
     "difficulty": "easy",
     "ci_commit": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
     "key": "dev-s1-cacheutils"
    },
    {
-    "id": "dev-06",
+    "id": "dev-07",
     "scenario": "S4",
     "difficulty": "hard",
     "ci_commit": "2061906940c5630f459c22fb18d1165113361fa7",
     "key": "dev-s4-cacheutils"
    },
    {
-    "id": "dev-07",
+    "id": "dev-08",
     "scenario": "S3",
     "difficulty": "hard",
     "ci_commit": "f387b64c4b7c4267ea94bcfcd229923ab2f598ea",
     "key": "dev-s3-strutils"
    },
    {
-    "id": "dev-08",
-    "scenario": "S5",
-    "difficulty": "medium",
+    "id": "dev-09",
+    "scenario": "S1",
+    "difficulty": "easy",
     "ci_commit": "6270b5e35ed902859df6188970eec5bee5ab73d1",
-    "key": "dev-s5-iterutils"
+    "key": "dev-s1-iterutils"
    }
   ],
   "test": [
@@ -122,11 +129,13 @@
    "urlutils"
   ]
  },
+ "corpus_version": "pilot-2",
+ "source_comment_policy": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
  "files_sha256": {
-  "pilot_dev.jsonl": "6d3a59a5a04c7f76739e2e8dc2971e437fc720acfb0eb50bb2b1099d7e0dffad",
-  "pilot_dev_agent_view.jsonl": "8d1e905f554c19248596c06abaaa8699379e5b36d09ba380a1ed1f07a7b39c64",
-  "pilot_test.jsonl": "e0bc94fb291f0733343277158fd475a44e8c5244161cfe3bde43795410b162be",
-  "pilot_test_agent_view.jsonl": "6ea7f9c60df62e6d4c99ed8b8e0bac064b9ec85e5fa17cae36aa362417084cb3"
+  "pilot_dev.jsonl": "c6f0a20631cd5e50bd3fab21773c27d2a172b875c464bf94ae8d9e0e2afddffc",
+  "pilot_dev_agent_view.jsonl": "87d1398471c02cb913dc1277f9581c0a44370d69b1c2f993718ddacb0603afcd",
+  "pilot_test.jsonl": "fa3f12230cb27fd33c8dad88fabe8fc3727042338833e16aae188430d54649e7",
+  "pilot_test_agent_view.jsonl": "e21791d4fdae54dc86fa42bf97799ac8f08223cff671670d9e94b7401f9f9fa8"
  },
  "frozen_test_split": "datasets/pilot_test*.jsonl: do not tune on it; regenerate only deliberately"
 }

@@ -224,8 +224,12 @@ def test_code_under_test_cannot_forge_the_probe(tmp_path: Path, payload: str) ->
     assert result.status is ProbeStatus.FAILED and not result.verified
 
 
+# The directory name matters: pytest numbers its temp dirs (pytest-1, pytest-2, ...), and a number such as 14 or 1444 puts
+# "-14" into the path, which legitimately appears in the spec's ``import_roots``.  The check must therefore look at the
+# semantic fields, never at a substring of the whole serialised spec.
+@pytest.mark.parametrize("dirname", ["plain", "pytest-14", "pytest-1444"])
 def test_expected_values_never_enter_the_sandbox(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, dirname: str
 ) -> None:
     """The call specification written for the sandbox contains arguments only."""
     from testorcode.tools import verification
@@ -236,12 +240,26 @@ def test_expected_values_never_enter_the_sandbox(
         captured["spec"] = (tmp_dir / "probe" / "spec.json").read_text()
         raise RuntimeError("stop before executing anything")
 
+    base = tmp_path / dirname
+    base.mkdir()
     monkeypatch.setattr(verification, "_execute", fake_execute)
     with pytest.raises(RuntimeError):
-        verify_behaviour(episode(tmp_path), PROBE, timeout_seconds=30, isolation="trusted-host")
+        verify_behaviour(episode(base), PROBE, timeout_seconds=30, isolation="trusted-host")
     spec = json.loads(captured["spec"])
+    # Only these fields exist; none can carry an expected value or an expected exception.
+    assert set(spec) == {"module", "function", "import_roots", "cases"}
     assert [set(case) for case in spec["cases"]] == [{"args", "kwargs"}] * 3
-    assert "-14" not in captured["spec"] and "TypeError" not in captured["spec"]
+    cases = json.dumps(spec["cases"])
+    assert "-14" not in cases and "TypeError" not in cases
+    # Every field except the path-bearing import_roots is also checked verbatim.
+    non_path = json.dumps({k: v for k, v in spec.items() if k != "import_roots"})
+    assert "-14" not in non_path and "TypeError" not in non_path
+    # Regression guard for the temp-directory counter: whenever the path contains "-14" (always for the two pytest-NN
+    # variants, and for "plain" whenever pytest's own counter is in the 14xx range) it DOES reach the spec, inside
+    # import_roots.  That is exactly why the old whole-spec substring check failed intermittently.
+    assert ("-14" in str(base)) == ("-14" in captured["spec"])
+    if dirname != "plain":
+        assert "-14" in captured["spec"]
 
 
 @needs_bwrap

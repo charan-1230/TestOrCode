@@ -21,6 +21,7 @@ from testorcode.schemas.episode_schemas import (
     DecisionLabel,
     Episode,
     EpisodeInput,
+    EvidenceSourceType,
     RepairDirection,
     ScenarioType,
     find_leaked_ground_truth,
@@ -44,8 +45,9 @@ def scenarios(eps: list[Episode]) -> Counter:
 
 
 def test_split_sizes_and_scenario_mix(episodes) -> None:
-    assert len(episodes["dev"]) == 8 and len(episodes["test"]) == 4
-    assert scenarios(episodes["dev"]) == {S.S1_OUTDATED_TEST: 2, S.S2_INJECTED_REGRESSION: 3, S.S3_MIXED: 1,
+    # 13 episodes in total: this exceeds the 5-day plan's 6-12 target (documented in datasets/README.md).
+    assert len(episodes["dev"]) == 9 and len(episodes["test"]) == 4
+    assert scenarios(episodes["dev"]) == {S.S1_OUTDATED_TEST: 3, S.S2_INJECTED_REGRESSION: 3, S.S3_MIXED: 1,
                                           S.S4_DECOY_REGRESSION: 1, S.S5_INTENT_STRIPPED: 1}
     assert scenarios(episodes["test"]) == {S.S2_INJECTED_REGRESSION: 2, S.S3_MIXED: 1, S.S4_DECOY_REGRESSION: 1}
 
@@ -188,3 +190,113 @@ def test_loaders_refuse_the_wrong_kind_of_file() -> None:
 def test_loader_types(views: dict[str, list[EpisodeInput]]) -> None:
     assert all(isinstance(v, EpisodeInput) for vs in views.values() for v in vs)
     assert Path(agent_view_path("dev")).name == "pilot_dev_agent_view.jsonl"
+
+
+# ---- revision 2: source-comment evidence policy, dev-08 as S1, S5 on 353f6bef -------------------------------------------
+
+DEV_08_SHA = "6270b5e35ed902859df6188970eec5bee5ab73d1"  # iterutils remap namedtuples (was S5, now S1)
+DEV_07_SHA = "f387b64c4b7c4267ea94bcfcd229923ab2f598ea"  # strutils bytes2human + listutils mutant (S3)
+S5_SHA = "353f6befb4739f1d3583a8ce0ab5db761babd411"  # tbutils ParsedException.from_string
+S5_WITHHELD_MESSAGE = "Exception message should not start with whitespace"
+
+
+def by_commit(episodes, sha: str) -> Episode:
+    (ep,) = [e for eps in episodes.values() for e in eps if e.agent_input.ci_event.commit.sha == sha]
+    return ep
+
+
+def test_corpus_version_and_source_comment_boundary(episodes) -> None:
+    """Eligible: comments in production source (boltons/). Excluded: anything from test files."""
+    for ep in (e for eps in episodes.values() for e in eps):
+        corpus = ep.agent_input.corpus
+        assert corpus.corpus_version == "pilot-2"
+        ids = [i.evidence_id for i in corpus.items or []]
+        assert len(ids) == len(set(ids))
+        assert not any(i.source_type is EvidenceSourceType.TEST_FILE for i in corpus.items or [])
+        for item in (i for i in corpus.items or [] if i.evidence_id.startswith("comment:")):
+            assert item.source_type is EvidenceSourceType.SOURCE_FILE
+            path, _, function = item.source_ref.partition("::")  # same convention as docstring items
+            assert path.startswith("boltons/") and path.endswith(".py") and function
+            assert item.text and item.text.lstrip().startswith("#")
+            assert item.line_start is not None and item.line_end is not None and item.line_start <= item.line_end
+            assert item.commit_sha and item.commit_index is not None and item.commit_index <= corpus.history_cutoff_index
+            assert not item.source_ref.startswith("tests/")
+
+
+def test_gold_evidence_resolves_and_sits_in_the_labelled_function(episodes) -> None:
+    for ep in (e for eps in episodes.values() for e in eps):
+        corpus = {i.evidence_id: i for i in ep.agent_input.corpus.items or []}
+        for label in ep.ground_truth.per_test_labels:
+            for gid in label.gold_evidence_ids or []:
+                assert gid in corpus, f"{ep.episode_id}: gold {gid} is not an agent-visible corpus item"
+                if gid.startswith("comment:"):
+                    module_function = label.function_qualname.removeprefix("boltons.")
+                    assert gid.startswith(f"comment:{module_function}#"), (ep.episode_id, gid)
+
+
+def test_dev_07_update_half_is_supported_by_the_bytes2human_comment_only(episodes) -> None:
+    ep = by_commit(episodes, DEV_07_SHA)
+    corpus = {i.evidence_id: i for i in ep.agent_input.corpus.items or []}
+    update = [lbl for lbl in ep.ground_truth.per_test_labels if lbl.expected_action is DecisionLabel.UPDATE_TEST]
+    assert len(update) == 1 and update[0].function_qualname == "boltons.strutils.bytes2human"
+    (gold,) = update[0].gold_evidence_ids or []
+    assert gold.startswith("comment:strutils.bytes2human#")
+    assert "pick the unit after rounding" in (corpus[gold].text or "")
+    fix = [lbl for lbl in ep.ground_truth.per_test_labels if lbl.expected_action is DecisionLabel.FIX_CODE]
+    assert fix and all(not lbl.gold_evidence_ids for lbl in fix)
+
+
+def test_dev_08_is_a_clean_s1_with_agent_visible_gold_evidence(episodes) -> None:
+    ep = by_commit(episodes, DEV_08_SHA)
+    assert ep.scenario is S.S1_OUTDATED_TEST and ep.stream_id == "pilot-dev"
+    gt, ci = ep.ground_truth, ep.agent_input.ci_event
+    assert {lbl.expected_action for lbl in gt.per_test_labels} == {DecisionLabel.UPDATE_TEST}
+    assert {lbl.gold_direction for lbl in gt.per_test_labels} == {RepairDirection.UPDATE_TEST}
+    assert not gt.stripped_evidence and gt.expected_episode_outcome is None and gt.reference_repairs
+    assert ci.commit_message and "fix remap namedtuples" in ci.commit_message  # the real, unstripped message
+    corpus = {i.evidence_id: i for i in ep.agent_input.corpus.items or []}
+    gold = set().union(*(set(lbl.gold_evidence_ids or []) for lbl in gt.per_test_labels))
+    assert f"msg:{DEV_08_SHA[:12]}" in gold
+    (comment,) = [g for g in gold if g.startswith("comment:")]
+    assert "namedtuple, rebuilt in default_exit" in (corpus[comment].text or "")
+
+
+def test_s5_on_353f6bef_is_provisional_and_hides_the_message(episodes) -> None:
+    ep = by_commit(episodes, S5_SHA)
+    assert ep.scenario is S.S5_INTENT_STRIPPED
+    gt = ep.ground_truth
+    assert {lbl.expected_action for lbl in gt.per_test_labels} == {DecisionLabel.ESCALATE}
+    assert ep.agent_input.visible_memory == [] and ep.agent_input.ci_event.commit_message == "tbutils: update"
+    assert {s.source_type for s in gt.stripped_evidence} == {EvidenceSourceType.COMMIT_MESSAGE}
+    assert S5_WITHHELD_MESSAGE not in json.dumps(ep.agent_payload()), "the withheld message is visible to the agent"
+    assert not any(S5_WITHHELD_MESSAGE in (i.text or "") for i in ep.agent_input.corpus.items or [])
+    assert (gt.note or "").startswith("PROVISIONAL"), "S5 must stay provisional until history access is tested"
+
+
+def test_verification_file_stores_only_a_hash_of_the_withheld_message() -> None:
+    """The human-only verification file must not carry the withheld S5 message in clear text (authorised check: datasets/README.md)."""
+    raw = (DATASETS_DIR / "pilot_verification.json").read_text()
+    assert S5_WITHHELD_MESSAGE not in raw
+    ((_, record),) = [(k, v) for k, v in json.loads(raw).items() if v["scenario"] == "S5"]
+    notes = record["notes"]
+    assert "real_message" not in notes
+    assert notes["withheld_message_sha256"] == hashlib.sha256(S5_WITHHELD_MESSAGE.encode("utf-8")).hexdigest()
+    assert notes["withheld_message_chars"] == len(S5_WITHHELD_MESSAGE)
+
+
+def test_history_access_tripwire_for_the_provisional_s5() -> None:
+    """The agent-facing history tools are stubs, so the S5 leak path (git_show of the CI commit) cannot be tested yet.
+
+    When they are implemented this test fails ON PURPOSE: replace it with a regression test that, with the cutoff at the
+    parent commit, git_log/git_show/git_blame cannot return the CI commit's message or test diff, then clear the
+    PROVISIONAL note on the S5 episode.
+    """
+    from testorcode.tools import git_tools
+
+    for call in (
+        lambda: git_tools.git_log(Path("."), cutoff_commit="a1b2c3d4"),
+        lambda: git_tools.git_show(Path("."), "a1b2c3d4", cutoff_commit="a1b2c3d4"),
+        lambda: git_tools.git_blame(Path("."), "x.py", 1, 1, cutoff_commit="a1b2c3d4"),
+    ):
+        with pytest.raises(NotImplementedError):
+            call()
