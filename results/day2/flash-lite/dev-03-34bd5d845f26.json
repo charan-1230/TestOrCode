@@ -1,0 +1,388 @@
+{
+  "schema_version": "2.0.0",
+  "provenance": {
+    "run_id": "dev-03-34bd5d845f26",
+    "episode_id": "dev-03",
+    "condition": "B1",
+    "seed": 42,
+    "model_id": "gemini-3.5-flash-lite",
+    "provider": "gemini",
+    "dataset_version": "pilot@8d1e905f554c",
+    "split": "dev",
+    "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+    "prompt_template_version": "b1-v2",
+    "agent_config_version": null,
+    "retrieval_config_version": null,
+    "index_version": null,
+    "environment_ref": null,
+    "started_at": "2026-10-28T16:41:07.835113Z",
+    "ended_at": "2026-10-28T16:42:59.250334Z"
+  },
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": null,
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "mapped_by": null,
+      "stability_runs": 5,
+      "decision": "ESCALATE",
+      "guard_decision": null,
+      "guard_reasons": [],
+      "integrity": null,
+      "patch_ids": [],
+      "verification_run_ids": [],
+      "disposition": "not_applied",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "group_id": "g1",
+      "predicted_action": "ESCALATE",
+      "hypothesis": "regression",
+      "predicted_behaviour": null,
+      "cited_evidence_ids": [],
+      "contradicting_evidence_ids": [],
+      "rationale": "FIX_CODE cites no evidence of the expected behaviour the change contradicts; the absence of intent evidence alone is not enough",
+      "decided_by": "single_agent"
+    }
+  ],
+  "retrieved_evidence": [
+    {
+      "evidence_id": "docstring:strutils.strip_ansi",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.strip_ansi",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 372,
+      "line_end": 389,
+      "snippet": "Strips ANSI escape codes from *text*. Useful for the occasional\ntime when a log or redirected output accidentally captures console\ncolor codes and the like.\n\n>>> strip_ansi('\u001b[0m\u001b[1;36mart\u001b[46;34m')\n'art'\n\nSupports str, bytes and bytearray content as input. Returns the\nsame type as the input.\n\nThere's a lot of ANSI art available for testing on `sixteencolors.net`_.\nThis function does not interpret or render ANSI art, but you can do so with\n`ansi2img`_ or `escapes.js`_.\n\n.. _sixteencolors.net: http://sixteencolors.net\n.. _ansi2img: http://www.bedroomlan.org/projects/ansi2img\n.. _escapes.js: htt",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 63.43586455493091,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.is_uuid",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.is_uuid",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 711,
+      "line_end": 723,
+      "snippet": "Check the argument is either a valid UUID object or string.\n\nArgs:\n    obj (object): The test target. Strings and UUID objects supported.\n    version (int): The target UUID version, set to 0 to skip version check.\n\n>>> is_uuid('e682ccca-5a4c-4ef2-9711-73f9ad1e15ea')\nTrue\n>>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9')\nFalse\n>>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9', version=1)\nTrue",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 29.81690512326629,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1127,
+      "line_end": 1181,
+      "snippet": "MultiReplace is a tool for doing multiple find/replace actions in one pass.\n\nGiven a mapping of values to be replaced it allows for all of the matching\nvalues to be replaced in a single pass which can save a lot of performance\non very large strings. In addition to simple replace, it also allows for\nreplacing based on regular expressions.\n\nKeyword Arguments:\n\n:type regex: bool\n:param regex: Treat search keys as regular expressions [Default: False]\n:type flags: int\n:param flags: flags to pass to the regex engine during compile\n\nDictionary Usage::\n\n    from boltons import strutils\n    s = strutil",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 24.082277557322293,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.is_ascii",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.is_ascii",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 443,
+      "line_end": 453,
+      "snippet": "Check if a string or bytestring, *text*, is composed of ascii\ncharacters only. Raises :exc:`ValueError` if argument is not text.\n\nArgs:\n    text (str): The string to be checked.\n\n>>> is_ascii('Beyoncé')\nFalse\n>>> is_ascii('Beyonce')\nTrue",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 4,
+      "score": 23.176199584026815,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:2d904513f5a9",
+      "source_type": "commit_message",
+      "source_ref": "2d904513f5a9b00bb0023ea6ca0bb234325cc69b",
+      "commit_sha": "2d904513f5a9b00bb0023ea6ca0bb234325cc69b",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "fix partial method test error for py3.13+",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 5,
+      "score": 23.172898330523825,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:1408e27ac533",
+      "source_type": "commit_message",
+      "source_ref": "1408e27ac533e8a07b1e675c4c81cce08b961c04",
+      "commit_sha": "1408e27ac533e8a07b1e675c4c81cce08b961c04",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix including docs and tests in sdist (#353)\n\nFix the `recursive-include` statements in `MANIFEST.in` to actually\ninclude full documentation and test tree.  The statements without\na list of globs were ineffective, and only `.py` files were included.\nEffectively, docs were missing completely and tests missed required\ndata files (e.g. `json_test_data.txt`).",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 6,
+      "score": 23.041464493804156,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.camel2under",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.camel2under",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 70,
+      "line_end": 75,
+      "snippet": "Converts a camelcased string to underscores. Useful for turning a\nclass name into a function name.\n\n>>> camel2under('BasicParseTest')\n'basic_parse_test'",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 7,
+      "score": 21.943972686627074,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.html2text",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.html2text",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 603,
+      "line_end": 609,
+      "snippet": "Strips tags from HTML text, returning markup-free text. Also, does\na best effort replacement of entities like \"&nbsp;\"\n\n>>> r = html2text(u'<a href=\"#\">Test &amp;<em>(Δ&#x03b7;&#956;&#x03CE;)</em></a>')\n>>> r == u'Test &(Δημώ)'\nTrue",
+      "retrieval_query": "tests/test_strutils.py::test_strip_ansi\nTypeError: 'NoneType' object is not callable\ntests/test_strutils.py:9: in test_strip_ansi\n    assert strutils.strip_ansi(\nboltons/strutils.py:404: in strip_ansi\n    cleaned = target_type(cleaned, 'utf-8')\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: 'NoneType' object is not callable",
+      "retrieval_method": "bm25",
+      "rank": 8,
+      "score": 19.89355292853307,
+      "support": "unknown",
+      "freshness": "unknown"
+    }
+  ],
+  "patches": [],
+  "test_runs": [
+    {
+      "run_id": "baseline",
+      "phase": "pre_repair",
+      "status": "failed",
+      "selector": "tests/test_strutils.py::test_strip_ansi",
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    },
+    {
+      "run_id": "final-suite",
+      "phase": "final",
+      "status": "failed",
+      "selector": "tests",
+      "passed": 440,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "final_test_status": "failed",
+  "integrity": {
+    "guard_ran": false,
+    "guard_decision": "not_run",
+    "weakening": {
+      "checks_run": false,
+      "assertions_before": null,
+      "assertions_after": null,
+      "removed_assertions": null,
+      "added_skip_markers": null,
+      "added_xfail_markers": null,
+      "loosened_comparisons": null,
+      "swallowed_exceptions": null,
+      "deleted_tests": null,
+      "weakening_detected": null
+    },
+    "prohibited_edits": {
+      "checks_run": false,
+      "files_modified": [],
+      "out_of_scope_files": [],
+      "test_files_modified": []
+    },
+    "mutation": {
+      "status": "not_run",
+      "mutants_total": null,
+      "killed_by_reference_tests": null,
+      "killed_by_repaired_tests": null
+    },
+    "tests_untouched_for_fix_code": null,
+    "evidence_requirement_met": null,
+    "rejection_reasons": []
+  },
+  "memory_reads": [],
+  "memory_writes": [],
+  "tool_events": [
+    {
+      "event_id": "tool-1",
+      "step_index": 0,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 222.2
+    },
+    {
+      "event_id": "tool-2",
+      "step_index": 1,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 216.6
+    },
+    {
+      "event_id": "tool-3",
+      "step_index": 2,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 269.1
+    },
+    {
+      "event_id": "tool-4",
+      "step_index": 3,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 218.9
+    },
+    {
+      "event_id": "tool-5",
+      "step_index": 4,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 216.8
+    },
+    {
+      "event_id": "tool-6",
+      "step_index": 5,
+      "tool": "search_repo",
+      "called_by": "single_agent",
+      "arguments": {
+        "query_chars": 337,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 2.7
+    },
+    {
+      "event_id": "tool-7",
+      "step_index": 6,
+      "tool": "run_tests",
+      "called_by": "orchestrator",
+      "arguments": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 2073.8
+    }
+  ],
+  "usage": {
+    "reported": true,
+    "input_tokens": 5034,
+    "output_tokens": 371,
+    "total_tokens": 5405,
+    "llm_calls": 1
+  },
+  "errors": [],
+  "outcome": {
+    "status": "escalated",
+    "escalation": {
+      "trigger": "insufficient_evidence",
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "evidence_found_ids": [],
+      "evidence_missing": [
+        "g1: no cited evidence that the change was intended"
+      ],
+      "competing_hypotheses": [
+        "g1 analyst: regression: A regression was introduced in boltons/strutils.py where `if target_type and target_type != type(cleaned):` was accidentally changed to `if target_type or target_type != type(cleaned):`, causing `target_type` (which is `None` for regular strings) to be called as a function (`NoneType` object is not callable).",
+        "g1 alternative: outdated_test: the change was intended and the test encodes the old behaviour (UPDATE_TEST)"
+      ],
+      "summary": "g1: FIX_CODE cites no evidence of the expected behaviour the change contradicts; the absence of intent evidence alone is not enough"
+    },
+    "maintainer_approved": null,
+    "revisions_used": 0
+  },
+  "evaluation": null
+}

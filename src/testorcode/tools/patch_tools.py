@@ -41,9 +41,17 @@ from typing import Final
 from testorcode.errors import PatchError, ScopeViolationError, ToolError
 from testorcode.logging_config import get_logger
 from testorcode.schemas.contracts import PatchValidation
-from testorcode.schemas.episode_schemas import DecisionLabel, EditPolicy, PatchScope, PathClass
+from testorcode.schemas.episode_schemas import (
+    DecisionLabel,
+    EditPolicy,
+    PatchScope,
+    PathClass,
+    ToolName,
+)
+from testorcode.schemas.result_schemas import ToolCallStatus
 from testorcode.tools.git_tools import require_worktree_root, run_git
 from testorcode.tools.patch_content import content_problems, forward_states
+from testorcode.tools.trace import tool_call
 
 logger = get_logger(__name__)
 
@@ -509,6 +517,15 @@ def _read_record(root: Path, unified_diff: str) -> PatchScope | None:
 # --------------------------------------------------------------------------- #
 
 
+def _with_final_newline(unified_diff: str) -> str:
+    """Contracts strip edge whitespace (``PatchProposal.unified_diff`` loses its final
+    newline), and ``git apply`` calls such a diff corrupt.  Non-strings pass through
+    so ``_inspect`` reports them."""
+    if isinstance(unified_diff, str) and unified_diff and not unified_diff.endswith("\n"):
+        return unified_diff + "\n"
+    return unified_diff
+
+
 def validate_patch(
     worktree_path: Path, unified_diff: str, *, policy: EditPolicy, scope: PatchScope
 ) -> PatchValidation:
@@ -519,18 +536,26 @@ def validate_patch(
     Raises:
         ScopeViolationError: ``scope`` is not a ``PatchScope`` (e.g. an ESCALATE).
         ToolError: the worktree is not a git work-tree root, or git cannot run.
+        BudgetExceededError: the episode's tool-call budget is used up.
     """
-    scope = _coerce_scope(scope)
-    root = require_worktree_root(worktree_path)
-    validation = _inspect(root, unified_diff, policy=policy, scope=scope).to_validation()
-    logger.info(
-        "validate_patch: %d paths, valid=%s, allowed=%s, %d reasons",
-        len(validation.changed_paths),
-        validation.valid,
-        validation.allowed,
-        len(validation.rejection_reasons),
-    )
-    return validation
+    with tool_call(ToolName.APPLY_PATCH, operation="validate", scope=str(scope) if scope is not None else None) as call:
+        scope = _coerce_scope(scope)
+        root = require_worktree_root(worktree_path)
+        unified_diff = _with_final_newline(unified_diff)
+        validation = _inspect(root, unified_diff, policy=policy, scope=scope).to_validation()
+        logger.info(
+            "validate_patch: %d paths, valid=%s, allowed=%s, %d reasons",
+            len(validation.changed_paths),
+            validation.valid,
+            validation.allowed,
+            len(validation.rejection_reasons),
+        )
+        if not validation.ok:
+            call.fail(
+                ToolCallStatus.NOT_PERMITTED if not validation.allowed else ToolCallStatus.INVALID_ARGUMENTS,
+                "; ".join(validation.rejection_reasons),
+            )
+        return validation
 
 
 def apply_patch(
@@ -546,21 +571,23 @@ def apply_patch(
         PatchError: the patch is malformed or does not apply.
         ToolError: the worktree is not a git work-tree root, or git cannot run.
     """
-    scope = _coerce_scope(scope)
-    root = require_worktree_root(worktree_path)
-    inspection = _inspect(root, unified_diff, policy=policy, scope=scope)
-    if inspection.scope_problems:
-        raise ScopeViolationError("patch rejected: " + "; ".join(inspection.reasons()))
-    if not inspection.valid or not inspection.paths:
-        raise PatchError("patch rejected: " + "; ".join(inspection.reasons()))
-    _git_apply(root, unified_diff, inspection.paths, reverse=False)
-    try:
-        _write_record(root, unified_diff, scope, inspection.paths)
-    except OSError:
-        _git_apply(root, unified_diff, inspection.paths, reverse=True)
-        raise ToolError("could not record the applied patch; it was undone") from None
-    logger.info("apply_patch: applied %d paths (scope=%s)", len(inspection.paths), scope)
-    return inspection.to_validation()
+    with tool_call(ToolName.APPLY_PATCH, operation="apply", scope=str(scope) if scope is not None else None):
+        scope = _coerce_scope(scope)
+        root = require_worktree_root(worktree_path)
+        unified_diff = _with_final_newline(unified_diff)
+        inspection = _inspect(root, unified_diff, policy=policy, scope=scope)
+        if inspection.scope_problems:
+            raise ScopeViolationError("patch rejected: " + "; ".join(inspection.reasons()))
+        if not inspection.valid or not inspection.paths:
+            raise PatchError("patch rejected: " + "; ".join(inspection.reasons()))
+        _git_apply(root, unified_diff, inspection.paths, reverse=False)
+        try:
+            _write_record(root, unified_diff, scope, inspection.paths)
+        except OSError:
+            _git_apply(root, unified_diff, inspection.paths, reverse=True)
+            raise ToolError("could not record the applied patch; it was undone") from None
+        logger.info("apply_patch: applied %d paths (scope=%s)", len(inspection.paths), scope)
+        return inspection.to_validation()
 
 
 def revert_patch(
@@ -590,24 +617,26 @@ def revert_patch(
             cannot be reversed cleanly (e.g. the files changed since).
         ToolError: the worktree is not a git work-tree root, or git cannot run.
     """
-    if scope is not None:
-        scope = _coerce_scope(scope)
-    root = require_worktree_root(worktree_path)
-    recorded = _read_record(root, unified_diff) if isinstance(unified_diff, str) else None
-    if scope is not None and recorded is not None and scope is not recorded:
-        raise ScopeViolationError(
-            f"revert rejected: patch was applied with scope {recorded}, not {scope}"
-        )
-    effective = scope or recorded
-    inspection = _inspect(root, unified_diff, policy=policy, scope=effective, reverse=True)
-    if inspection.scope_problems:
-        raise ScopeViolationError("revert rejected: " + "; ".join(inspection.reasons()))
-    if not inspection.valid or not inspection.paths:
-        raise PatchError("revert rejected: " + "; ".join(inspection.reasons()))
-    if recorded is None:
-        raise PatchError(
-            "revert rejected: this patch was not applied by apply_patch in this worktree"
-        )
-    _git_apply(root, unified_diff, inspection.paths, reverse=True)
-    _record_path(root, unified_diff).unlink(missing_ok=True)
-    logger.info("revert_patch: reverted %d paths (scope=%s)", len(inspection.paths), recorded)
+    with tool_call(ToolName.APPLY_PATCH, operation="revert", scope=str(scope) if scope is not None else None):
+        if scope is not None:
+            scope = _coerce_scope(scope)
+        root = require_worktree_root(worktree_path)
+        unified_diff = _with_final_newline(unified_diff)
+        recorded = _read_record(root, unified_diff) if isinstance(unified_diff, str) else None
+        if scope is not None and recorded is not None and scope is not recorded:
+            raise ScopeViolationError(
+                f"revert rejected: patch was applied with scope {recorded}, not {scope}"
+            )
+        effective = scope or recorded
+        inspection = _inspect(root, unified_diff, policy=policy, scope=effective, reverse=True)
+        if inspection.scope_problems:
+            raise ScopeViolationError("revert rejected: " + "; ".join(inspection.reasons()))
+        if not inspection.valid or not inspection.paths:
+            raise PatchError("revert rejected: " + "; ".join(inspection.reasons()))
+        if recorded is None:
+            raise PatchError(
+                "revert rejected: this patch was not applied by apply_patch in this worktree"
+            )
+        _git_apply(root, unified_diff, inspection.paths, reverse=True)
+        _record_path(root, unified_diff).unlink(missing_ok=True)
+        logger.info("revert_patch: reverted %d paths (scope=%s)", len(inspection.paths), recorded)

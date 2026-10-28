@@ -1,0 +1,52 @@
+{
+  "run_id": "dev-03-5ca5fe845ea4",
+  "episode_id": "dev-03",
+  "scenario": "S2",
+  "condition": "A2",
+  "model_id": "gemini-3.5-flash",
+  "run_status": "api_failure",
+  "final_test_status": "not_run",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": false,
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "llm_calls": null
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "patches": [],
+  "predictions": [],
+  "escalation": null,
+  "errors": [
+    {
+      "error_id": "err-1",
+      "category": "rate_limit",
+      "message": "RateLimitError (HTTP 429)",
+      "operation": "intent_analysis:g1",
+      "tool": null,
+      "retries": 0,
+      "recovered": false,
+      "fatal": true,
+      "counted_against_agent": false
+    }
+  ],
+  "worktree_changed_files_after_run": [
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/strutils.py"
+  ]
+}

@@ -1,0 +1,331 @@
+{
+  "run_id": "dev-03-193e8f2b9296",
+  "episode_id": "dev-03",
+  "scenario": "S2",
+  "condition": "A2",
+  "model_id": "gemini-3.5-flash",
+  "prompt_version": "triage-v1+intent-v4+repair-v5+guard-v1",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": "boltons.strutils.strip_ansi",
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "mapped_by": "traceback",
+      "stability_runs": 5,
+      "decision": "ESCALATE",
+      "guard_decision": "escalate",
+      "guard_reasons": [
+        "post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+      ],
+      "integrity": {
+        "guard_ran": true,
+        "guard_decision": "escalate",
+        "weakening": {
+          "checks_run": true,
+          "assertions_before": 0,
+          "assertions_after": 0,
+          "removed_assertions": 0,
+          "added_skip_markers": 0,
+          "added_xfail_markers": null,
+          "loosened_comparisons": null,
+          "swallowed_exceptions": null,
+          "deleted_tests": null,
+          "weakening_detected": false
+        },
+        "prohibited_edits": {
+          "checks_run": true,
+          "files_modified": [
+            "boltons/strutils.py"
+          ],
+          "out_of_scope_files": [],
+          "test_files_modified": []
+        },
+        "mutation": {
+          "status": "not_run",
+          "mutants_total": null,
+          "killed_by_reference_tests": null,
+          "killed_by_repaired_tests": null
+        },
+        "tests_untouched_for_fix_code": true,
+        "evidence_requirement_met": null,
+        "rejection_reasons": []
+      },
+      "patch_ids": [
+        "g1-r0"
+      ],
+      "verification_run_ids": [
+        "g1-r0-post",
+        "g1-r0-regression"
+      ],
+      "disposition": "reverted",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "run_status": "escalated",
+  "final_test_status": "failed",
+  "guard_decision": "escalate",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 7889,
+    "output_tokens": 441,
+    "total_tokens": 10697,
+    "llm_calls": 3
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 441,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "final",
+      "status": "failed",
+      "passed": 440,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "g1-r0",
+      "scope": "src",
+      "files": [
+        "boltons/strutils.py"
+      ],
+      "status": "reverted",
+      "apply_error": null
+    }
+  ],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "predicted": "ESCALATE",
+      "hypothesis": "regression",
+      "direction": "FIX_CODE",
+      "cited": [
+        "msg:bba729bf4539"
+      ],
+      "decided_by": "integrity_guard",
+      "gold": "FIX_CODE",
+      "match": false,
+      "direction_match": true
+    }
+  ],
+  "escalation": {
+    "trigger": "insufficient_evidence",
+    "failing_test_ids": [
+      "tests/test_strutils.py::test_strip_ansi"
+    ],
+    "evidence_found_ids": [
+      "msg:bba729bf4539"
+    ],
+    "evidence_missing": [
+      "g1: independent verification: post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+    ],
+    "competing_hypotheses": [
+      "g1 analyst: regression: The change in strip_ansi replaced 'and' with 'or' in 'if target_type and target_type != type(cleaned):', causing target_type(cleaned, 'utf-8') to be called with None when target_type is None. The commit message indicates the commit was intended only to speed up MultiReplace match lookup, making this change an unintended regression.",
+      "g1 alternative: The change to strip_ansi was intended, but there is no evidence or documentation supporting a behavior change in strip_ansi."
+    ],
+    "summary": "g1: integrity guard escalated: post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+  },
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 14,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "intent_analyst",
+      "status": "ok",
+      "args": {
+        "query_chars": 32,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "intent_analyst",
+      "status": "ok",
+      "args": {
+        "query_chars": 75,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "intent_analyst",
+      "status": "ok",
+      "args": {
+        "query_chars": 34,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "repairer",
+      "status": "ok",
+      "args": {
+        "operation": "validate",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "repairer",
+      "status": "ok",
+      "args": {
+        "operation": "apply",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "integrity_guard",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "integrity_guard",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "orchestrator",
+      "status": "ok",
+      "args": {
+        "operation": "revert",
+        "scope": null,
+        "budget": "exempt"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "orchestrator",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "error": null
+    }
+  ],
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/strutils.py"
+  ]
+}

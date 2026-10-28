@@ -20,15 +20,19 @@ src/testorcode/
 │   ├── contracts.py         agent/tool messages (new)             implemented
 │   └── schemas.py           alias of episode_schemas (existing)
 ├── llm_client.py        LLMClient, OpenAICompatibleClient,Fake   implemented
-├── orchestrator.py      run_episode (state-machine scaffolding)   scaffolding
+├── orchestrator.py      run_episode (state machine, conditions)   implemented (see below)
 ├── retrieval.py         Retriever, build_retriever                implemented (BM25)
 ├── memory.py            MemoryStore                               stub
 ├── conditions.py        ConditionProfile, episode_for_condition    implemented
 ├── evaluation.py        evaluate_run, summarize                   stub
 ├── agents/              triage, intent_analyst, repairer,
-│                        integrity_guard                           stub
+│                        integrity_guard                           implemented (see below)
+│   ├── prompts.py       four role prompts + B1 prompt, reply models implemented
+│   ├── tools.py         model-callable search_repo/read_file/run_tests implemented
+│   ├── tool_loop.py     bounded JSON-step tool loop               implemented
+│   └── single_agent.py  B1 baseline agent                         implemented
 └── tools/               pytest_runner, patch_tools, sandbox,
-                         patch_content, verification               implemented
+                         patch_content, verification, trace        implemented
                          git_tools (run_git helpers only;
                          git_log/show/blame)                       stub
 ```
@@ -48,9 +52,9 @@ Use the existing names; do not redefine them elsewhere.
 | `Hypothesis` | `Hypothesis(kind, explanation)` | `contracts` |
 | `FailureGroup` | `FailureGroup(group_id, function_qualname, test_ids)` | `episode_schemas` |
 | failure details | `FailingTest` (traceback, assertion diff, stability) | `episode_schemas` |
-| group + context | `FailureGroupDetail(group, failing_tests, affected_files, context_commits, diff_context)` | `contracts` |
+| group + context | `FailureGroupDetail(group, failing_tests, affected_files, context_commits, diff_context, mapped_by)` | `contracts` |
 | `Evidence` (corpus) | `EvidenceItem(evidence_id, source_type, source_ref, commit_sha, line range, text)` | `episode_schemas` |
-| `Evidence` (retrieved) | `RetrievedEvidence` (adds query, method, rank, score, support, freshness) | `result_schemas` |
+| `Evidence` (retrieved) | `RetrievedEvidence` (adds query, method, rank, score, support (the agent's **claimed** reading, not verified), freshness) | `result_schemas` |
 | `TestRunResult` (executed) | `PytestExecution` (selectors, command, status, exit_code, timed_out, counts, failures) | `contracts` |
 | `TestRunResult` (logged) | `TestRunResult` (written via `PytestExecution.to_record`) | `result_schemas` |
 | `IntentAnalysis` | `IntentAnalysis` | `contracts` |
@@ -60,8 +64,8 @@ Use the existing names; do not redefine them elsewhere.
 | `MemoryRecord` | `MemoryRecord` (function, behaviour signature, direction, probe, evidence ids, approved-at commit, `flagged_stale`, `supersedes`) | `episode_schemas` |
 | `MemoryReadResult` | `MemoryReadResult(checks: MemoryRecordCheck[])`; `.usable` lists only valid records | `contracts` |
 | write approval | `MemoryApproval` | `contracts` |
-| `EpisodeContext` | `EpisodeContext` (built from `EpisodeInput`) | `contracts` |
-| `EpisodeResult` | `ExperimentRunRecord` (one JSONL line per run) | `result_schemas` |
+| `EpisodeContext` | `EpisodeContext` (built from `EpisodeInput`; `stability_runs` from `environment.stability_runs`) | `contracts` |
+| `EpisodeResult` | `ExperimentRunRecord` (one JSONL line per run; additive `failure_groups: FailureGroupRecord[]`, `unstable_test_ids`) | `result_schemas` |
 | `EvaluationResult` | `RunEvaluation` (per run), `ConditionSummary` (aggregate, provisional) | `result_schemas`, `evaluation` |
 
 Rules enforced by validators (see the tests):
@@ -87,16 +91,18 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 
 | Module | Signature | Owner branch |
 |---|---|---|| `tools.patch_tools` | `validate_patch`, `apply_patch`, `revert_patch` | sandbox |
-| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None, retriever=None, agents=None, patch_tools=None) -> ExperimentRunRecord` (the last three are optional injections for tests) | agent-core |
+| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None, retriever=None, agents=None, patch_tools=None, maintainer=None) -> ExperimentRunRecord` (`retriever`/`agents`/`patch_tools` are injections for tests; `maintainer(group, decision, guard_result) -> bool` is the harness's simulated maintainer) | agent-core |
 | `llm_client` | `LLMClient.complete_structured(*, role, system, user, response_model) -> LLMResponse[T]`; `create_llm_client(settings)` | agent-core |
 | `agents.triage` | `run_triage(context, ci_event, *, llm, settings) -> TriageResult` | agent-core |
 | `agents.intent_analyst` | `analyse_intent(context, group, *, retriever, memory, llm) -> IntentAnalysis` | agent-core |
-| `agents.repairer` | `propose_repair(context, group, analysis, *, llm, previous_rejection=None) -> RepairerOutput` | agent-core |
-| `agents.integrity_guard` | `verify_repair(context, group, analysis, proposal, *, llm=None) -> GuardResult`; `authorize_memory_write(result, record, *, maintainer_approved) -> MemoryApproval` | agent-core |
+| `agents.repairer` | `propose_repair(context, group, analysis, *, llm, previous_rejection=None, rejection_reasons=(), tools=None) -> RepairerOutput` (`previous_rejection` = a Guard rejection; `rejection_reasons` = a validation/apply/direction rejection; `tools: AgentTools` enables the tool loop, at most 4 model calls per attempt) | agent-core |
+| `agents.single_agent` | `run_single_agent(context, ci_event, tests, *, llm, tools, rejection_reasons=()) -> B1Step \| None` (B1; used by `orchestrator.SingleAgentRun`) | agent-core |
+| `agents.tools` | `AgentTools(context, *, retriever, timeout_seconds, python_executable=None)`: `search_repo(query)`, `read_file(path, start_line, end_line)`, `run_tests(selectors)` → text for the model; permission/argument checks; every call is a `ToolEvent` | agent-core |
+| `agents.integrity_guard` | `verify_repair(context, group, analysis, proposal, *, llm=None, python_executable=None, timeout_seconds=120, probe=None, known_failures=frozenset()) -> GuardResult`; `verify_group(context, group, known_failures, *, timeout_seconds, python_executable=None) -> (targeted, regression, problems)` (shared with B1); `suite_selectors(context)`; `build_memory_record(context, group, analysis, proposal, result) -> MemoryRecord` (stub: probe derivation is memory work); `authorize_memory_write(result, record, *, maintainer_approved) -> MemoryApproval` | agent-core |
 | `tools.pytest_runner` | `run_tests(worktree_path, selectors, *, timeout_seconds, python_executable=None, isolation="auto", docker_image=None) -> PytestExecution`; `run_pytest(...)` also returns bounded stdout/stderr and the isolation used. `auto` = Docker (image + reachable daemon) else bubblewrap else `ToolError`; `"trusted-host"` only for trusted fixtures | sandbox |
 | `tools.git_tools` | `git_log`, `git_show`, `git_blame` (every call takes `cutoff_commit`) | sandbox |
-| `tools.patch_tools` | `validate_patch`, `apply_patch(worktree_path, diff, *, policy, scope) -> PatchValidation`, `revert_patch(worktree_path, diff, *, policy=None, scope=None)` (only undoes the exact diff `apply_patch` applied in that worktree, with the recorded scope); `scope_for_decision(decision)`; `is_protected_path(path)` (config, CI, dependency, generated and backup files at any depth, rejected on top of `EditPolicy`; the Integrity Guard should reuse it). `tools.patch_content`: a test-only patch may change **only expected literal values in existing `assert <expr> ==/!= <literal>` statements** (AST comparison; no new/deleted/renamed/non-Python test files); anything else is rejected and should be escalated | sandbox |
-| `tools.verification` | `verify_behaviour(worktree_path, probe: TrustedProbe | None, *, timeout_seconds, policy=None, isolation="auto", docker_image=None) -> TrustedVerification`; `trusted_outcome(post_repair_run, verification) -> TrustedVerification`. A raw `PytestExecution.PASSED` is never approval: only `TrustedVerification.verified` (`ProbeStatus.PASSED` from a harness-supplied probe run in a fresh sandbox) may recommend `GuardDecision.APPROVE`; no/failed/unverifiable probe → `ESCALATE`/`REJECT`. The Integrity Guard itself is not implemented | sandbox |
+| `tools.patch_tools` | `validate_patch`, `apply_patch(worktree_path, diff, *, policy, scope) -> PatchValidation`, `revert_patch(worktree_path, diff, *, policy=None, scope=None)` (only undoes the exact diff `apply_patch` applied in that worktree, with the recorded scope); `scope_for_decision(decision)`; `is_protected_path(path)` (config, CI, dependency, generated and backup files at any depth, rejected on top of `EditPolicy`; the Integrity Guard should reuse it). `tools.patch_content`: a test-only patch may change **only (a) expected literal values in existing `assert <expr> ==/!= <literal>` statements and (b) literal keyword arguments of setup calls in test-function bodies (added or changed, never removed; not inside asserts, decorators or pytest/mock/assert/skip-style helpers)** (AST comparison; no new/deleted/renamed/non-Python test files, no changed positional inputs); anything else is rejected and should be escalated. The Integrity Guard additionally rejects a test patch that changes any test function outside the failure group | sandbox |
+| `tools.verification` | `verify_behaviour(worktree_path, probe: TrustedProbe | None, *, timeout_seconds, policy=None, isolation="auto", docker_image=None) -> TrustedVerification`; `trusted_outcome(post_repair_run, verification) -> TrustedVerification`. A raw `PytestExecution.PASSED` is never approval: only `TrustedVerification.verified` (`ProbeStatus.PASSED` from a harness-supplied probe run in a fresh sandbox) may recommend `GuardDecision.APPROVE`; no/failed/unverifiable probe → `ESCALATE`/`REJECT`. The Integrity Guard (`agents/integrity_guard.py`, Human 1) is implemented and calls `trusted_outcome` as its last step; see §8 | sandbox |
 | `retrieval` | `build_retriever(corpus, worktree_path=None) -> Retriever`; `Retriever.search(query, *, top_k)`; implemented (BM25), see `docs/retrieval.md` | agent-core |
 | `memory` | `MemoryStore.read(context, function_qualname) -> MemoryReadResult`; `MemoryStore.write(record, approval)` | agent-core |
 | `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes) -> list[ConditionSummary]` | evaluation |
@@ -184,13 +190,108 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** every body in `llm_client`, `orchestrator`, `memory`, `evaluation`,
-`agents/*` and `tools/*`; `ConditionSummary` is provisional.
+**Deferred (raise `NotImplementedError`):** `memory.MemoryStore`, `evaluation`, `tools.git_tools.git_log/git_show/
+git_blame`, and building a retrieval corpus from a worktree; `ConditionSummary` is provisional.
+`integrity_guard.build_memory_record` is a stub, so an approved repair's memory write is logged as `write_error`.
+
+**Agents.** Signatures are as in section 3.
+- **Triage** runs the CI's failing tests `context.stability_runs` times (5 for the pilot; `triage.stable_failures`, shared
+  with B1). PASSED and FAILED are the only test outcomes: a test is kept only if it failed in every run (`stable=True`),
+  one that passes in some run is unstable. A run ending in ERROR / COLLECTION_ERROR / TIMEOUT raises `ToolError` /
+  `ToolTimeoutError` (run status `tool_failure`), never "unstable". Tests are mapped to the changed function they exercise:
+  `target_function`, else the deepest traceback frame inside a changed function, else one model call (`TriageGrouping`);
+  a test with no function found gets its own group (`mapped_by="unmapped"`), never a shared one by test file.
+- **Intent Analyst** makes one model call per group (`IntentAnalysis`, incl. `alternative_explanation`). Decision policy
+  (proposal section 7), enforced by `contracts.decision_policy_problem` in the orchestrator (an escalation, not a parse
+  error): UPDATE_TEST must cite positive intent evidence (contract validator); **FIX_CODE must cite the evidence of the
+  expected behaviour the change breaks** (a docstring, doc, changelog entry, an unrelated CI commit message, a memory
+  record) — the mere absence of intent evidence escalates; an id cited both for and against escalates as contradictory.
+  Citations are checked to exist (`unknown_evidence_ids`), not to support the claim.
+- **Repairer**: inside `run_episode` it gets `tools` and runs a bounded tool loop (`agents.tool_loop`, at most 4 model
+  calls per attempt; each reply is one JSON step, a tool call or the final `patch`/`escalate`); running out of steps is an
+  escalation. It returns snippet edits; the module builds the diff and re-asks once if they cannot be placed.
+- **Integrity Guard**: test-level verification by `verify_group` — (1) the group's own failing tests must pass, (2) a
+  whole-suite regression run (the policy's test roots) may fail only on `known_failures` (other groups' still-unresolved
+  CI failures; groups already accepted are excluded, so they must keep passing). Then the deterministic checks (scope,
+  lost assertions/skips, test functions outside the group, FIX_CODE touching tests, UPDATE_TEST without evidence) →
+  REJECT; then an optional model review that can only lower the verdict to ESCALATE; then `trusted_outcome`: APPROVE only
+  with a passing harness `TrustedProbe`, otherwise ESCALATE (see `docs/day2-human1.readme.md` §7 for the open design).
+  `GuardResult.post_repair_run` is the targeted run, `GuardResult.regression_run` the suite run.  The content checks
+  judge **only the current patch**: the pre-patch state is rebuilt by reversing this patch's diff on the worktree
+  (`git apply -R --recount` in a scratch copy), so repairs of earlier, already accepted groups are part of both states
+  and never blamed on a later group.  A later patch that edits an earlier group's test is still rejected (test function
+  outside the group).  The orchestrator passes `python_executable=settings.test_python` and
+  `timeout_seconds=settings.test_timeout_seconds` to every Guard call (default or injected).
+
+**Prompts** (`agents/prompts.py`). Each role has `*_SYSTEM`, `build_*_user` and a version; `PROMPT_VERSION`
+(`triage-v1+intent-v4+repair-v5+guard-v1`) goes into `RunProvenance.prompt_template_version` for the multi-agent
+pipeline; B1 runs record `b1-v2` (`B1_SYSTEM`). All share `COMMON_RULES` (green build is not the goal, cite only listed
+ids, proposal 11.1 unsafe actions). Every field of a reply model is required. Bump a role's version whenever its prompt
+changes.
+
+**Orchestrator.**
+- *Conditions:* `settings.experiment_condition` selects the episode view (`conditions.episode_for_condition`) and memory
+  (`profile_for(...).memory`; otherwise `memory` is ignored). Each run class executes only its own conditions:
+  `EpisodeRun` → A2 (the `Settings` default) and FULL (needs a `MemoryStore`); `SingleAgentRun` → B1. `run_episode`
+  picks the class. Conditions without a code path (A1, A3, and the non-proposal B0, B2, A4, A5, trivial), or a
+  condition sent to the wrong class, fail explicitly as `ORCHESTRATOR_ERROR` at stage `setup`.
+- *B1* (`SingleAgentRun`): shared `stable_failures` baseline, one agent with standard RAG (`naive_query` through
+  `search_repo`) and the same three tools, at most `TOOL_STEPS_PER_TEST` (6) model calls per failing test it is asked
+  about; its own grouping (`B1Decision` items); the same evidence and decision-policy checks; one placement re-ask for
+  edits that cannot be placed (like the Repairer); the same patch validation/application, `verify_group` verification
+  and revision limit; no Guard (`integrity.guard_ran=False`, `decided_by=single_agent`).
+- *Revisions:* a rejection before the Guard (unsupported evidence id, direction mismatch, validation, apply) reaches the
+  Repairer as `rejection_reasons`; a Guard rejection as `previous_rejection`.
+- *Evidence:* the analysis's cited/contradicting ids and the patch's `evidence_ids` must all be ids that were retrieved
+  in this episode or usable memory records (`unknown_evidence_ids`); an unsupported analysis id escalates, an
+  unsupported patch id rejects the patch.
+- *Tools:* `tools.trace` records every tool call of the episode (`run_tests`, `read_file`, `apply_patch` with
+  `operation=validate|apply|revert`, `search_repo`, `memory.read`, `memory.write`) as a `ToolEvent` with the acting role
+  (refused calls as `not_permitted`, bad arguments as `invalid_arguments`) and its budget category in
+  `arguments["budget"]`: `agent` (calls made while Intent Analysis, the Repairer or B1's decision loop act; limited by
+  `budget.max_tool_calls`), `operational` (Triage stability runs, patch validate/apply, Guard or B1 verification runs,
+  memory write; limited by a finite safety cap, `OPERATIONAL_CAP_FACTOR` (3) × `max_tool_calls`, or 200 without a
+  budget) and `exempt` (reverts and the one final suite run; never blocked). Either limit raises
+  `BudgetExceededError` (`budget_exhausted`). `read_file` refuses `..`,
+  absolute paths, `.git`, `.env*`, and symlinks whose target is one of those or lies outside the worktree.
+- *Final state:* after every group, `PatchTools.run_suite` runs the whole suite once (`TestRunPhase.FINAL`,
+  `run_id="final-suite"`); `final_test_status` is that run's status.  If it cannot start (NOT_RUN) or cannot execute the
+  tests (ERROR / COLLECTION_ERROR / TIMEOUT, kept as the final status) the run is `tool_failure` with a non-fatal
+  `final_suite` error (category `tool_error`/`timeout`).  If an accepted group's tests fail in it, that group's
+  `disposition` is `failed_final_verification` with `final_failing_test_ids`, a `final_suite` `validation_error` names
+  the groups and tests, and the run is `incomplete`; decisions and verification history are kept.  Group verifications
+  stay in `test_runs` as `<patch>-post` (targeted) and `<patch>-regression`. `run_suite=None` (fake tools in unit
+  tests) skips it.
+- *Approval:* after a Guard APPROVE, `maintainer` decides; on approval the Guard's record is written through
+  `authorize_memory_write`. Every attempt is logged in `memory_writes`; `outcome.maintainer_approved` is set.
+- *Escalation summary:* `evidence_missing` and `competing_hypotheses` (the analyst's and its `alternative_explanation`,
+  or a generic opposite) are filled.
+- *Per-group record (for Human 3):* each `failure_groups[]` entry (`FailureGroupRecord`, additive, all new fields
+  optional so older records load) has `decision`, `guard_decision` (last verdict), `guard_reasons` (all verdicts, in
+  order), `integrity` (last `IntegrityReport`), `patch_ids` (`<group>-r<n>`), `verification_run_ids` (that group's
+  `-post`/`-regression` runs), `disposition` (`accepted`, `failed_final_verification`, `reverted`, `not_applied`;
+  `null` if the group did not finish) and `final_failing_test_ids`.  `ExperimentRunRecord.integrity` still holds only
+  the last Guard verdict of the run.
+- *Triage/Analyst outputs in the record:* `failure_groups`, `unstable_test_ids`; `retrieved_evidence[].support` is the
+  agent's **claimed** reading (`supports` for cited ids, `contradicts` for contradicting ids; run-level, an id cited by
+  one group and contradicted by another stays `unknown`). It is not evidence that the item supports the claim; citation
+  faithfulness belongs to the evaluation harness.
+- *Provenance:* `prompt_template_version` and `code_revision` (git sha, `-dirty` with uncommitted changes); the CLI adds
+  `split` and `dataset_version`.
+
+**Configuration.** `TEST_PYTHON` and `TEST_TIMEOUT_SECONDS` reach every test run of an episode (Triage, the Repairer's
+`run_tests`, the Guard, the final suite), whether it is started by `run_episode` or the CLI. `LLM_API_KEY_1..9` are
+used in order (then `LLM_API_KEY`): a 429 naming a per-day quota, or rate limits that outlast the retries, switch to
+the next key; with every key exhausted the call is an `LLMRateLimitError` (API failure). Logs name key positions only; `LLM_STRUCTURED_MODE`,
+`LLM_MAX_RETRIES`, `LLM_TIMEOUT_SECONDS`. `patch_tools` restores
+the final newline that contract stripping removes, and the orchestrator reverts with the episode's `EditPolicy`.
 
 ## 9. Open decisions for the team
 
-1. `EXPERIMENT_CONDITION` defaults to `B1` to match `.env.example`; confirm that is the intended default.
-2. Where agent prompts and the tool-call loop live (inside each agent, or a shared helper in `llm_client`).
+1. ~~`EXPERIMENT_CONDITION` default~~ Resolved: `A2` in `Settings` and `.env.example` (A2 and B1 run; FULL needs memory).
+2. ~~Where agent prompts and the tool-call loop live~~ Resolved: all four role prompts are in `agents/prompts.py`;
+   shared file helpers are in `agents/_common.py`; the tool loop is `agents/tool_loop.py` (JSON steps validated by
+   Pydantic, no provider function calling). The Repairer and B1 use it; the Intent Analyst still retrieves in code.
 3. Whether `Settings.log_file` should default to a per-run file under `results/`.
 4. `ConditionSummary` shape (evaluation branch).
 5. `requirements-lock.txt` is both tracked and listed in `.gitignore`; the README says to commit it.

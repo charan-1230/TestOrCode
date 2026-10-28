@@ -1,0 +1,190 @@
+{
+  "run_id": "dev-05-422c122c92a3",
+  "episode_id": "dev-05",
+  "scenario": "S1",
+  "condition": "B1",
+  "model_id": "gemini-3.5-flash",
+  "prompt_version": "b1-v2",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "failure_groups": [],
+  "unstable_test_ids": [],
+  "run_status": "api_failure",
+  "final_test_status": "not_run",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 32377,
+    "output_tokens": 477,
+    "total_tokens": 33757,
+    "llm_calls": 5
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_cacheutils.py::test_unscoped_cached_dec"
+      ]
+    }
+  ],
+  "patches": [],
+  "predictions": [],
+  "escalation": null,
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 11,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 370,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "read_file",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "path": "tests/test_cacheutils.py",
+        "start_line": 250,
+        "end_line": 285,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "read_file",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "path": "boltons/cacheutils.py",
+        "start_line": 450,
+        "end_line": 500,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 6,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "read_file",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "path": "boltons/cacheutils.py",
+        "start_line": 525,
+        "end_line": 570,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 3,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    }
+  ],
+  "errors": [
+    {
+      "error_id": "err-1",
+      "category": "provider_outage",
+      "message": "APIConnectionError",
+      "operation": "repair",
+      "tool": null,
+      "retries": 0,
+      "recovered": false,
+      "fatal": true,
+      "counted_against_agent": false
+    }
+  ],
+  "worktree_changed_files_after_run": [
+    "boltons/cacheutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/cacheutils.py"
+  ]
+}

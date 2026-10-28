@@ -166,18 +166,46 @@ cp .env.example .env
 
 Add the required API configuration to `.env` according to the selected provider.
 
-For example:
+The configuration used for the Day-1 runs (Gemini through its OpenAI-compatible endpoint; no extra SDK):
 
 ```dotenv
-LLM_PROVIDER=openai_compatible
+LLM_PROVIDER=gemini
 LLM_API_KEY=your_api_key_here
-LLM_BASE_URL=
-LLM_MODEL=
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+LLM_MODEL=gemini-3.5-flash
+LLM_STRUCTURED_MODE=json_schema
+LLM_MAX_RETRIES=6
+LLM_TIMEOUT_SECONDS=90
+# Interpreter for the target repository's tests (see section 8a); the venv path, not its resolved symlink.
+TEST_PYTHON=/abs/path/to/boltons-venv/bin/python
 ```
+
+`gemini-2.5-flash` is no longer available to new keys. The free tier allows about 20 requests per day per model
+and per Google Cloud project, and often answers 503 under load; the client retries those. One episode takes 2-4 calls.
 
 Never commit `.env`, API keys, access tokens, or other secrets to Git. Keep `.env.example` free of real credentials.
 
 The hosted model should be accessed through one common client interface. Before selecting the final model, verify structured output support, tool-calling behavior, availability, rate limits, and API access.
+
+## 8a. Run a Pilot Episode End to End
+
+The pilot episodes run against a pinned clone of boltons with its own interpreter (the dataset was verified with
+pytest 8.4.2; this project's lock pins a newer pytest). From the project root:
+
+```bash
+git clone https://github.com/mahmoud/boltons ../boltons
+git -C ../boltons checkout d31d821d56c8f7756af9c30a864077f2e5855321
+python3.12 -m venv ../boltons-venv && ../boltons-venv/bin/python -m pip install pytest==8.4.2
+
+python scripts/llm_smoke.py --episode dev-05          # one live model call, validated as IntentAnalysis
+python scripts/run_episode.py --episode dev-05        # failure -> decision -> patch/escalation -> rerun
+```
+
+`run_episode.py` materialises the episode's CI state in `../episode-worktrees/<episode>`, runs the tests in the
+bubblewrap sandbox, and writes `results/day1/<run_id>.json` (the `ExperimentRunRecord`) plus a `.summary.json` that
+scores the prediction against the gold label after the run. Runs are recorded as condition A2 (no memory) until the
+memory store exists. If your shell exports a `PYTHONPATH` (e.g. ROS), `unset PYTHONPATH` first; the sandbox ignores it
+but direct `pytest` calls do not. Results and verdicts so far: [`docs/day1_overview.md`](docs/day1_overview.md).
 
 ## 9. Project Structure
 

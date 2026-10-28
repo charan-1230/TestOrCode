@@ -1,0 +1,45 @@
+{
+  "kind": "llm_smoke",
+  "at": "2026-10-27T12:21:07.431216+00:00",
+  "episode_id": "dev-05",
+  "provider": "gemini",
+  "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+  "requested_model": "gemini-3.5-flash",
+  "model_id": "gemini-3.5-flash",
+  "structured_mode": "json_schema",
+  "prompt_version": "intent-v1",
+  "latency_seconds": 36.8,
+  "usage": {
+    "reported": true,
+    "input_tokens": 3208,
+    "output_tokens": 198,
+    "total_tokens": 5683,
+    "llm_calls": 1
+  },
+  "retrieved_evidence_ids": [
+    "msg:8408ab57e6c9",
+    "doc:docs/cacheutils.rst#2",
+    "docstring:cacheutils.ThresholdCounter",
+    "docstring:cacheutils.ThresholdCounter.get",
+    "docstring:cacheutils.LRI",
+    "docstring:cacheutils.ThresholdCounter.add",
+    "docstring:cacheutils.LRU",
+    "docstring:cacheutils.cachedmethod"
+  ],
+  "cited_ids_not_retrieved": [],
+  "validated_as": "IntentAnalysis",
+  "response": {
+    "group_id": "g1",
+    "hypothesis": {
+      "kind": "outdated_test",
+      "explanation": "The code change deliberately updated CachedFunction to honor scoped caching by including self.func in key_args when self.scoped is True, as stated in the commit message msg:8408ab57e6c9. Previously, self.scoped was ignored, allowing different cached functions to incorrectly share cache hits. The test test_unscoped_cached_dec encoded the old buggy behavior where cache entries were shared across functions without specifying scoped=False."
+    },
+    "expected_behaviour": "CachedFunction should include self.func in cache keys when scoped is True, so separate functions using the same cache object do not share cache entries unless scoped=False is explicitly configured.",
+    "cited_evidence_ids": [
+      "msg:8408ab57e6c9"
+    ],
+    "contradicting_evidence_ids": [],
+    "confidence": 0.95,
+    "recommended_decision": "UPDATE_TEST"
+  }
+}

@@ -1,0 +1,404 @@
+{
+  "schema_version": "2.0.0",
+  "provenance": {
+    "run_id": "dev-05-0419c79d8012",
+    "episode_id": "dev-05",
+    "condition": "B1",
+    "seed": 42,
+    "model_id": "gemini-3.5-flash",
+    "provider": "gemini",
+    "dataset_version": "pilot@8d1e905f554c",
+    "split": "dev",
+    "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+    "prompt_template_version": "b1-v2",
+    "agent_config_version": null,
+    "retrieval_config_version": null,
+    "index_version": null,
+    "environment_ref": null,
+    "started_at": "2026-10-28T16:30:59.931270Z",
+    "ended_at": "2026-10-28T16:33:41.545014Z"
+  },
+  "failure_groups": [],
+  "unstable_test_ids": [],
+  "predictions": [],
+  "retrieved_evidence": [
+    {
+      "evidence_id": "doc:docs/cacheutils.rst#2",
+      "source_type": "documentation",
+      "source_ref": "docs/cacheutils.rst",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Continuing in the theme of cache tunability and experimentation,\n``cacheutils`` also offers a pluggable way to cache function return\nvalues: the :func:`cached` function decorator and the\n:func:`cachedmethod` method decorator.\n\n.. autofunction:: boltons.cacheutils.cached\n.. autofunction:: boltons.cacheutils.cachedmethod\n\nSimilar functionality can be found in Python 3.4's\n:func:`functools.lru_cache` decorator, but the functools approach does\nnot support the same cache strategy modification, nor does it support\nsharing the cache object across multiple functions.\n\n.. autofunction:: boltons.cacheut",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 33.00519852752398,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.cachedmethod",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.cachedmethod",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 574,
+      "line_end": 609,
+      "snippet": "Similar to :func:`cached`, ``cachedmethod`` is used to cache\nmethods based on their arguments, using any :class:`dict`-like\n*cache* object.\n\nArgs:\n    cache (str/Mapping/callable): Can be the name of an attribute\n        on the instance, any Mapping/:class:`dict`-like object, or\n        a callable which returns a Mapping.\n    scoped (bool): Whether the method itself and the object it is\n        bound to are part of the cache keys. ``True`` by default,\n        different methods will not read one another's cache\n        results. ``False`` can be useful for certain shared cache\n        use cases.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 28.79689595526498,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.CachedMethod",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.CachedMethod",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 479,
+      "line_end": 481,
+      "snippet": "Similar to :class:`CachedFunction`, this type is used by\n:func:`cachedmethod` to wrap methods in caching logic.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 27.33557963313047,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.CachedFunction",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.CachedFunction",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 440,
+      "line_end": 442,
+      "snippet": "This type is used by :func:`cached`, below. Instances of this\nclass are used to wrap functions in caching logic.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 4,
+      "score": 27.106915730389783,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.ThresholdCounter.get",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.ThresholdCounter.get",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 791,
+      "line_end": 791,
+      "snippet": "Get count for *key*, defaulting to 0.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 5,
+      "score": 25.21308273209641,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.ThresholdCounter.update",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.ThresholdCounter.update",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 798,
+      "line_end": 803,
+      "snippet": "Like dict.update() but add counts instead of replacing them, used\nto add multiple items in one call.\n\nSource can be an iterable of keys to add, or a mapping of keys\nto integer counts.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 6,
+      "score": 24.35598026392519,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.ThresholdCounter.get_common_count",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.ThresholdCounter.get_common_count",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 737,
+      "line_end": 739,
+      "snippet": "Get the sum of counts for keys exceeding the configured data\nthreshold.",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 7,
+      "score": 23.003880992738274,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.cached",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.cached",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 536,
+      "line_end": 567,
+      "snippet": "Cache any function with the cache object of your choosing. Note\nthat the function wrapped should take only `hashable`_ arguments.\n\nArgs:\n    cache (Mapping): Any :class:`dict`-like object suitable for\n        use as a cache. Instances of the :class:`LRU` and\n        :class:`LRI` are good choices, but a plain :class:`dict`\n        can work in some cases, as well. This argument can also be\n        a callable which accepts no arguments and returns a mapping.\n    scoped (bool): Whether the function itself is part of the\n        cache key.  ``True`` by default, different functions will\n        not",
+      "retrieval_query": "tests/test_cacheutils.py::test_unscoped_cached_dec\nassert 1 == 0\n +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count\ntests/test_cacheutils.py:273: in test_unscoped_cached_dec\n    assert other_inner_func.call_count == 0\nE   assert 1 == 0\nE    +  where 1 = <tests.test_cacheutils.CountingCallable object at 0x7f0000000000>.call_count",
+      "retrieval_method": "bm25",
+      "rank": 8,
+      "score": 22.906115128761723,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:8408ab57e6c9",
+      "source_type": "commit_message",
+      "source_ref": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "cacheutils: honor scoped caching, falsey on_miss, method keys, copy, |=, eq, ThresholdCounter width (#498, #593, #541, #506, #490, #580, #598)",
+      "retrieval_query": "scoped",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 4.783205460498648,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.cachedmethod",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.cachedmethod",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 574,
+      "line_end": 609,
+      "snippet": "Similar to :func:`cached`, ``cachedmethod`` is used to cache\nmethods based on their arguments, using any :class:`dict`-like\n*cache* object.\n\nArgs:\n    cache (str/Mapping/callable): Can be the name of an attribute\n        on the instance, any Mapping/:class:`dict`-like object, or\n        a callable which returns a Mapping.\n    scoped (bool): Whether the method itself and the object it is\n        bound to are part of the cache keys. ``True`` by default,\n        different methods will not read one another's cache\n        results. ``False`` can be useful for certain shared cache\n        use cases.",
+      "retrieval_query": "scoped",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 2.481653297598565,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:cacheutils.cached",
+      "source_type": "docstring",
+      "source_ref": "boltons/cacheutils.py::cacheutils.cached",
+      "commit_sha": "8408ab57e6c92b4ddd37db6220628ea41ee8bb5b",
+      "line_start": 536,
+      "line_end": 567,
+      "snippet": "Cache any function with the cache object of your choosing. Note\nthat the function wrapped should take only `hashable`_ arguments.\n\nArgs:\n    cache (Mapping): Any :class:`dict`-like object suitable for\n        use as a cache. Instances of the :class:`LRU` and\n        :class:`LRI` are good choices, but a plain :class:`dict`\n        can work in some cases, as well. This argument can also be\n        a callable which accepts no arguments and returns a mapping.\n    scoped (bool): Whether the function itself is part of the\n        cache key.  ``True`` by default, different functions will\n        not",
+      "retrieval_query": "scoped",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 2.467175981326721,
+      "support": "unknown",
+      "freshness": "unknown"
+    }
+  ],
+  "patches": [],
+  "test_runs": [
+    {
+      "run_id": "baseline",
+      "phase": "pre_repair",
+      "status": "failed",
+      "selector": "tests/test_cacheutils.py::test_unscoped_cached_dec",
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": [
+        "tests/test_cacheutils.py::test_unscoped_cached_dec"
+      ]
+    }
+  ],
+  "final_test_status": "not_run",
+  "integrity": {
+    "guard_ran": false,
+    "guard_decision": "not_run",
+    "weakening": {
+      "checks_run": false,
+      "assertions_before": null,
+      "assertions_after": null,
+      "removed_assertions": null,
+      "added_skip_markers": null,
+      "added_xfail_markers": null,
+      "loosened_comparisons": null,
+      "swallowed_exceptions": null,
+      "deleted_tests": null,
+      "weakening_detected": null
+    },
+    "prohibited_edits": {
+      "checks_run": false,
+      "files_modified": [],
+      "out_of_scope_files": [],
+      "test_files_modified": []
+    },
+    "mutation": {
+      "status": "not_run",
+      "mutants_total": null,
+      "killed_by_reference_tests": null,
+      "killed_by_repaired_tests": null
+    },
+    "tests_untouched_for_fix_code": null,
+    "evidence_requirement_met": null,
+    "rejection_reasons": []
+  },
+  "memory_reads": [],
+  "memory_writes": [],
+  "tool_events": [
+    {
+      "event_id": "tool-1",
+      "step_index": 0,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 223.7
+    },
+    {
+      "event_id": "tool-2",
+      "step_index": 1,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 216.5
+    },
+    {
+      "event_id": "tool-3",
+      "step_index": 2,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 217.6
+    },
+    {
+      "event_id": "tool-4",
+      "step_index": 3,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 216.6
+    },
+    {
+      "event_id": "tool-5",
+      "step_index": 4,
+      "tool": "run_tests",
+      "called_by": "single_agent",
+      "arguments": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 215.8
+    },
+    {
+      "event_id": "tool-6",
+      "step_index": 5,
+      "tool": "search_repo",
+      "called_by": "single_agent",
+      "arguments": {
+        "query_chars": 370,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 1.6
+    },
+    {
+      "event_id": "tool-7",
+      "step_index": 6,
+      "tool": "read_file",
+      "called_by": "single_agent",
+      "arguments": {
+        "path": "tests/test_cacheutils.py",
+        "start_line": 255,
+        "end_line": 280,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 0.1
+    },
+    {
+      "event_id": "tool-8",
+      "step_index": 7,
+      "tool": "search_repo",
+      "called_by": "single_agent",
+      "arguments": {
+        "query_chars": 6,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 0.6
+    }
+  ],
+  "usage": {
+    "reported": true,
+    "input_tokens": 10812,
+    "output_tokens": 190,
+    "total_tokens": 11183,
+    "llm_calls": 2
+  },
+  "errors": [
+    {
+      "error_id": "err-1",
+      "category": "provider_outage",
+      "message": "InternalServerError (HTTP 503)",
+      "operation": "repair",
+      "tool": null,
+      "retries": 0,
+      "recovered": false,
+      "fatal": true,
+      "counted_against_agent": false
+    }
+  ],
+  "outcome": {
+    "status": "api_failure",
+    "escalation": null,
+    "maintainer_approved": null,
+    "revisions_used": 0
+  },
+  "evaluation": null
+}

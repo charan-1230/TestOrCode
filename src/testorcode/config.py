@@ -18,7 +18,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 from dotenv import dotenv_values
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
@@ -34,6 +34,9 @@ ENV_VARS: Final[dict[str, str]] = {
     "llm_api_key": "LLM_API_KEY",
     "llm_base_url": "LLM_BASE_URL",
     "llm_model": "LLM_MODEL",
+    "llm_structured_mode": "LLM_STRUCTURED_MODE",
+    "llm_max_retries": "LLM_MAX_RETRIES",
+    "llm_timeout_seconds": "LLM_TIMEOUT_SECONDS",
     "voyage_api_key": "VOYAGE_API_KEY",
     "voyage_embedding_model": "VOYAGE_EMBEDDING_MODEL",
     "voyage_rerank_model": "VOYAGE_RERANK_MODEL",
@@ -42,12 +45,16 @@ ENV_VARS: Final[dict[str, str]] = {
     "random_seed": "RANDOM_SEED",
     "dataset_path": "DATASET_PATH",
     "results_path": "RESULTS_PATH",
+    "test_python": "TEST_PYTHON",
     "test_timeout_seconds": "TEST_TIMEOUT_SECONDS",
     "retrieval_top_k": "RETRIEVAL_TOP_K",
     "max_repair_revisions": "MAX_REPAIR_REVISIONS",
     "log_level": "LOG_LEVEL",
     "log_file": "LOG_FILE",
 }
+
+# Extra API keys used one after another when a key's quota runs out (LLM_API_KEY_1 .. LLM_API_KEY_9, in order).
+KEY_POOL_VARS: Final[tuple[str, ...]] = tuple(f"LLM_API_KEY_{i}" for i in range(1, 10))
 
 _VALID_LOG_LEVELS: Final[tuple[str, ...]] = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
@@ -60,8 +67,16 @@ class Settings(BaseModel):
     # LLM: a single provider/model for all agents.
     llm_provider: str | None = None
     llm_api_key: SecretStr | None = None
+    llm_api_key_pool: tuple[SecretStr, ...] = Field(
+        default=(), description="LLM_API_KEY_1..9: keys tried in order when the current one's quota is used up."
+    )
     llm_base_url: str | None = None
     llm_model: str | None = None
+    llm_structured_mode: Literal["json_schema", "json_object", "prompt"] = Field(
+        default="json_schema", description="What the provider is asked for; replies are always validated client-side."
+    )
+    llm_max_retries: int = Field(default=2, ge=0, le=10, description="Retries for rate limits, timeouts and 5xx.")
+    llm_timeout_seconds: float = Field(default=60.0, gt=0, description="Per-request timeout.")
 
     # Optional integrations.
     voyage_api_key: SecretStr | None = None
@@ -70,10 +85,16 @@ class Settings(BaseModel):
     github_token: SecretStr | None = None
 
     # Experiment.
-    experiment_condition: ExperimentCondition = ExperimentCondition.B1
+    # A2 is the only condition run_episode can execute today (no MemoryStore yet; B1/A1/A3 have no code
+    # path); the others fail explicitly.  Revisit when they are implemented.
+    experiment_condition: ExperimentCondition = ExperimentCondition.A2_NO_MEMORY
     random_seed: int = 42
     dataset_path: Path = Path("datasets/pilot_dev.jsonl")
     results_path: Path = Path("results/")
+
+    # Target repository: interpreter that runs its tests (None = the current one).
+    # Keep it an unresolved venv path: resolving the symlink loses the venv.
+    test_python: Path | None = None
 
     # Limits.
     test_timeout_seconds: int = Field(default=120, gt=0)
@@ -114,12 +135,16 @@ class Settings(BaseModel):
             value = source.get(var)
             if value is not None and value.strip() != "":
                 raw[field] = value.strip()
+        pool = [source[var].strip() for var in KEY_POOL_VARS if (source.get(var) or "").strip()]
+        if pool:
+            raw["llm_api_key_pool"] = pool
         try:
             settings = cls.model_validate(raw)
         except ValidationError as exc:
             problems = []
             for err in exc.errors(include_input=False, include_url=False):
                 field = str(err["loc"][0]) if err["loc"] else "?"
+                field = "LLM_API_KEY_n" if field == "llm_api_key_pool" else field
                 problems.append(f"{ENV_VARS.get(field, field)}: {err['msg']}")
             raise ConfigError("invalid configuration: " + "; ".join(problems)) from None
         level = settings.log_level.upper()
@@ -131,18 +156,27 @@ class Settings(BaseModel):
         """Check the settings needed for a live model call.
 
         Raises:
-            ConfigError: ``LLM_MODEL`` is unset, or ``LLM_API_KEY`` is unset
-                while no ``LLM_BASE_URL`` points at a keyless endpoint.
+            ConfigError: ``LLM_MODEL`` is unset, or no API key (``LLM_API_KEY_n`` or
+                ``LLM_API_KEY``) is set while no ``LLM_BASE_URL`` points at a keyless endpoint.
         """
         missing = []
         if not self.llm_model:
             missing.append("LLM_MODEL")
-        if self.llm_api_key is None and not self.llm_base_url:
+        if not self.llm_api_keys() and not self.llm_base_url:
             missing.append("LLM_API_KEY (or LLM_BASE_URL for a keyless endpoint)")
         if missing:
             raise ConfigError("live LLM use requires: " + ", ".join(missing))
 
+    def llm_api_keys(self) -> list[SecretStr]:
+        """Keys in the order they are used: ``LLM_API_KEY_1..9``, then ``LLM_API_KEY``; duplicates dropped."""
+        keys, seen = [], set()
+        for key in (*self.llm_api_key_pool, *((self.llm_api_key,) if self.llm_api_key is not None else ())):
+            if key.get_secret_value() not in seen:
+                seen.add(key.get_secret_value())
+                keys.append(key)
+        return keys
+
     def secret_values(self) -> list[str]:
         """Plain secret values, for log redaction only."""
-        secrets = (self.llm_api_key, self.voyage_api_key, self.github_token)
+        secrets = (self.llm_api_key, *self.llm_api_key_pool, self.voyage_api_key, self.github_token)
         return [s.get_secret_value() for s in secrets if s is not None]

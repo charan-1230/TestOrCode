@@ -1,0 +1,185 @@
+{
+  "run_id": "dev-03-34bd5d845f26",
+  "episode_id": "dev-03",
+  "scenario": "S2",
+  "condition": "B1",
+  "model_id": "gemini-3.5-flash-lite",
+  "prompt_version": "b1-v2",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": null,
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "mapped_by": null,
+      "stability_runs": 5,
+      "decision": "ESCALATE",
+      "guard_decision": null,
+      "guard_reasons": [],
+      "integrity": null,
+      "patch_ids": [],
+      "verification_run_ids": [],
+      "disposition": "not_applied",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "run_status": "escalated",
+  "final_test_status": "failed",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 5034,
+    "output_tokens": 371,
+    "total_tokens": 5405,
+    "llm_calls": 1
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    },
+    {
+      "phase": "final",
+      "status": "failed",
+      "passed": 440,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "patches": [],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "predicted": "ESCALATE",
+      "hypothesis": "regression",
+      "direction": "FIX_CODE",
+      "cited": [],
+      "decided_by": "single_agent",
+      "gold": "FIX_CODE",
+      "match": false,
+      "direction_match": true
+    }
+  ],
+  "escalation": {
+    "trigger": "insufficient_evidence",
+    "failing_test_ids": [
+      "tests/test_strutils.py::test_strip_ansi"
+    ],
+    "evidence_found_ids": [],
+    "evidence_missing": [
+      "g1: no cited evidence that the change was intended"
+    ],
+    "competing_hypotheses": [
+      "g1 analyst: regression: A regression was introduced in boltons/strutils.py where `if target_type and target_type != type(cleaned):` was accidentally changed to `if target_type or target_type != type(cleaned):`, causing `target_type` (which is `None` for regular strings) to be called as a function (`NoneType` object is not callable).",
+      "g1 alternative: outdated_test: the change was intended and the test encodes the old behaviour (UPDATE_TEST)"
+    ],
+    "summary": "g1: FIX_CODE cites no evidence of the expected behaviour the change contradicts; the absence of intent evidence alone is not enough"
+  },
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 7,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 337,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "orchestrator",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "error": null
+    }
+  ],
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/strutils.py"
+  ]
+}

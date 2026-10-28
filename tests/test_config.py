@@ -12,7 +12,7 @@ from testorcode.schemas.result_schemas import ExperimentCondition
 def test_defaults_need_no_environment_or_key() -> None:
     s = Settings.from_env({})
     assert s.llm_api_key is None and s.llm_model is None
-    assert s.experiment_condition is ExperimentCondition.B1
+    assert s.experiment_condition is ExperimentCondition.A2_NO_MEMORY  # the only runnable condition today
     assert s.max_repair_revisions == 1 and s.retrieval_top_k > 0
 
 
@@ -89,3 +89,12 @@ def test_env_example_lists_every_variable() -> None:
     text = (Path(__file__).parent.parent / ".env.example").read_text()
     missing = [v for v in ENV_VARS.values() if f"{v}=" not in text]
     assert not missing, f".env.example lacks {missing}"
+
+
+def test_numbered_keys_are_used_in_order_then_the_single_key() -> None:
+    s = Settings.from_env({"LLM_API_KEY_2": "k-two", "LLM_API_KEY_1": "k-one", "LLM_API_KEY_3": " ",
+                           "LLM_API_KEY": "k-one"})
+    assert [k.get_secret_value() for k in s.llm_api_keys()] == ["k-one", "k-two"]  # blank row ignored, duplicate once
+    assert "k-two" not in repr(s) and "k-two" in s.secret_values()
+    Settings.from_env({"LLM_MODEL": "m", "LLM_API_KEY_1": "k"}).require_llm()  # a numbered key alone is enough
+    assert Settings.from_env({"LLM_API_KEY": "only"}).llm_api_keys()[0].get_secret_value() == "only"

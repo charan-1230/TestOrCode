@@ -139,10 +139,11 @@ class TestRunPhase(StrEnum):
     PRE_REPAIR = "pre_repair"
     POST_REPAIR = "post_repair"
     POST_REVISION = "post_revision"
+    FINAL = "final"  # one whole-suite run after every group was handled (the episode's end state)
 
 
 _FINAL_PHASES: Final[frozenset[TestRunPhase]] = frozenset(
-    {TestRunPhase.POST_REPAIR, TestRunPhase.POST_REVISION}
+    {TestRunPhase.POST_REPAIR, TestRunPhase.POST_REVISION, TestRunPhase.FINAL}
 )
 
 
@@ -820,6 +821,42 @@ class RunEvaluation(_Result):
 
 
 # --------------------------------------------------------------------------- #
+# Triage output kept in the record
+# --------------------------------------------------------------------------- #
+
+
+class FailureGroupRecord(_Result):
+    """One failure group as Triage formed it, so the grouping can be audited from the record alone."""
+
+    group_id: Identifier
+    function_qualname: str | None = None
+    test_ids: list[Identifier] = Field(min_length=1)
+    mapped_by: Literal["target_function", "traceback", "model", "unmapped", "test_file"] | None = None
+    stability_runs: int | None = Field(default=None, ge=1, description="Runs each test failed in before grouping.")
+    # Per-group outcome (all optional: older records do not carry them).  ``ExperimentRunRecord.integrity`` keeps
+    # only the last Guard verdict of the run; these keep every group's own.
+    decision: DecisionLabel | None = Field(default=None, description="The group's final action.")
+    guard_decision: GuardDecision | None = Field(
+        default=None, description="This group's last Integrity Guard verdict; None = no Guard ran (B1, or never reached)."
+    )
+    guard_reasons: list[str] = Field(default_factory=list, description="Reasons of every Guard verdict for this group.")
+    integrity: IntegrityReport | None = Field(default=None, description="This group's last Guard report.")
+    patch_ids: list[Identifier] = Field(default_factory=list)
+    verification_run_ids: list[Identifier] = Field(default_factory=list)
+    disposition: Literal["accepted", "failed_final_verification", "reverted", "not_applied"] | None = Field(
+        default=None,
+        description=(
+            "accepted = its repair passed verification and stayed; failed_final_verification = accepted, but its tests "
+            "fail in the final suite run; reverted = a patch was applied and undone; not_applied = no patch was ever "
+            "applied (escalated or blocked); None = not processed (the run stopped earlier)."
+        ),
+    )
+    final_failing_test_ids: list[Identifier] = Field(
+        default_factory=list, description="This group's tests that fail in the final suite run."
+    )
+
+
+# --------------------------------------------------------------------------- #
 # The JSONL record
 # --------------------------------------------------------------------------- #
 
@@ -829,6 +866,12 @@ class ExperimentRunRecord(_Result):
 
     schema_version: str = RESULT_SCHEMA_VERSION
     provenance: RunProvenance
+    failure_groups: list[FailureGroupRecord] = Field(
+        default_factory=list, description="Triage groups (empty for records written before this field existed)."
+    )
+    unstable_test_ids: list[Identifier] = Field(
+        default_factory=list, description="CI failures that did not fail in every stability run."
+    )
     predictions: list[PredictedDecision] = Field(default_factory=list)
     retrieved_evidence: list[RetrievedEvidence] = Field(default_factory=list)
     patches: list[PatchRecord] = Field(default_factory=list)
