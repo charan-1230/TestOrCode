@@ -76,33 +76,33 @@ def run_dev(episode_id: str, reply: IntentAnalysis, tmp_path: Path):
     return run.execute(), repaired, llm
 
 
-def test_dev03_regression_citing_the_unrelated_ci_commit_message_reaches_the_repairer(tmp_path: Path) -> None:
-    # dev-03 (S2): the CI commit is about MultiReplace; strip_ansi changing is not what it says.  The retrieved commit
+def test_dev04_regression_citing_the_unrelated_ci_commit_message_reaches_the_repairer(tmp_path: Path) -> None:
+    # dev-04 (S2; was dev-03 before the pilot-2 renumbering): the CI commit is about MultiReplace; strip_ansi changing is not what it says.  The retrieved commit
     # message is the contradiction the FIX_CODE decision cites.
-    record, repaired, llm = run_dev("dev-03", analysis("FIX_CODE", "regression", ("msg:bba729bf4539",)), tmp_path)
+    record, repaired, llm = run_dev("dev-04", analysis("FIX_CODE", "regression", ("msg:bba729bf4539",)), tmp_path)
     assert repaired == [DecisionLabel.FIX_CODE]  # policy satisfied: the repair stage was reached
     assert "msg:bba729bf4539" in {e.evidence_id for e in record.retrieved_evidence}
     assert "[msg:bba729bf4539]" in llm.calls[0]["user"]
 
 
-def test_dev08_intent_stripped_fix_code_without_evidence_escalates(tmp_path: Path) -> None:
-    # dev-08 (S5): intent evidence was removed on purpose; "nothing says it was intended" must not become FIX_CODE.
-    record, repaired, llm = run_dev("dev-08", analysis("FIX_CODE", "regression"), tmp_path)
+def test_dev01_intent_stripped_fix_code_without_evidence_escalates(tmp_path: Path) -> None:
+    # dev-01 (S5; was dev-08 before the pilot-2 renumbering): intent evidence was removed on purpose; "nothing says it was intended" must not become FIX_CODE.
+    record, repaired, llm = run_dev("dev-01", analysis("FIX_CODE", "regression"), tmp_path)
     assert repaired == [] and record.outcome.status is RunStatus.ESCALATED
     assert record.outcome.escalation.trigger == "insufficient_evidence"
     assert "absence of intent evidence" in record.outcome.escalation.summary
-    [pred] = record.predictions
-    assert pred.predicted_action is DecisionLabel.ESCALATE and pred.decided_by is AgentRole.ORCHESTRATOR
+    assert len(record.predictions) == len(DEV["dev-01"].ci_event.failing_tests)  # one prediction per failing test
+    assert all(p.predicted_action is DecisionLabel.ESCALATE and p.decided_by is AgentRole.ORCHESTRATOR for p in record.predictions)
     prompt = llm.calls[0]["user"].lower()
     assert "gold" not in prompt and "expected_action" not in prompt and "reference_repair" not in prompt
 
 
 def test_unsupported_citation_escalates_before_repair(tmp_path: Path) -> None:
-    record, repaired, _ = run_dev("dev-08", analysis("FIX_CODE", "regression", ("docstring:never.retrieved",)), tmp_path)
+    record, repaired, _ = run_dev("dev-01", analysis("FIX_CODE", "regression", ("docstring:never.retrieved",)), tmp_path)
     assert repaired == [] and "never retrieved" in record.outcome.escalation.summary
 
 
 def test_evidence_cited_both_ways_escalates_as_contradictory(tmp_path: Path) -> None:
     reply = analysis("FIX_CODE", "regression", ("msg:bba729bf4539",), ("msg:bba729bf4539",))
-    record, repaired, _ = run_dev("dev-03", reply, tmp_path)
+    record, repaired, _ = run_dev("dev-04", reply, tmp_path)
     assert repaired == [] and record.outcome.escalation.trigger == "contradictory_evidence"
