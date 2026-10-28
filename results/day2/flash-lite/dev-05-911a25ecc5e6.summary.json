@@ -1,0 +1,248 @@
+{
+  "run_id": "dev-05-911a25ecc5e6",
+  "episode_id": "dev-05",
+  "scenario": "S1",
+  "condition": "B1",
+  "model_id": "gemini-3.5-flash-lite",
+  "prompt_version": "b1-v2",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": null,
+      "test_ids": [
+        "tests/test_cacheutils.py::test_unscoped_cached_dec"
+      ],
+      "mapped_by": null,
+      "stability_runs": 5,
+      "decision": "UPDATE_TEST",
+      "guard_decision": null,
+      "guard_reasons": [],
+      "integrity": null,
+      "patch_ids": [
+        "g1-r0"
+      ],
+      "verification_run_ids": [
+        "g1-r0-post",
+        "g1-r0-regression"
+      ],
+      "disposition": "accepted",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "run_status": "completed",
+  "final_test_status": "passed",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 5210,
+    "output_tokens": 524,
+    "total_tokens": 5734,
+    "llm_calls": 1
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_cacheutils.py::test_unscoped_cached_dec"
+      ]
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 547,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "final",
+      "status": "passed",
+      "passed": 547,
+      "failed": 0,
+      "failing": []
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "g1-r0",
+      "scope": "test",
+      "files": [
+        "tests/test_cacheutils.py"
+      ],
+      "status": "applied",
+      "apply_error": null
+    }
+  ],
+  "predictions": [
+    {
+      "test_id": "tests/test_cacheutils.py::test_unscoped_cached_dec",
+      "predicted": "UPDATE_TEST",
+      "hypothesis": "outdated_test",
+      "direction": "UPDATE_TEST",
+      "cited": [
+        "docstring:cacheutils.cached"
+      ],
+      "decided_by": "single_agent",
+      "gold": "UPDATE_TEST",
+      "match": true,
+      "direction_match": true
+    }
+  ],
+  "escalation": null,
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 11,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 370,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "operation": "validate",
+        "scope": "test",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "operation": "apply",
+        "scope": "test",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_cacheutils.py::test_unscoped_cached_dec"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "orchestrator",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "error": null
+    }
+  ],
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/cacheutils.py",
+    "tests/test_cacheutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/cacheutils.py",
+    " M tests/test_cacheutils.py"
+  ]
+}

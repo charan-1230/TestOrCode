@@ -9,9 +9,24 @@ is accepted only if
 1. it modifies an *existing* ``.py`` file under a test root (no new, deleted,
    renamed or non-Python test files);
 2. the file parses before and after;
-3. after replacing the *expected literal* of every eligible assertion with a
-   placeholder, the two syntax trees are identical; and
-4. at least one expected literal actually changed.
+3. after replacing the *expected literal* of every eligible assertion and the
+   *literal keyword arguments* of every eligible setup call with placeholders,
+   the two syntax trees are identical;
+4. no literal keyword argument was removed from a setup call; and
+5. at least one expected literal or setup keyword argument actually changed.
+
+An eligible setup call is a call inside the body of a test function
+(``test*`` at module level, or a ``test*`` method of a ``Test*`` class) that is
+not part of an ``assert`` statement, not in a decorator, and is not an
+assertion, approximation, skip, mark, fixture, patching or reflection helper
+(``pytest.*``, ``unittest.*``, ``mock.*`` and names containing assert, approx,
+raises, warn, skip, xfail, fail, mark, fixture, patch, parametrize, setattr,
+getattr, exec, eval, import or compile).  Its literal keyword arguments may be
+added or changed, never removed; its callee, positional arguments and
+non-literal keyword arguments must stay the same.  This admits setup changes such
+as ``cached(lru)`` -> ``cached(lru, scoped=False)`` when the intended behaviour
+changed a default.  Whether the changed test functions are the failing ones is
+checked by the Integrity Guard, which knows the failure group.
 
 An eligible assertion is ``assert <expr> == <literal>`` or
 ``assert <expr> != <literal>`` (either operand order), where exactly one side
@@ -24,7 +39,8 @@ tests, hooks, skips, ``sys.modules``/``sys.path`` changes, monkeypatching,
 altered - no list of suspicious names is involved.
 
 Not supported (rejected, to be escalated): new tests or assertions, changed
-inputs, expected values held in variables, ``pytest.approx``,
+inputs (positional arguments, or anything inside an assertion), removed keyword
+arguments, expected values held in variables, ``pytest.approx``,
 ``self.assertEqual``, parametrize tables, fixtures and test data files.
 
 **Source files (FIX_CODE)** keep the earlier basic checks: the file must parse
@@ -126,27 +142,28 @@ def content_problems(
     """Rejection reasons for the change ``before`` -> ``after`` (empty if acceptable)."""
     problems: list[str] = []
     test_paths = 0
-    literal_changes = 0
+    changes = 0
     for path, old in before.items():
         new = after.get(path)
         if policy.classify_path(path) is PathClass.TEST:
             test_paths += 1
             changed, problem = _test_change(path, old, new)
-            literal_changes += changed
+            changes += changed
             if problem:
                 problems.append(problem)
         elif path.endswith(".py"):
             problems.extend(_source_problems(path, old, new))
-    if test_paths and not problems and literal_changes == 0:
+    if test_paths and not problems and changes == 0:
         problems.append(
-            "test-only patch changes no expected literal value; only expected values in "
-            "existing `assert <expr> ==/!= <literal>` statements may change"
+            "test-only patch changes no expected literal value or setup keyword argument; only expected "
+            "values in existing `assert <expr> ==/!= <literal>` statements and literal keyword arguments "
+            "of setup calls in test functions may change"
         )
     return problems
 
 
 def _test_change(path: str, old: bytes | None, new: bytes | None) -> tuple[int, str | None]:
-    """(number of changed expected literals, rejection reason or None) for one test file."""
+    """(number of changed expectations/setup calls, rejection reason or None) for one test file."""
     if not path.endswith(".py"):
         return 0, f"{path}: test-only patches may change existing Python test files only"
     if old is None:
@@ -156,18 +173,25 @@ def _test_change(path: str, old: bytes | None, new: bytes | None) -> tuple[int, 
     old_tree, new_tree = _parse(old), _parse(new)
     if old_tree is None or new_tree is None:
         return 0, f"{path}: does not parse as Python before or after the patch"
-    old_shape, old_literals = _normalise(old_tree)
-    new_shape, new_literals = _normalise(new_tree)
+    old_shape, old_literals, old_calls = _normalise(old_tree)
+    new_shape, new_literals, new_calls = _normalise(new_tree)
     if old_shape != new_shape:
         return 0, (
             f"{path}: change is not limited to expected literal values in existing "
-            "equality/inequality assertions (code, tests, imports or calls changed)"
+            "equality/inequality assertions or literal keyword arguments of setup calls "
+            "(code, tests, imports, inputs or assertions changed)"
         )
-    return sum(a != b for a, b in zip(old_literals, new_literals, strict=True)), None
+    removed = sorted({k for a, b in zip(old_calls, new_calls, strict=True) for k in a.keys() - b.keys()})
+    if removed:
+        return 0, f"{path}: removes keyword argument(s) from a setup call: {', '.join(removed)}"
+    changed_literals = sum(a != b for a, b in zip(old_literals, new_literals, strict=True))
+    changed_calls = sum(a != b for a, b in zip(old_calls, new_calls, strict=True))
+    return changed_literals + changed_calls, None
 
 
-def _normalise(tree: ast.Module) -> tuple[str, list[str]]:
-    """Tree dump with every eligible expected literal replaced, plus those literals in order."""
+def _normalise(tree: ast.Module) -> tuple[str, list[str], list[dict[str, str]]]:
+    """Tree dump with every eligible expected literal and setup-call literal keyword replaced,
+    plus those literals and keyword maps in order."""
     literals: list[str] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Assert) or not isinstance(node.test, ast.Compare):
@@ -185,7 +209,58 @@ def _normalise(tree: ast.Module) -> tuple[str, list[str]]:
         else:
             literals.append(ast.dump(test.comparators[0]))
             test.comparators = [placeholder]
-    return ast.dump(tree, include_attributes=False), literals
+    calls: list[dict[str, str]] = []
+    for function in _test_functions(tree):
+        for call in _setup_calls(function):
+            literal = [kw for kw in call.keywords if kw.arg is not None and _is_literal(kw.value)]
+            calls.append({kw.arg: ast.dump(kw.value) for kw in literal})
+            call.keywords = [kw for kw in call.keywords if kw not in literal]
+    return ast.dump(tree, include_attributes=False), literals, calls
+
+
+_EXCLUDED_CALL_ROOTS: Final[frozenset[str]] = frozenset({"pytest", "unittest", "mock"})
+_EXCLUDED_CALL_WORDS: Final[tuple[str, ...]] = (
+    "assert", "approx", "raises", "warn", "skip", "xfail", "fail", "mark", "fixture", "patch",
+    "parametrize", "setattr", "getattr", "exec", "eval", "import", "compile",
+)
+
+
+def _test_functions(tree: ast.Module) -> list[ast.FunctionDef | ast.AsyncFunctionDef]:
+    """``test*`` functions at module level and ``test*`` methods of ``Test*`` classes."""
+    found = []
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
+            found.append(node)
+        elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
+            found += [
+                m for m in node.body
+                if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and m.name.startswith("test")
+            ]
+    return found
+
+
+def _setup_calls(function: ast.FunctionDef | ast.AsyncFunctionDef) -> list[ast.Call]:
+    """Eligible setup calls in the body of ``function`` (never in asserts, decorators or nested scopes)."""
+    calls: list[ast.Call] = []
+
+    def visit(node: ast.AST) -> None:
+        if isinstance(node, (ast.Assert, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)):
+            return
+        if isinstance(node, ast.Call) and _setup_call_allowed(node):
+            calls.append(node)
+        for child in ast.iter_child_nodes(node):
+            visit(child)
+
+    for statement in function.body:
+        visit(statement)
+    return calls
+
+
+def _setup_call_allowed(call: ast.Call) -> bool:
+    name = _dotted(call.func).lower()
+    if not name or name.split(".", 1)[0] in _EXCLUDED_CALL_ROOTS:
+        return False
+    return not any(word in name for word in _EXCLUDED_CALL_WORDS)
 
 
 def _is_literal(node: ast.expr) -> bool:

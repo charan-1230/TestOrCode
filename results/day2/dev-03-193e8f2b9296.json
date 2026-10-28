@@ -1,0 +1,1305 @@
+{
+  "schema_version": "2.0.0",
+  "provenance": {
+    "run_id": "dev-03-193e8f2b9296",
+    "episode_id": "dev-03",
+    "condition": "A2",
+    "seed": 42,
+    "model_id": "gemini-3.5-flash",
+    "provider": "gemini",
+    "dataset_version": "pilot@8d1e905f554c",
+    "split": "dev",
+    "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+    "prompt_template_version": "triage-v1+intent-v4+repair-v5+guard-v1",
+    "agent_config_version": null,
+    "retrieval_config_version": null,
+    "index_version": null,
+    "environment_ref": null,
+    "started_at": "2026-10-28T16:09:24.437322Z",
+    "ended_at": "2026-10-28T16:11:03.159029Z"
+  },
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": "boltons.strutils.strip_ansi",
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "mapped_by": "traceback",
+      "stability_runs": 5,
+      "decision": "ESCALATE",
+      "guard_decision": "escalate",
+      "guard_reasons": [
+        "post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+      ],
+      "integrity": {
+        "guard_ran": true,
+        "guard_decision": "escalate",
+        "weakening": {
+          "checks_run": true,
+          "assertions_before": 0,
+          "assertions_after": 0,
+          "removed_assertions": 0,
+          "added_skip_markers": 0,
+          "added_xfail_markers": null,
+          "loosened_comparisons": null,
+          "swallowed_exceptions": null,
+          "deleted_tests": null,
+          "weakening_detected": false
+        },
+        "prohibited_edits": {
+          "checks_run": true,
+          "files_modified": [
+            "boltons/strutils.py"
+          ],
+          "out_of_scope_files": [],
+          "test_files_modified": []
+        },
+        "mutation": {
+          "status": "not_run",
+          "mutants_total": null,
+          "killed_by_reference_tests": null,
+          "killed_by_repaired_tests": null
+        },
+        "tests_untouched_for_fix_code": true,
+        "evidence_requirement_met": null,
+        "rejection_reasons": []
+      },
+      "patch_ids": [
+        "g1-r0"
+      ],
+      "verification_run_ids": [
+        "g1-r0-post",
+        "g1-r0-regression"
+      ],
+      "disposition": "reverted",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "group_id": "g1",
+      "predicted_action": "ESCALATE",
+      "hypothesis": "regression",
+      "predicted_behaviour": "strip_ansi should strip ANSI escape sequences from strings without raising a TypeError when target_type is None.",
+      "cited_evidence_ids": [
+        "msg:bba729bf4539"
+      ],
+      "contradicting_evidence_ids": [],
+      "rationale": "integrity guard escalated: post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required",
+      "decided_by": "integrity_guard"
+    }
+  ],
+  "retrieved_evidence": [
+    {
+      "evidence_id": "docstring:strutils.strip_ansi",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.strip_ansi",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 372,
+      "line_end": 389,
+      "snippet": "Strips ANSI escape codes from *text*. Useful for the occasional\ntime when a log or redirected output accidentally captures console\ncolor codes and the like.\n\n>>> strip_ansi('\u001b[0m\u001b[1;36mart\u001b[46;34m')\n'art'\n\nSupports str, bytes and bytearray content as input. Returns the\nsame type as the input.\n\nThere's a lot of ANSI art available for testing on `sixteencolors.net`_.\nThis function does not interpret or render ANSI art, but you can do so with\n`ansi2img`_ or `escapes.js`_.\n\n.. _sixteencolors.net: http://sixteencolors.net\n.. _ansi2img: http://www.bedroomlan.org/projects/ansi2img\n.. _escapes.js: htt",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 14.433980725767835,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:bba729bf4539",
+      "source_type": "commit_message",
+      "source_ref": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Speed up MultiReplace match lookup",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 11.986156057832044,
+      "support": "supports",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.multi_replace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.multi_replace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1230,
+      "line_end": 1241,
+      "snippet": "Shortcut function to invoke MultiReplace in a single call.\n\nExample Usage::\n\n    from boltons.strutils import multi_replace\n    new = multi_replace(\n        'The foo bar cat ate a bat',\n        {'foo': 'zoo', 'cat': 'hat', 'bat': 'kraken'}\n    )\n    new == 'The zoo bar hat ate a kraken'",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 11.806041495407964,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:80f9eb4296da",
+      "source_type": "commit_message",
+      "source_ref": "80f9eb4296daadad85db5ef6c0fd14e2f3602fa4",
+      "commit_sha": "80f9eb4296daadad85db5ef6c0fd14e2f3602fa4",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix syntax error in MultiReplace example",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 4,
+      "score": 11.732182180208767,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace.__init__",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace.__init__",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1184,
+      "line_end": 1184,
+      "snippet": "Compile any regular expressions that have been passed.",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 5,
+      "score": 11.556025186472972,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace._get_value",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace._get_value",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1216,
+      "line_end": 1216,
+      "snippet": "Given a match object find replacement value.",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 6,
+      "score": 11.556025186472972,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace.sub",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace.sub",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1220,
+      "line_end": 1225,
+      "snippet": "Run substitutions on the input text.\n\nGiven an input string, run all substitutions given in the\nconstructor.",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 7,
+      "score": 9.968481928664136,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1127,
+      "line_end": 1181,
+      "snippet": "MultiReplace is a tool for doing multiple find/replace actions in one pass.\n\nGiven a mapping of values to be replaced it allows for all of the matching\nvalues to be replaced in a single pass which can save a lot of performance\non very large strings. In addition to simple replace, it also allows for\nreplacing based on regular expressions.\n\nKeyword Arguments:\n\n:type regex: bool\n:param regex: Treat search keys as regular expressions [Default: False]\n:type flags: int\n:param flags: flags to pass to the regex engine during compile\n\nDictionary Usage::\n\n    from boltons import strutils\n    s = strutil",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 8,
+      "score": 9.863151748894715,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:21dc968d2b81",
+      "source_type": "commit_message",
+      "source_ref": "21dc968d2b81e57a69c153d214ccf774fa8392d3",
+      "commit_sha": "21dc968d2b81e57a69c153d214ccf774fa8392d3",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "replace deprecated utcnow",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 9,
+      "score": 4.421943388174663,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:d463c605877f",
+      "source_type": "commit_message",
+      "source_ref": "d463c605877f80787a62f8d968d358cdd7d0a601",
+      "commit_sha": "d463c605877f80787a62f8d968d358cdd7d0a601",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "fix module name in multireplace docstring",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 10,
+      "score": 4.310297057894176,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "changelog:2",
+      "source_type": "changelog",
+      "source_ref": "CHANGELOG.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "## 25.0.0\n\n_(February 2, 2025)_\n\n- Added Python 3.13 support\n- Replace deprecated `utcnow()`\n- Add fsync to [`fileutils.atomic_save`][fileutils.atomic_save]\n- Add [`fileutils.rotate_file`][fileutils.rotate_file]",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 11,
+      "score": 2.6580656931687026,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "changelog:1",
+      "source_type": "changelog",
+      "source_ref": "CHANGELOG.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "## 26.0.0\n\n_(June 19, 2026)_\n\n- Added [`funcutils.once`][funcutils.once] decorator for one-time function execution\n- Added [`strutils.human_readable_list`][strutils.human_readable_list] for formatting lists as human-readable strings\n- Extended [`iterutils.partition`][iterutils.partition] to accept multiple predicates\n- Added `cache` option to [`iterutils.remap`][iterutils.remap] and [`iterutils.research`][iterutils.research]\n- Fixed [`iterutils.split`][iterutils.split] `maxsplit=0` wrapping source object instead of its values\n- Fixed [`listutils.BarrelList`][listutils.BarrelList] `insert()` ra",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 12,
+      "score": 2.38284065850121,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:c463d1633a07",
+      "source_type": "commit_message",
+      "source_ref": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "commit_sha": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix OrderedMultiDict equality to compare values against plain mappings\n\nOrderedMultiDict.__eq__ has a branch for comparing against a non-OMD\nmapping (anything with a keys() method, e.g. a dict). That branch\ncomputes other[selfk] == self[selfk] but throws the result away, so it\nonly checks that every key of self exists in other and never compares\nthe values. As a result an OMD compares equal to any same-keyed mapping\nregardless of the values:\n\n    >>> omd = OMD([('a', 1), ('b', 2)])\n    >>> omd == {'a': 999, 'b': 2}\n    True   # should be False\n\nThe existing test_eq doesn't catch this because i",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 13,
+      "score": 2.0781213414886284,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:docs/strutils.rst#1",
+      "source_type": "documentation",
+      "source_ref": "docs/strutils.rst",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "``strutils`` - Text manipulation\n=================================\n\n.. automodule:: boltons.strutils\n   :members:\n   :undoc-members:",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 14,
+      "score": 1.557152257653965,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#3",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "[atomic]: https://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save\n[omd]: https://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict\n[pq]: https://boltons.readthedocs.org/en/latest/queueutils.html#boltons.queueutils.PriorityQueue\n[chunked]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked\n[windowed]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed\n[tbinfo]: https://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 15,
+      "score": 1.4217722219444318,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.DeaccenterDict",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.DeaccenterDict",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 470,
+      "line_end": 470,
+      "snippet": "A small caching dictionary for deaccenting.",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 16,
+      "score": 1.4079274777077888,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:b47171245ceb",
+      "source_type": "commit_message",
+      "source_ref": "b47171245cebeb39df55cbac7ae1efb3e29f317e",
+      "commit_sha": "b47171245cebeb39df55cbac7ae1efb3e29f317e",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "fix strutils",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 17,
+      "score": 1.3324519318697785,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 31,
+      "line_end": 35,
+      "snippet": "So much practical programming involves string manipulation, which\nPython readily accommodates. Still, there are dozens of basic and\ncommon capabilities missing from the standard library, several of them\nprovided by ``strutils``.",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 18,
+      "score": 1.278981368908014,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.under2camel",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.under2camel",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 80,
+      "line_end": 85,
+      "snippet": "Converts an underscored string to camelcased. Useful for turning a\nfunction name into a class name.\n\n>>> under2camel('complex_tokenizer')\n'ComplexTokenizer'",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 19,
+      "score": 1.1936129356465608,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.camel2under",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.camel2under",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 70,
+      "line_end": 75,
+      "snippet": "Converts a camelcased string to underscores. Useful for turning a\nclass name into a function name.\n\n>>> camel2under('BasicParseTest')\n'basic_parse_test'",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 20,
+      "score": 1.1807745533091614,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.pluralize",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.pluralize",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 236,
+      "line_end": 245,
+      "snippet": "Semi-intelligently converts an English *word* from singular form to\nplural, preserving case pattern.\n\n>>> pluralize('friend')\n'friends'\n>>> pluralize('enemy')\n'enemies'\n>>> pluralize('Sheep')\n'Sheep'",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 21,
+      "score": 1.1682094087868056,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.singularize",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.singularize",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 202,
+      "line_end": 214,
+      "snippet": "Semi-intelligently converts an English plural *word* to its\nsingular form, preserving case pattern.\n\n>>> singularize('chances')\n'chance'\n>>> singularize('Activities')\n'Activity'\n>>> singularize('Glasses')\n'Glass'\n>>> singularize('FEET')\n'FOOT'",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 22,
+      "score": 1.1320688713622924,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.cardinalize",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.cardinalize",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 187,
+      "line_end": 195,
+      "snippet": "Conditionally pluralizes a singular word *unit_noun* if\n*count* is not one, preserving case when possible.\n\n>>> vowels = 'aeiou'\n>>> print(len(vowels), cardinalize('vowel', len(vowels)))\n5 vowels\n>>> print(3, cardinalize('Wish', 3))\n3 Wishes",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 23,
+      "score": 1.0872221265270325,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.html2text",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.html2text",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 603,
+      "line_end": 609,
+      "snippet": "Strips tags from HTML text, returning markup-free text. Also, does\na best effort replacement of entities like \"&nbsp;\"\n\n>>> r = html2text(u'<a href=\"#\">Test &amp;<em>(Δ&#x03b7;&#956;&#x03CE;)</em></a>')\n>>> r == u'Test &(Δημώ)'\nTrue",
+      "retrieval_query": "strutils strip_ansi MultiReplace",
+      "retrieval_method": "bm25",
+      "rank": 24,
+      "score": 1.0765601824913549,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:c463d1633a07",
+      "source_type": "commit_message",
+      "source_ref": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "commit_sha": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix OrderedMultiDict equality to compare values against plain mappings\n\nOrderedMultiDict.__eq__ has a branch for comparing against a non-OMD\nmapping (anything with a keys() method, e.g. a dict). That branch\ncomputes other[selfk] == self[selfk] but throws the result away, so it\nonly checks that every key of self exists in other and never compares\nthe values. As a result an OMD compares equal to any same-keyed mapping\nregardless of the values:\n\n    >>> omd = OMD([('a', 1), ('b', 2)])\n    >>> omd == {'a': 999, 'b': 2}\n    True   # should be False\n\nThe existing test_eq doesn't catch this because i",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 5.869089188403391,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1127,
+      "line_end": 1181,
+      "snippet": "MultiReplace is a tool for doing multiple find/replace actions in one pass.\n\nGiven a mapping of values to be replaced it allows for all of the matching\nvalues to be replaced in a single pass which can save a lot of performance\non very large strings. In addition to simple replace, it also allows for\nreplacing based on regular expressions.\n\nKeyword Arguments:\n\n:type regex: bool\n:param regex: Treat search keys as regular expressions [Default: False]\n:type flags: int\n:param flags: flags to pass to the regex engine during compile\n\nDictionary Usage::\n\n    from boltons import strutils\n    s = strutil",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 5.817719865953144,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:bba729bf4539",
+      "source_type": "commit_message",
+      "source_ref": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Speed up MultiReplace match lookup",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 5.603447261148797,
+      "support": "supports",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:25e8d6b18ecb",
+      "source_type": "commit_message",
+      "source_ref": "25e8d6b18ecba58d358c8f46a5cea554f99bdfb2",
+      "commit_sha": "25e8d6b18ecba58d358c8f46a5cea554f99bdfb2",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Match list insert before start in BarrelList",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 4,
+      "score": 5.370912273942622,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace._get_value",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace._get_value",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1216,
+      "line_end": 1216,
+      "snippet": "Given a match object find replacement value.",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 5,
+      "score": 4.776285389692696,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.is_uuid",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.is_uuid",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 711,
+      "line_end": 723,
+      "snippet": "Check the argument is either a valid UUID object or string.\n\nArgs:\n    obj (object): The test target. Strings and UUID objects supported.\n    version (int): The target UUID version, set to 0 to skip version check.\n\n>>> is_uuid('e682ccca-5a4c-4ef2-9711-73f9ad1e15ea')\nTrue\n>>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9')\nFalse\n>>> is_uuid('0221f0d9-d4b9-11e5-a478-10ddb1c2feb9', version=1)\nTrue",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 6,
+      "score": 4.756752091718547,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.DeaccenterDict",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.DeaccenterDict",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 470,
+      "line_end": 470,
+      "snippet": "A small caching dictionary for deaccenting.",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 7,
+      "score": 4.5124335126746695,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#2",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "* [Atomic file saving][atomic], bolted on with [fileutils][fileutils]\n  * A highly-optimized [OrderedMultiDict][omd], in [dictutils][dictutils]\n  * *Two* types of [PriorityQueue][pq], in [queueutils][queueutils]\n  * [Chunked][chunked] and [windowed][windowed] iteration, in [iterutils][iterutils]\n  * Recursive data structure [iteration and merging][remap], with [iterutils.remap][iterutils.remap]\n  * Exponential backoff functionality, including jitter, through [iterutils.backoff][iterutils.backoff]\n  * A full-featured [TracebackInfo][tbinfo] type, for representing stack traces,\n    in [tbutils][",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 8,
+      "score": 4.372618401825367,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.strip_ansi",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.strip_ansi",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 372,
+      "line_end": 389,
+      "snippet": "Strips ANSI escape codes from *text*. Useful for the occasional\ntime when a log or redirected output accidentally captures console\ncolor codes and the like.\n\n>>> strip_ansi('\u001b[0m\u001b[1;36mart\u001b[46;34m')\n'art'\n\nSupports str, bytes and bytearray content as input. Returns the\nsame type as the input.\n\nThere's a lot of ANSI art available for testing on `sixteencolors.net`_.\nThis function does not interpret or render ANSI art, but you can do so with\n`ansi2img`_ or `escapes.js`_.\n\n.. _sixteencolors.net: http://sixteencolors.net\n.. _ansi2img: http://www.bedroomlan.org/projects/ansi2img\n.. _escapes.js: htt",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 9,
+      "score": 3.640762959675893,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.indent",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.indent",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 695,
+      "line_end": 704,
+      "snippet": "The missing counterpart to the built-in :func:`textwrap.dedent`.\n\nArgs:\n    text (str): The text to indent.\n    margin (str): The string to prepend to each line.\n    newline (str): The newline used to rejoin the lines (default: ``\\n``)\n    key (callable): Called on each line to determine whether to\n      indent it. Default: :class:`bool`, to ensure that empty lines do\n      not get whitespace added.",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 10,
+      "score": 2.71309963781856,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "changelog:1",
+      "source_type": "changelog",
+      "source_ref": "CHANGELOG.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "## 26.0.0\n\n_(June 19, 2026)_\n\n- Added [`funcutils.once`][funcutils.once] decorator for one-time function execution\n- Added [`strutils.human_readable_list`][strutils.human_readable_list] for formatting lists as human-readable strings\n- Extended [`iterutils.partition`][iterutils.partition] to accept multiple predicates\n- Added `cache` option to [`iterutils.remap`][iterutils.remap] and [`iterutils.research`][iterutils.research]\n- Fixed [`iterutils.split`][iterutils.split] `maxsplit=0` wrapping source object instead of its values\n- Fixed [`listutils.BarrelList`][listutils.BarrelList] `insert()` ra",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 11,
+      "score": 1.8956102190870923,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#3",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "[atomic]: https://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save\n[omd]: https://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict\n[pq]: https://boltons.readthedocs.org/en/latest/queueutils.html#boltons.queueutils.PriorityQueue\n[chunked]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked\n[windowed]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed\n[tbinfo]: https://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo",
+      "retrieval_query": "target_type group_dict type cleaned match key group_map groupdict lastgroup",
+      "retrieval_method": "bm25",
+      "rank": 12,
+      "score": 1.8688900658728231,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:bba729bf4539",
+      "source_type": "commit_message",
+      "source_ref": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Speed up MultiReplace match lookup",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 1,
+      "score": 35.5100553743265,
+      "support": "supports",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace._get_value",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace._get_value",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1216,
+      "line_end": 1216,
+      "snippet": "Given a match object find replacement value.",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 2,
+      "score": 14.993085760873983,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:80f9eb4296da",
+      "source_type": "commit_message",
+      "source_ref": "80f9eb4296daadad85db5ef6c0fd14e2f3602fa4",
+      "commit_sha": "80f9eb4296daadad85db5ef6c0fd14e2f3602fa4",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix syntax error in MultiReplace example",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 3,
+      "score": 11.732182180208767,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.multi_replace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.multi_replace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1230,
+      "line_end": 1241,
+      "snippet": "Shortcut function to invoke MultiReplace in a single call.\n\nExample Usage::\n\n    from boltons.strutils import multi_replace\n    new = multi_replace(\n        'The foo bar cat ate a bat',\n        {'foo': 'zoo', 'cat': 'hat', 'bat': 'kraken'}\n    )\n    new == 'The zoo bar hat ate a kraken'",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 4,
+      "score": 10.652494376340314,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace.__init__",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace.__init__",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1184,
+      "line_end": 1184,
+      "snippet": "Compile any regular expressions that have been passed.",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 5,
+      "score": 10.216800371181288,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1127,
+      "line_end": 1181,
+      "snippet": "MultiReplace is a tool for doing multiple find/replace actions in one pass.\n\nGiven a mapping of values to be replaced it allows for all of the matching\nvalues to be replaced in a single pass which can save a lot of performance\non very large strings. In addition to simple replace, it also allows for\nreplacing based on regular expressions.\n\nKeyword Arguments:\n\n:type regex: bool\n:param regex: Treat search keys as regular expressions [Default: False]\n:type flags: int\n:param flags: flags to pass to the regex engine during compile\n\nDictionary Usage::\n\n    from boltons import strutils\n    s = strutil",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 6,
+      "score": 8.922970369109832,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.MultiReplace.sub",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.MultiReplace.sub",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 1220,
+      "line_end": 1225,
+      "snippet": "Run substitutions on the input text.\n\nGiven an input string, run all substitutions given in the\nconstructor.",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 7,
+      "score": 8.761748362274592,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:25e8d6b18ecb",
+      "source_type": "commit_message",
+      "source_ref": "25e8d6b18ecba58d358c8f46a5cea554f99bdfb2",
+      "commit_sha": "25e8d6b18ecba58d358c8f46a5cea554f99bdfb2",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Match list insert before start in BarrelList",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 8,
+      "score": 5.370912273942622,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:459817bff618",
+      "source_type": "commit_message",
+      "source_ref": "459817bff6186d2eaaca62e8cf7f4b6442dd5310",
+      "commit_sha": "459817bff6186d2eaaca62e8cf7f4b6442dd5310",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "fix up fileutils py3 issues",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 9,
+      "score": 5.125058049907685,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:23635529c6d3",
+      "source_type": "commit_message",
+      "source_ref": "23635529c6d3abbbf3818248ea1bd590f06a0f1b",
+      "commit_sha": "23635529c6d3abbbf3818248ea1bd590f06a0f1b",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "clean up all the inaccurate basestring translations",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 10,
+      "score": 4.9031673826837805,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:21dc968d2b81",
+      "source_type": "commit_message",
+      "source_ref": "21dc968d2b81e57a69c153d214ccf774fa8392d3",
+      "commit_sha": "21dc968d2b81e57a69c153d214ccf774fa8392d3",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "replace deprecated utcnow",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 11,
+      "score": 4.421943388174663,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:d463c605877f",
+      "source_type": "commit_message",
+      "source_ref": "d463c605877f80787a62f8d968d358cdd7d0a601",
+      "commit_sha": "d463c605877f80787a62f8d968d358cdd7d0a601",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "fix module name in multireplace docstring",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 12,
+      "score": 4.310297057894176,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "docstring:strutils.gzip_bytes",
+      "source_type": "docstring",
+      "source_ref": "boltons/strutils.py::strutils.gzip_bytes",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": 636,
+      "line_end": 649,
+      "snippet": "Turn some bytes into some compressed bytes.\n\n>>> len(gzip_bytes(b'a' * 10000))\n46\n\nArgs:\n    bytestring (bytes): Bytes to be compressed\n    level (int): An integer, 1-9, controlling the\n      speed/compression. 1 is fastest, least compressed, 9 is\n      slowest, but most compressed.\n\nNote that all levels of gzip are pretty fast these days, though\nit's not really a competitor in compression, at any level.",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 13,
+      "score": 2.739390778319628,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:207651ee6055",
+      "source_type": "commit_message",
+      "source_ref": "207651ee6055aabd0d9cdeac2e00140cdc208d44",
+      "commit_sha": "207651ee6055aabd0d9cdeac2e00140cdc208d44",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Add human_readable_list to __all__ in strutils\n\nThe human_readable_list function was added in PR #388 but was not\nincluded in the module's __all__ list. This means it doesn't show up\nin dir(boltons.strutils) or get exported with wildcard imports.",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 14,
+      "score": 2.6901904841316813,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "changelog:2",
+      "source_type": "changelog",
+      "source_ref": "CHANGELOG.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "## 25.0.0\n\n_(February 2, 2025)_\n\n- Added Python 3.13 support\n- Replace deprecated `utcnow()`\n- Add fsync to [`fileutils.atomic_save`][fileutils.atomic_save]\n- Add [`fileutils.rotate_file`][fileutils.rotate_file]",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 15,
+      "score": 2.6580656931687026,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "msg:c463d1633a07",
+      "source_type": "commit_message",
+      "source_ref": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "commit_sha": "c463d1633a075c398d6ffad7d8653064a615b696",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Fix OrderedMultiDict equality to compare values against plain mappings\n\nOrderedMultiDict.__eq__ has a branch for comparing against a non-OMD\nmapping (anything with a keys() method, e.g. a dict). That branch\ncomputes other[selfk] == self[selfk] but throws the result away, so it\nonly checks that every key of self exists in other and never compares\nthe values. As a result an OMD compares equal to any same-keyed mapping\nregardless of the values:\n\n    >>> omd = OMD([('a', 1), ('b', 2)])\n    >>> omd == {'a': 999, 'b': 2}\n    True   # should be False\n\nThe existing test_eq doesn't catch this because i",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 16,
+      "score": 2.0781213414886284,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "changelog:1",
+      "source_type": "changelog",
+      "source_ref": "CHANGELOG.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "## 26.0.0\n\n_(June 19, 2026)_\n\n- Added [`funcutils.once`][funcutils.once] decorator for one-time function execution\n- Added [`strutils.human_readable_list`][strutils.human_readable_list] for formatting lists as human-readable strings\n- Extended [`iterutils.partition`][iterutils.partition] to accept multiple predicates\n- Added `cache` option to [`iterutils.remap`][iterutils.remap] and [`iterutils.research`][iterutils.research]\n- Fixed [`iterutils.split`][iterutils.split] `maxsplit=0` wrapping source object instead of its values\n- Fixed [`listutils.BarrelList`][listutils.BarrelList] `insert()` ra",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 17,
+      "score": 1.4420997801565862,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#3",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "[atomic]: https://boltons.readthedocs.org/en/latest/fileutils.html#boltons.fileutils.atomic_save\n[omd]: https://boltons.readthedocs.org/en/latest/dictutils.html#boltons.dictutils.OrderedMultiDict\n[pq]: https://boltons.readthedocs.org/en/latest/queueutils.html#boltons.queueutils.PriorityQueue\n[chunked]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.chunked\n[windowed]: https://boltons.readthedocs.org/en/latest/iterutils.html#boltons.iterutils.windowed\n[tbinfo]: https://boltons.readthedocs.org/en/latest/tbutils.html#boltons.tbutils.TracebackInfo",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 18,
+      "score": 1.4217722219444318,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#6",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "Found something missing in the standard library that should be in\n`boltons`? Found something missing in `boltons`? First, take a\nmoment to read the very brief [architecture statement][architecture]\nto make sure the functionality would be a good fit. It covers the\ndesign philosophy, what belongs in boltons, and how modules are\norganized.\n\nThen, if you are very motivated, submit [a Pull Request][prs]. Otherwise,\nsubmit a short feature request on [the Issues page][issues], and we will\nfigure something out.\n\n[architecture]: https://boltons.readthedocs.org/en/latest/architecture.html\n[issues]: http",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 19,
+      "score": 1.229673858754807,
+      "support": "unknown",
+      "freshness": "unknown"
+    },
+    {
+      "evidence_id": "doc:README.md#2",
+      "source_type": "documentation",
+      "source_ref": "README.md",
+      "commit_sha": "bba729bf4539afc993a6410bdf8074b28707004a",
+      "line_start": null,
+      "line_end": null,
+      "snippet": "* [Atomic file saving][atomic], bolted on with [fileutils][fileutils]\n  * A highly-optimized [OrderedMultiDict][omd], in [dictutils][dictutils]\n  * *Two* types of [PriorityQueue][pq], in [queueutils][queueutils]\n  * [Chunked][chunked] and [windowed][windowed] iteration, in [iterutils][iterutils]\n  * Recursive data structure [iteration and merging][remap], with [iterutils.remap][iterutils.remap]\n  * Exponential backoff functionality, including jitter, through [iterutils.backoff][iterutils.backoff]\n  * A full-featured [TracebackInfo][tbinfo] type, for representing stack traces,\n    in [tbutils][",
+      "retrieval_query": "Speed up MultiReplace match lookup",
+      "retrieval_method": "bm25",
+      "rank": 20,
+      "score": 1.0124354830004167,
+      "support": "unknown",
+      "freshness": "unknown"
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "g1-r0",
+      "scope": "src",
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "target_files": [
+        "boltons/strutils.py"
+      ],
+      "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -400,7 +400,7 @@\n     cleaned = ANSI_SEQUENCES.sub('', text)\n \n     # Transform back the result to the same bytearray type provided by the user.\n-    if target_type or target_type != type(cleaned):\n+    if target_type and target_type != type(cleaned):\n         cleaned = target_type(cleaned, 'utf-8')\n \n     return cleaned",
+      "application_status": "reverted",
+      "apply_error": null,
+      "out_of_scope_files": [],
+      "revision_index": 0
+    }
+  ],
+  "test_runs": [
+    {
+      "run_id": "baseline",
+      "phase": "pre_repair",
+      "status": "failed",
+      "selector": "tests/test_strutils.py::test_strip_ansi",
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    },
+    {
+      "run_id": "g1-r0-post",
+      "phase": "post_repair",
+      "status": "passed",
+      "selector": "tests/test_strutils.py::test_strip_ansi",
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": []
+    },
+    {
+      "run_id": "g1-r0-regression",
+      "phase": "post_repair",
+      "status": "passed",
+      "selector": "tests",
+      "passed": 441,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": []
+    },
+    {
+      "run_id": "final-suite",
+      "phase": "final",
+      "status": "failed",
+      "selector": "tests",
+      "passed": 440,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    }
+  ],
+  "final_test_status": "failed",
+  "integrity": {
+    "guard_ran": true,
+    "guard_decision": "escalate",
+    "weakening": {
+      "checks_run": true,
+      "assertions_before": 0,
+      "assertions_after": 0,
+      "removed_assertions": 0,
+      "added_skip_markers": 0,
+      "added_xfail_markers": null,
+      "loosened_comparisons": null,
+      "swallowed_exceptions": null,
+      "deleted_tests": null,
+      "weakening_detected": false
+    },
+    "prohibited_edits": {
+      "checks_run": true,
+      "files_modified": [
+        "boltons/strutils.py"
+      ],
+      "out_of_scope_files": [],
+      "test_files_modified": []
+    },
+    "mutation": {
+      "status": "not_run",
+      "mutants_total": null,
+      "killed_by_reference_tests": null,
+      "killed_by_repaired_tests": null
+    },
+    "tests_untouched_for_fix_code": true,
+    "evidence_requirement_met": null,
+    "rejection_reasons": []
+  },
+  "memory_reads": [],
+  "memory_writes": [],
+  "tool_events": [
+    {
+      "event_id": "tool-1",
+      "step_index": 0,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 223.6
+    },
+    {
+      "event_id": "tool-2",
+      "step_index": 1,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 268.2
+    },
+    {
+      "event_id": "tool-3",
+      "step_index": 2,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 217.2
+    },
+    {
+      "event_id": "tool-4",
+      "step_index": 3,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 215.7
+    },
+    {
+      "event_id": "tool-5",
+      "step_index": 4,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 266.3
+    },
+    {
+      "event_id": "tool-6",
+      "step_index": 5,
+      "tool": "search_repo",
+      "called_by": "intent_analyst",
+      "arguments": {
+        "query_chars": 32,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 0.8
+    },
+    {
+      "event_id": "tool-7",
+      "step_index": 6,
+      "tool": "search_repo",
+      "called_by": "intent_analyst",
+      "arguments": {
+        "query_chars": 75,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 0.8
+    },
+    {
+      "event_id": "tool-8",
+      "step_index": 7,
+      "tool": "search_repo",
+      "called_by": "intent_analyst",
+      "arguments": {
+        "query_chars": 34,
+        "top_k": 24,
+        "budget": "agent"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 0.5
+    },
+    {
+      "event_id": "tool-9",
+      "step_index": 8,
+      "tool": "apply_patch",
+      "called_by": "repairer",
+      "arguments": {
+        "operation": "validate",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 52.3
+    },
+    {
+      "event_id": "tool-10",
+      "step_index": 9,
+      "tool": "apply_patch",
+      "called_by": "repairer",
+      "arguments": {
+        "operation": "apply",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 38.6
+    },
+    {
+      "event_id": "tool-11",
+      "step_index": 10,
+      "tool": "run_tests",
+      "called_by": "integrity_guard",
+      "arguments": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 217.8
+    },
+    {
+      "event_id": "tool-12",
+      "step_index": 11,
+      "tool": "run_tests",
+      "called_by": "integrity_guard",
+      "arguments": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "operational"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 2081.5
+    },
+    {
+      "event_id": "tool-13",
+      "step_index": 12,
+      "tool": "apply_patch",
+      "called_by": "orchestrator",
+      "arguments": {
+        "operation": "revert",
+        "scope": null,
+        "budget": "exempt"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 59.2
+    },
+    {
+      "event_id": "tool-14",
+      "step_index": 13,
+      "tool": "run_tests",
+      "called_by": "orchestrator",
+      "arguments": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 2126.4
+    }
+  ],
+  "usage": {
+    "reported": true,
+    "input_tokens": 7889,
+    "output_tokens": 441,
+    "total_tokens": 10697,
+    "llm_calls": 3
+  },
+  "errors": [],
+  "outcome": {
+    "status": "escalated",
+    "escalation": {
+      "trigger": "insufficient_evidence",
+      "failing_test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "evidence_found_ids": [
+        "msg:bba729bf4539"
+      ],
+      "evidence_missing": [
+        "g1: independent verification: post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+      ],
+      "competing_hypotheses": [
+        "g1 analyst: regression: The change in strip_ansi replaced 'and' with 'or' in 'if target_type and target_type != type(cleaned):', causing target_type(cleaned, 'utf-8') to be called with None when target_type is None. The commit message indicates the commit was intended only to speed up MultiReplace match lookup, making this change an unintended regression.",
+        "g1 alternative: The change to strip_ansi was intended, but there is no evidence or documentation supporting a behavior change in strip_ansi."
+      ],
+      "summary": "g1: integrity guard escalated: post-repair tests pass, no integrity finding was raised and the semantic review found it consistent, but no trusted probe supplied; a raw pytest PASS is not integrity approval - human verification required"
+    },
+    "maintainer_approved": null,
+    "revisions_used": 0
+  },
+  "evaluation": null
+}

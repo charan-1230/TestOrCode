@@ -75,6 +75,9 @@ class EpisodeContext(_Contract):
     edit_policy: EditPolicy = Field(default_factory=EditPolicy)
     budget: EpisodeBudget = Field(default_factory=EpisodeBudget)
     allowed_tools: tuple[ToolName, ...] = ()
+    stability_runs: int = Field(
+        default=1, ge=1, description="Runs a failure must fail in to count as stable (environment.stability_runs)."
+    )
 
     @classmethod
     def from_episode_input(cls, episode: EpisodeInput, worktree_path: Path) -> EpisodeContext:
@@ -86,6 +89,7 @@ class EpisodeContext(_Contract):
             edit_policy=episode.edit_policy,
             budget=episode.budget,
             allowed_tools=tuple(episode.allowed_tools),
+            stability_runs=episode.environment.stability_runs or 1,
         )
 
 
@@ -182,6 +186,9 @@ class FailureGroupDetail(_Contract):
         default=(), description="Relevant history, at or before the current commit."
     )
     diff_context: str | None = Field(default=None, description="Relevant part of the CI commit diff.")
+    mapped_by: Literal["target_function", "traceback", "model", "unmapped", "test_file"] | None = Field(
+        default=None, description="How Triage tied the tests to function_qualname (unmapped = no function found, one test per group; test_file = older records that grouped unmapped tests by file)."
+    )
 
     @model_validator(mode="after")
     def _check(self) -> FailureGroupDetail:
@@ -228,6 +235,10 @@ class IntentAnalysis(_Contract):
     group_id: Identifier
     hypothesis: Hypothesis
     expected_behaviour: str | None = Field(default=None, description="Behaviour the code should have.")
+    alternative_explanation: str | None = Field(
+        default=None, max_length=2000,
+        description="The strongest competing hypothesis (the other side), and why it was not chosen.",
+    )
     cited_evidence_ids: tuple[Identifier, ...] = ()
     contradicting_evidence_ids: tuple[Identifier, ...] = ()
     confidence: float = Field(ge=0.0, le=1.0)
@@ -243,6 +254,33 @@ class IntentAnalysis(_Contract):
         if self.recommended_decision is DecisionLabel.UPDATE_TEST and not self.cited_evidence_ids:
             raise ValueError("UPDATE_TEST requires at least one cited evidence id")
         return self
+
+
+def decision_policy_problem(analysis: IntentAnalysis) -> str | None:
+    """Why ``analysis`` breaks the proposal's decision policy (section 7), or None.
+
+    Checked by the orchestrator (an escalation, not a parse error), on top of the
+    validator above, which already rejects UPDATE_TEST without a cited id:
+
+    * FIX_CODE must cite the evidence whose expected behaviour the change
+      contradicts (a docstring, doc, changelog entry, earlier commit message, or a
+      memory record whose probe passed).  "Nothing says the change was intended"
+      is not evidence for a regression; with neither side supported the policy says
+      ESCALATE.
+    * An id cited both for and against the hypothesis means the evidence conflicts.
+
+    Whether a cited item really says what the analyst claims is not checked here
+    (ids are only checked to exist, by ``unknown_evidence_ids``).
+    """
+    if analysis.recommended_decision is DecisionLabel.FIX_CODE and not analysis.cited_evidence_ids:
+        return (
+            "FIX_CODE cites no evidence of the expected behaviour the change contradicts; "
+            "the absence of intent evidence alone is not enough"
+        )
+    both = sorted(set(analysis.cited_evidence_ids) & set(analysis.contradicting_evidence_ids))
+    if both and analysis.recommended_decision is not DecisionLabel.ESCALATE:
+        return f"evidence cited both for and against the hypothesis: {', '.join(both)}"
+    return None
 
 
 def unknown_evidence_ids(cited: Iterable[str], retrieved: Iterable[str]) -> list[str]:
@@ -327,7 +365,12 @@ class GuardResult(_Contract):
 
     decision: GuardDecision
     reasons: tuple[str, ...] = ()
-    post_repair_run: PytestExecution | None = None
+    post_repair_run: PytestExecution | None = Field(
+        default=None, description="The group's own failing tests after the repair."
+    )
+    regression_run: PytestExecution | None = Field(
+        default=None, description="The whole test suite after the repair, checked for new failures."
+    )
     integrity: IntegrityReport
 
     @model_validator(mode="after")

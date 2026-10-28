@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from pydantic import BaseModel
 
+from testorcode.agents.prompts import PROMPT_VERSION
 from testorcode.config import Settings
 from testorcode.errors import ConfigError, LLMRateLimitError, PatchError, ToolError
 from testorcode.llm_client import FakeLLMClient, OpenAICompatibleClient
@@ -34,9 +35,11 @@ from testorcode.schemas.episode_schemas import (
     EpisodeBudget,
     EpisodeInput,
     EvidenceSourceType,
+    FailingTest,
     HypothesisKind,
     PatchScope,
     RepairDirection,
+    ToolName,
 )
 from testorcode.schemas.result_schemas import (
     AgentRole,
@@ -48,13 +51,17 @@ from testorcode.schemas.result_schemas import (
     ProbeStatus,
     RetrievedEvidence,
     RunStatus,
+    SupportStatus,
     TestRunPhase,
     TestRunStatus,
+    ToolCallStatus,
 )
 from testorcode.schemas.tests.conftest import HEAD, make_s1, make_s3, memory_record
 
 WT = Path("/tmp/testorcode-fake-worktree")  # never touched: patch tools are fakes
-SETTINGS = Settings.from_env({"LLM_MODEL": "fake-model-1"})
+# A2 (no memory) is the condition the pipeline runs without a MemoryStore; FULL needs one.
+SETTINGS = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A2"})
+FULL_SETTINGS = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "FULL"})
 TEST_DIFF = "--- a/tests/test_synthlib.py\n+++ b/tests/test_synthlib.py\n@@\n-x\n+y\n"
 SRC_DIFF = "--- a/src/synthlib/core.py\n+++ b/src/synthlib/core.py\n@@\n-x\n+y\n"
 # Contracts use str_strip_whitespace, so the diff reaching the tools has lost its final newline.
@@ -129,6 +136,9 @@ class FakeAgents:
 
     def __init__(self) -> None:
         self.repair_calls: list[GuardResult | None] = []
+        self.repair_reasons: list[tuple[str, ...]] = []
+        self.memory_record = None  # None = the real Guard builder (not implemented yet)
+        self.known_failures: list[frozenset[str]] = []
 
     @staticmethod
     def ask(llm, role: AgentRole, model: type[BaseModel]):
@@ -143,15 +153,20 @@ class FakeAgents:
             memory.read(context, group.group.function_qualname)
         return self.ask(llm, AgentRole.INTENT_ANALYST, IntentAnalysis)
 
-    def repair(self, context, group, analysis, *, llm, previous_rejection=None):
+    def repair(self, context, group, analysis, *, llm, previous_rejection=None, rejection_reasons=(), tools=None):
         self.repair_calls.append(previous_rejection)
+        self.repair_reasons.append(rejection_reasons)
         return self.ask(llm, AgentRole.REPAIRER, RepairReply).output
 
-    def guard(self, context, group, analysis, proposal, *, llm=None):
+    def guard(self, context, group, analysis, proposal, *, llm=None, known_failures=frozenset(), **_):
+        self.known_failures.append(known_failures)
         return self.ask(llm, AgentRole.INTEGRITY_GUARD, GuardResult)
 
     def agents(self) -> Agents:
-        return Agents(triage=self.triage, intent_analyst=self.intent, repairer=self.repair, integrity_guard=self.guard)
+        extra = {"memory_record": self.memory_record} if self.memory_record else {}
+        return Agents(
+            triage=self.triage, intent_analyst=self.intent, repairer=self.repair, integrity_guard=self.guard, **extra
+        )
 
 
 class FakeRetriever:
@@ -187,17 +202,22 @@ class FakePatchTools:
         self.reverted.append(diff)
 
     def tools(self) -> PatchTools:
-        return PatchTools(validate=self.validate, apply=self.apply, revert=self.revert)
+        # No final whole-suite run: the worktree here is fictional (tests of it use their own run_suite).
+        return PatchTools(validate=self.validate, apply=self.apply, revert=self.revert, run_suite=None)
 
 
 def run(episode: EpisodeInput, replies: dict, *, tools: FakePatchTools | None = None,
-        settings: Settings = SETTINGS, memory=None, retriever=None, fake: FakeAgents | None = None):
+        settings: Settings = SETTINGS, memory=None, retriever=None, fake: FakeAgents | None = None,
+        maintainer=None):
     fake = fake or FakeAgents()
     tools = tools or FakePatchTools()
+    if memory is not None and settings is SETTINGS:
+        settings = FULL_SETTINGS
     replies = {AgentRole.TRIAGE: [triage_result(episode)], **replies}
     episode_run = EpisodeRun(
         episode, worktree_path=WT, settings=settings, llm=FakeLLMClient(replies), memory=memory,
         retriever=retriever or FakeRetriever(), agents=fake.agents(), patch_tools=tools.tools(),
+        maintainer=maintainer,
     )
     record = episode_run.execute()
     assert ExperimentRunRecord.model_validate_json(record.to_jsonl()) == record
@@ -332,7 +352,7 @@ def test_second_rejection_escalates_and_leaves_worktree_reverted() -> None:
 
 
 def test_revision_limit_zero_escalates_on_first_rejection() -> None:
-    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "MAX_REPAIR_REVISIONS": "0"})
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "MAX_REPAIR_REVISIONS": "0", "EXPERIMENT_CONDITION": "A2"})
     record, _, _, fake = run(S1, {
         AgentRole.INTENT_ANALYST: [analysis(G1)],
         AgentRole.REPAIRER: [proposal(G1)],
@@ -537,7 +557,7 @@ def test_usage_of_invalid_replies_reaches_the_run_record() -> None:
     replies = [reply(triage_result(S1).model_dump_json()), reply("{bad"), reply("{still bad")]
     sdk = NS(chat=NS(completions=NS(create=lambda **kw: replies.pop(0))))
     llm = OpenAICompatibleClient(
-        Settings.from_env({"LLM_MODEL": "m-1", "LLM_BASE_URL": "http://llm.invalid/v1"}),
+        Settings.from_env({"LLM_MODEL": "m-1", "LLM_BASE_URL": "http://llm.invalid/v1", "EXPERIMENT_CONDITION": "A2"}),
         sdk_client=sdk, sleep=lambda s: None,
     )
     record = EpisodeRun(
@@ -603,3 +623,333 @@ def test_explicit_guard_escalate_is_not_a_rejection() -> None:
     assert record.patches[0].application_status is PatchApplicationStatus.REVERTED
     assert tools.reverted == [STORED_TEST_DIFF]
     assert record.integrity.guard_decision is GuardDecision.ESCALATE
+
+
+# --------------------------------------------------------------------------- #
+# Day 2: conditions, revision feedback, tool trajectory, maintainer, summaries
+# --------------------------------------------------------------------------- #
+
+APPROVED = {
+    AgentRole.INTENT_ANALYST: [analysis(G1)],
+    AgentRole.REPAIRER: [proposal(G1)],
+    AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+}
+
+
+@pytest.mark.parametrize("condition", ["A1", "A3", "A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
+def test_condition_without_a_code_path_fails_explicitly(condition: str) -> None:
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
+    record, er, _, _ = run(S1, {}, settings=settings)
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    [err] = record.errors
+    assert "not implemented" in err.message and err.operation == "setup"
+    assert record.predictions == [] and er.trace == [(None, Stage.FAILED)]
+    assert record.provenance.condition.value == condition
+
+
+def test_full_without_memory_store_fails_explicitly() -> None:
+    record, _, _, _ = run(S1, {}, settings=FULL_SETTINGS)
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert "needs a MemoryStore" in record.errors[0].message
+
+
+def test_a2_ignores_a_memory_store_and_hides_visible_memory() -> None:
+    class CountingMemory(FakeMemory):
+        reads = 0
+
+        def read(self, context, function_qualname):
+            CountingMemory.reads += 1
+            return super().read(context, function_qualname)
+
+    a2 = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A2"})
+    _, er, _, _ = run(S1, APPROVED, memory=CountingMemory(), settings=a2)
+    assert CountingMemory.reads == 0 and er.episode.visible_memory is None
+
+
+def test_validation_reasons_reach_the_repairer_on_revision() -> None:
+    bad = PatchValidation(valid=False, allowed=True, changed_paths=("tests/test_synthlib.py",),
+                          rejection_reasons=("hunk is truncated",))
+    _, _, _, fake = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)],
+        AgentRole.REPAIRER: [proposal(G1), proposal(G1)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    }, tools=FakePatchTools(validations=[bad]))
+    assert fake.repair_reasons == [(), ("hunk is truncated",)]
+    assert fake.repair_calls == [None, None]
+
+
+def test_guard_rejection_clears_earlier_validation_reasons() -> None:
+    bad = PatchValidation(valid=False, allowed=True, rejection_reasons=("does not apply",))
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A2"})
+    _, _, _, fake = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)],
+        AgentRole.REPAIRER: [proposal(G1), proposal(G1)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.REJECT)],
+    }, tools=FakePatchTools(validations=[bad]), settings=settings)
+    assert fake.repair_reasons[1] == ("does not apply",)
+
+
+def test_tool_calls_are_recorded_with_the_acting_role() -> None:
+    record, _, _, _ = run(S1, APPROVED)
+    [search] = record.tool_events
+    assert search.tool is ToolName.SEARCH_REPO and search.called_by is AgentRole.INTENT_ANALYST
+    assert search.status is ToolCallStatus.OK and "query_chars" in search.arguments
+
+
+def test_tool_call_budget_is_enforced() -> None:
+    tight = S1.model_copy(update={"budget": EpisodeBudget(max_tool_calls=1)})
+    record, _, _, _ = run(tight, APPROVED, memory=FakeMemory())  # search (1) then memory.read (2)
+    assert record.outcome.status is RunStatus.BUDGET_EXHAUSTED
+    assert [e.tool for e in record.tool_events] == [ToolName.SEARCH_REPO]
+
+
+def test_maintainer_approval_without_memory_logs_a_blocked_write() -> None:
+    seen = []
+
+    def maintainer(group, decision, result):
+        seen.append((group.group.group_id, decision))
+        return True
+
+    record, _, _, _ = run(S1, APPROVED, maintainer=maintainer)
+    assert seen == [(G1, DecisionLabel.UPDATE_TEST)]
+    assert record.outcome.maintainer_approved is True
+    [attempt] = record.memory_writes
+    assert attempt.approved and not attempt.written and attempt.blocked_reason == "memory_disabled"
+
+
+def test_maintainer_rejection_blocks_the_write() -> None:
+    record, _, _, _ = run(S1, APPROVED, maintainer=lambda *_: False)
+    assert record.outcome.maintainer_approved is False
+    assert record.memory_writes[0].blocked_reason == "not_approved"
+
+
+def test_approved_record_is_written_by_the_guard_workflow() -> None:
+    store, fake = FakeMemory(), FakeAgents()
+    fake.memory_record = lambda *_: memory_record("mem-new")
+    record, _, _, _ = run(S1, {**APPROVED, AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("mem-1",))]},
+                          memory=store, fake=fake, maintainer=lambda *_: True)
+    assert store.writes == 1
+    [attempt] = record.memory_writes
+    assert attempt.written and attempt.record_id == "mem-new"
+    assert record.tool_events[-1].tool is ToolName.MEMORY_WRITE
+    assert record.tool_events[-1].called_by is AgentRole.INTEGRITY_GUARD
+
+
+def test_missing_record_builder_is_a_logged_non_fatal_write_error() -> None:
+    store = FakeMemory()
+    record, _, _, _ = run(S1, {**APPROVED, AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("mem-1",))]},
+                          memory=store, maintainer=lambda *_: True)
+    assert store.writes == 0 and record.outcome.status is RunStatus.COMPLETED
+    assert record.memory_writes[0].blocked_reason == "write_error"
+    [err] = record.errors
+    assert not err.fatal and err.operation == f"memory_write:{G1}"
+
+
+def test_escalation_summary_lists_missing_evidence_and_both_hypotheses() -> None:
+    record, _, _, _ = run(S1, {AgentRole.INTENT_ANALYST: [analysis(G1, DecisionLabel.ESCALATE)]})
+    summary = record.outcome.escalation
+    assert any("no cited evidence" in m for m in summary.evidence_missing)
+    assert len(summary.competing_hypotheses) == 2
+    assert "undecided" in summary.competing_hypotheses[1]
+
+
+def test_invented_citation_is_listed_as_missing_evidence() -> None:
+    record, _, _, _ = run(S1, {AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("ev-invented",))]})
+    assert any("ev-invented" in m for m in record.outcome.escalation.evidence_missing)
+
+
+def test_provenance_records_prompt_version() -> None:
+    record, _, _, _ = run(S1, APPROVED)
+    assert record.provenance.prompt_template_version == PROMPT_VERSION
+
+
+def test_repairer_escalation_explains_what_is_missing() -> None:
+    request = EscalationRequest(group_id=G1, trigger="insufficient_evidence", summary="needs a setup change")
+    record, _, _, _ = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)], AgentRole.REPAIRER: [RepairReply(output=request)],
+    })
+    assert any("within the allowed edit policy" in m for m in record.outcome.escalation.evidence_missing)
+
+
+def test_patch_citing_unretrieved_evidence_is_rejected_and_fed_back() -> None:
+    invented = PatchProposal(
+        group_id=G1, decision=RepairDirection.UPDATE_TEST, scope=PatchScope.TEST,
+        target_files=("tests/test_synthlib.py",), unified_diff=TEST_DIFF, rationale="r",
+        evidence_ids=("ev-msg", "ev-invented"),
+    )
+    record, _, tools, fake = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)],
+        AgentRole.REPAIRER: [RepairReply(output=invented), proposal(G1)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    })
+    first, second = record.patches
+    assert "ev-invented" in first.apply_error and tools.applied == [second.unified_diff]
+    assert any("ev-invented" in r for r in fake.repair_reasons[1])
+    assert record.outcome.status is RunStatus.COMPLETED and record.outcome.revisions_used == 1
+
+
+def test_patch_citing_unretrieved_evidence_twice_escalates_without_applying() -> None:
+    invented = PatchProposal(
+        group_id=G1, decision=RepairDirection.UPDATE_TEST, scope=PatchScope.TEST,
+        target_files=("tests/test_synthlib.py",), unified_diff=TEST_DIFF, rationale="r", evidence_ids=("ev-x",),
+    )
+    record, _, tools, _ = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)],
+        AgentRole.REPAIRER: [RepairReply(output=invented), RepairReply(output=invented)],
+    })
+    assert tools.applied == [] and record.outcome.status is RunStatus.ESCALATED
+
+
+
+def test_record_keeps_triage_groups_and_unstable_tests() -> None:
+    tr = triage_result(S3)
+    unstable = tr.model_copy(update={"unstable_test_ids": ("tests/flaky.py::test_x",)})
+    groups = [d.model_copy(update={"mapped_by": "traceback"}) for d in unstable.groups]
+    replies = {AgentRole.TRIAGE: [unstable.model_copy(update={"groups": tuple(groups)})]}
+    for d in groups:
+        replies.setdefault(AgentRole.INTENT_ANALYST, []).append(analysis(d.group.group_id, DecisionLabel.ESCALATE))
+    record, _, _, _ = run(S3, replies)
+    assert [g.group_id for g in record.failure_groups] == [d.group.group_id for d in groups]
+    assert all(g.mapped_by == "traceback" and g.stability_runs == S3.environment.stability_runs
+               for g in record.failure_groups)
+    assert record.failure_groups[0].test_ids == list(groups[0].group.test_ids)
+    assert record.unstable_test_ids == ["tests/flaky.py::test_x"]
+
+
+def test_cited_and_contradicting_evidence_are_labelled() -> None:
+    record, _, _, _ = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("ev-msg",),
+                                            contradicting_evidence_ids=("ev-changelog",))],
+        AgentRole.REPAIRER: [proposal(G1)], AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    })
+    support = {e.evidence_id: e.support for e in record.retrieved_evidence}
+    assert support == {"ev-msg": SupportStatus.SUPPORTS, "ev-changelog": SupportStatus.CONTRADICTS}
+
+
+def test_analyst_alternative_explanation_reaches_the_escalation_summary() -> None:
+    record, _, _, _ = run(S1, {AgentRole.INTENT_ANALYST: [
+        analysis(G1, DecisionLabel.ESCALATE, alternative_explanation="maybe the test is right after all")
+    ]})
+    assert "maybe the test is right after all" in record.outcome.escalation.competing_hypotheses[1]
+
+
+def test_failed_triage_leaves_no_groups() -> None:
+    record, _, _, _ = run(S1, {AgentRole.TRIAGE: [LLMRateLimitError("429")]})
+    assert record.failure_groups == [] and record.outcome.status is RunStatus.API_FAILURE
+
+
+
+def test_b1_cannot_run_through_the_multi_agent_pipeline() -> None:
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "B1"})
+    record, er, _, _ = run(S1, {}, settings=settings)  # EpisodeRun directly, not run_episode
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert "not executed by this pipeline" in record.errors[0].message and er.trace == [(None, Stage.FAILED)]
+
+
+def _suite(status: TestRunStatus, error: Exception | None = None, failing: tuple[str, ...] = ()):
+    calls = []
+
+    def run_suite(worktree_path, selectors, **_):
+        calls.append(list(selectors))
+        if error is not None:
+            raise error
+        extra = {"error_message": "ImportError"} if status in (TestRunStatus.ERROR, TestRunStatus.COLLECTION_ERROR) else {}
+        if status is TestRunStatus.TIMEOUT:
+            extra = {"timed_out": True, "exit_code": None}
+        failures = tuple(FailingTest(test_id=t, test_file=t.split("::")[0], test_name=t.split("::")[-1],
+                                     failure_message="assert") for t in failing)
+        return PytestExecution(**{"selectors": tuple(selectors), "command": ("pytest",), "status": status,
+                                  "failures": failures, "exit_code": 0 if status is TestRunStatus.PASSED else 2,
+                                  **extra})
+    return run_suite, calls
+
+
+def run_with_suite(run_suite, episode=S1, replies=None):
+    tools = FakePatchTools()
+    patch_tools = PatchTools(validate=tools.validate, apply=tools.apply, revert=tools.revert, run_suite=run_suite)
+    replies = {AgentRole.TRIAGE: [triage_result(episode)], **(replies or APPROVED)}
+    er = EpisodeRun(episode, worktree_path=WT, settings=SETTINGS, llm=FakeLLMClient(replies),
+                    retriever=FakeRetriever(), agents=FakeAgents().agents(), patch_tools=patch_tools)
+    return er.execute()
+
+
+@pytest.mark.parametrize("status", [TestRunStatus.PASSED, TestRunStatus.FAILED, TestRunStatus.COLLECTION_ERROR])
+def test_final_status_is_the_final_suite_run_not_the_last_group(status) -> None:  # FAILED: tests outside any group
+    run_suite, calls = _suite(status)
+    record = run_with_suite(run_suite)
+    assert len(calls) == 1 and record.test_runs[-1].phase is TestRunPhase.FINAL
+    assert record.test_runs[-2].status is TestRunStatus.PASSED  # the group's own verification still recorded
+    assert record.final_test_status is status  # an infrastructure status stays itself, never PASSED/FAILED
+
+
+def test_final_suite_that_cannot_start_is_not_run_with_an_error() -> None:
+    run_suite, _ = _suite(TestRunStatus.PASSED, error=ToolError("sandbox unavailable"))
+    record = run_with_suite(run_suite)
+    assert record.final_test_status is TestRunStatus.NOT_RUN
+    [err] = record.errors
+    assert err.operation == "final_suite" and not err.fatal and err.category is ErrorCategory.TOOL_ERROR
+    assert record.outcome.status is RunStatus.TOOL_FAILURE  # the end state is unknown: never reported as completed
+    assert record.predictions[0].predicted_action is DecisionLabel.UPDATE_TEST  # the decision history is kept
+
+
+@pytest.mark.parametrize(
+    ("status", "category"),
+    [(TestRunStatus.ERROR, ErrorCategory.TOOL_ERROR), (TestRunStatus.COLLECTION_ERROR, ErrorCategory.TOOL_ERROR),
+     (TestRunStatus.TIMEOUT, ErrorCategory.TIMEOUT)],
+)
+def test_final_suite_that_does_not_execute_the_tests_is_a_tool_failure(status, category) -> None:
+    run_suite, _ = _suite(status)
+    record = run_with_suite(run_suite)
+    assert record.final_test_status is status  # keeps its own status
+    [err] = record.errors
+    assert err.operation == "final_suite" and err.category is category and status.value in err.message
+    assert record.outcome.status is RunStatus.TOOL_FAILURE and not err.counted_against_agent
+    [group] = record.failure_groups
+    assert group.disposition == "accepted" and group.guard_decision is GuardDecision.APPROVE
+
+
+def test_accepted_group_failing_in_the_final_suite_is_flagged_not_completed() -> None:
+    # Two groups: g-n accepted, g-s escalated.  The final suite shows g-n's test failing again (and g-s's, which is
+    # expected: it was never repaired).
+    g_n, g_s = (d.group for d in triage_result(S3).groups)
+    run_suite, _ = _suite(TestRunStatus.FAILED, failing=(g_n.test_ids[0], *g_s.test_ids))
+    record = run_with_suite(run_suite, episode=S3, replies={
+        AgentRole.INTENT_ANALYST: [analysis("g-n"), analysis("g-s", DecisionLabel.ESCALATE)],
+        AgentRole.REPAIRER: [proposal("g-n")],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    })
+    groups = {g.group_id: g for g in record.failure_groups}
+    assert groups["g-n"].disposition == "failed_final_verification"
+    assert groups["g-n"].final_failing_test_ids == [g_n.test_ids[0]]
+    assert groups["g-n"].guard_decision is GuardDecision.APPROVE  # the verification history is kept
+    assert groups["g-s"].disposition == "not_applied" and groups["g-s"].final_failing_test_ids == []
+    assert record.outcome.status is RunStatus.INCOMPLETE
+    [err] = record.errors
+    assert err.operation == "final_suite" and "g-n" in err.message and g_n.test_ids[0] in err.message
+    assert {p.test_id: p.predicted_action for p in record.predictions}[g_n.test_ids[0]] is DecisionLabel.UPDATE_TEST
+
+
+def test_failure_group_records_keep_every_guard_verdict() -> None:
+    record, _, _, _ = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1)],
+        AgentRole.REPAIRER: [proposal(G1), proposal(G1)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.REJECT), guard(GuardDecision.APPROVE)],
+    })
+    [group] = record.failure_groups
+    assert group.decision is DecisionLabel.UPDATE_TEST and group.guard_decision is GuardDecision.APPROVE
+    assert "assertion removed" in " ".join(group.guard_reasons)
+    assert group.patch_ids == [f"{G1}-r0", f"{G1}-r1"] and group.disposition == "accepted"
+    assert group.integrity is not None
+
+
+def test_final_suite_is_not_blocked_by_the_tool_budget() -> None:
+    from testorcode.tools.trace import tool_call
+    run_suite_inner, _ = _suite(TestRunStatus.PASSED)
+
+    def recorded(worktree_path, selectors, **kw):  # behaves like the real runner: a recorded tool call
+        with tool_call(ToolName.RUN_TESTS, selectors=list(selectors)):
+            return run_suite_inner(worktree_path, selectors, **kw)
+    tight = S1.model_copy(update={"budget": EpisodeBudget(max_tool_calls=1)})  # the one search uses it up
+    record = run_with_suite(recorded, episode=tight)
+    assert record.final_test_status is TestRunStatus.PASSED
+    assert record.tool_events[-1].called_by is AgentRole.ORCHESTRATOR

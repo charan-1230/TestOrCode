@@ -4,11 +4,16 @@
 
 Steps: materialize the episode's CI state in a git worktree of the pinned clone, build ``Settings`` from
 ``.env``, run ``orchestrator.run_episode`` with the real agents and tools, write the ``ExperimentRunRecord``
-to ``results/day1/<run_id>.json`` and print a summary.  Only after the run, the harness reads the gold
-labels (``pilot_<split>.jsonl``) to score the prediction; they are never passed to the agents.
+to ``<out>/<run_id>.json`` (default ``results/day2``) and print a summary.
 
-The condition is recorded as A2 (no memory): ``MemoryStore`` is not implemented yet, and A2 is exactly
-the multi-agent pipeline with intent retrieval and the Integrity Guard.
+Gold labels (``pilot_<split>.jsonl``) stay on the harness side.  They are used only by the simulated
+maintainer (proposal section 9: approve when the direction matches the gold label and the tests pass), which
+the orchestrator asks after a Guard APPROVE, and to score the prediction after the run.  They are never
+passed to an agent.
+
+``--condition`` defaults to A2 (no memory). B1 runs the single-agent baseline on the same input. FULL fails
+explicitly until ``MemoryStore`` exists, and conditions without a code path (A1, A3, ...) are recorded as
+not implemented.
 
     python scripts/run_episode.py --episode dev-05 --repo ../boltons
 """
@@ -19,22 +24,22 @@ import argparse
 import importlib.util
 import json
 import sys
-from functools import partial
 from pathlib import Path
 
-from testorcode.agents.integrity_guard import verify_repair
-from testorcode.conditions import episode_for_condition
 from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
 from testorcode.llm_client import create_llm_client
 from testorcode.logging_config import configure_logging
-from testorcode.orchestrator import Agents, run_episode
+from testorcode.orchestrator import Maintainer, run_episode
 from testorcode.schemas.episode_schemas import DecisionLabel, HypothesisKind
-from testorcode.schemas.result_schemas import ExperimentCondition, ExperimentRunRecord
+from testorcode.schemas.result_schemas import (
+    ExperimentCondition,
+    ExperimentRunRecord,
+    TestRunStatus,
+)
 from testorcode.tools.git_tools import run_git
 
 ROOT = Path(__file__).resolve().parents[1]
-CONDITION = ExperimentCondition.A2_NO_MEMORY
 _DIRECTION = {HypothesisKind.OUTDATED_TEST: DecisionLabel.UPDATE_TEST, HypothesisKind.REGRESSION: DecisionLabel.FIX_CODE}
 
 
@@ -52,30 +57,32 @@ def main() -> int:
     parser.add_argument("--allow-test-split", action="store_true", help="the test split is frozen; refuse it by default")
     parser.add_argument("--repo", default=str(ROOT.parent / "boltons"), help="clone of the pinned repository")
     parser.add_argument("--worktree", default=None, help="default: ../episode-worktrees/<episode>")
-    parser.add_argument("--out", default=str(ROOT / "results" / "day1"))
+    parser.add_argument("--condition", default="A2", choices=[c.value for c in ExperimentCondition])
+    parser.add_argument("--out", default=str(ROOT / "results" / "day2"))
     args = parser.parse_args()
     if args.split == "test" and not args.allow_test_split:
         parser.error("the test split is frozen; pass --allow-test-split only for the frozen evaluation")
 
-    settings = Settings.from_env(env_file=ROOT / ".env").model_copy(update={"experiment_condition": CONDITION})
+    condition = ExperimentCondition(args.condition)
+    settings = Settings.from_env(env_file=ROOT / ".env").model_copy(update={"experiment_condition": condition})
     configure_logging(settings.log_level, log_file=settings.log_file, secrets=settings.secret_values())
 
     episode = next(e for e in load_agent_inputs(agent_view_path(args.split)) if e.episode_id == args.episode)
-    episode = episode_for_condition(episode, CONDITION)
     worktree = Path(args.worktree or ROOT.parent / "episode-worktrees" / args.episode).absolute()
     _materializer()(args.repo, worktree, episode.model_dump(mode="json"))
 
     llm = create_llm_client(settings)
-    agents = Agents(
-        integrity_guard=partial(
-            verify_repair, python_executable=settings.test_python, timeout_seconds=settings.test_timeout_seconds
-        )
-    )
-    record = run_episode(episode, worktree_path=worktree, settings=settings, llm=llm, memory=None, agents=agents)
-
-    # Harness side only from here on: gold labels are read after the run, for scoring.
+    # Harness side: gold labels feed only the simulated maintainer and the scoring below.
     full = next(e for e in load_episodes(episode_path(args.split)) if e.episode_id == args.episode)
-    summary = _summary(record, full.gold_actions(), full.scenario, worktree)
+    gold = full.gold_actions()
+    record = run_episode(
+        episode, worktree_path=worktree, settings=settings, llm=llm, memory=None,
+        maintainer=_simulated_maintainer(gold),
+    )
+    record = record.model_copy(update={"provenance": record.provenance.model_copy(
+        update={"split": args.split, "dataset_version": _dataset_version(args.split)}
+    )})
+    summary = _summary(record, gold, full.scenario, worktree)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -83,6 +90,21 @@ def main() -> int:
     (out / f"{record.provenance.run_id}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     _print(record, summary, out)
     return 0
+
+
+def _simulated_maintainer(gold: dict[str, DecisionLabel]) -> Maintainer:
+    """Proposal section 9: approve when the direction matches the gold label and the tests pass."""
+
+    def approve(group, decision, result) -> bool:
+        passed = result.post_repair_run is not None and result.post_repair_run.status is TestRunStatus.PASSED
+        return passed and all(gold.get(t) == decision for t in group.group.test_ids)
+
+    return approve
+
+
+def _dataset_version(split: str) -> str:
+    manifest = json.loads((ROOT / "datasets" / "pilot_manifest.json").read_text())
+    return "pilot@" + manifest["files_sha256"][f"pilot_{split}_agent_view.jsonl"][:12]
 
 
 def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) -> dict:
@@ -94,6 +116,10 @@ def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) 
         "scenario": str(scenario),
         "condition": record.provenance.condition,
         "model_id": record.provenance.model_id,
+        "prompt_version": record.provenance.prompt_template_version,
+        "code_revision": record.provenance.code_revision,
+        "failure_groups": [g.model_dump(mode="json") for g in record.failure_groups],
+        "unstable_test_ids": record.unstable_test_ids,
         "run_status": record.outcome.status,
         "final_test_status": record.final_test_status,
         "guard_decision": record.integrity.guard_decision,
@@ -119,6 +145,13 @@ def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) 
             for p in record.predictions
         ],
         "escalation": record.outcome.escalation.model_dump(mode="json") if record.outcome.escalation else None,
+        "maintainer_approved": record.outcome.maintainer_approved,
+        "memory_writes": [w.model_dump(mode="json") for w in record.memory_writes],
+        "tool_calls": len(record.tool_events),
+        "tool_events": [
+            {"tool": e.tool, "by": e.called_by, "status": e.status, "args": e.arguments, "error": e.error_message}
+            for e in record.tool_events
+        ],
         "errors": [e.model_dump(mode="json") for e in record.errors],
         "worktree_changed_files_after_run": ci_dirty,
         "worktree_status_after_run": status.splitlines(),
@@ -128,6 +161,11 @@ def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) 
 def _print(record: ExperimentRunRecord, summary: dict, out: Path) -> None:
     w = sys.stdout.write
     w(f"\n=== {summary['episode_id']} ({summary['scenario']})  condition={summary['condition']}  model={summary['model_id']}\n")
+    for g in summary["failure_groups"]:
+        w(f"group {g['group_id']}: {g['function_qualname'] or '-'} (mapped by {g['mapped_by'] or 'agent'}, "
+          f"{g['stability_runs']} stability run(s)) tests={len(g['test_ids'])}\n")
+    if summary["unstable_test_ids"]:
+        w(f"unstable (dropped): {summary['unstable_test_ids']}\n")
     for run in summary["test_runs"]:
         w(f"test run [{run['phase']}]: {run['status']} passed={run['passed']} failed={run['failed']}\n")
     for p in summary["predictions"]:
@@ -138,7 +176,18 @@ def _print(record: ExperimentRunRecord, summary: dict, out: Path) -> None:
           f"error={patch.apply_error or '-'}\n{patch.unified_diff}\n")
     w(f"guard: {summary['guard_decision']}  reasons: {summary['guard_reasons'] or '-'}\n")
     if summary["escalation"]:
-        w(f"escalation: {summary['escalation']['trigger']}: {summary['escalation']['summary']}\n")
+        esc = summary["escalation"]
+        w(f"escalation: {esc['trigger']}: {esc['summary']}\n")
+        for item in esc["evidence_missing"]:
+            w(f"  missing: {item}\n")
+        for item in esc["competing_hypotheses"]:
+            w(f"  hypothesis: {item[:300]}\n")
+    w(f"maintainer approved: {summary['maintainer_approved']}   memory writes: "
+      f"{[w_['blocked_reason'] or 'written' for w_ in summary['memory_writes']] or '-'}\n")
+    tools = {}
+    for e in summary["tool_events"]:
+        tools[f"{e['tool']}/{e['by']}"] = tools.get(f"{e['tool']}/{e['by']}", 0) + 1
+    w(f"tool calls: {summary['tool_calls']} {tools}\n")
     for err in summary["errors"]:
         w(f"error: {err['category']} at {err['operation']}: {err['message']}\n")
     w(f"run status: {summary['run_status']}   tokens: {summary['tokens']['total_tokens']}   "

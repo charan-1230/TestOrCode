@@ -15,6 +15,12 @@ Structured output is always validated client-side with ``response_model``.
 * ``"json_object"``: JSON mode; the schema goes into the system prompt.
 * ``"prompt"``: no ``response_format`` at all, for endpoints without JSON mode.
 
+Several API keys (``LLM_API_KEY_1..9``) are used one after another: when the
+provider says the current key's daily quota is used up (or rate limits outlast
+the retries), the client switches to the next key.  Only key positions are
+logged.  When every key is exhausted the call fails as ``LLMRateLimitError``
+(an API failure, never counted against the agent).
+
 Never log prompts, replies or keys: only role, model, attempt numbers and token counts.
 """
 
@@ -170,8 +176,8 @@ class OpenAICompatibleClient:
     validation errors, then raised as ``LLMStructuredOutputError`` whose ``usage``
     attribute holds the tokens all those replies consumed.
 
-    ``sdk_client`` and ``sleep`` exist for tests: pass an object with
-    ``chat.completions.create`` to avoid any network access.
+    ``sdk_client``, ``sdk_factory`` (key -> SDK object) and ``sleep`` exist for
+    tests: pass objects with ``chat.completions.create`` to avoid any network access.
     """
 
     def __init__(
@@ -184,6 +190,7 @@ class OpenAICompatibleClient:
         structured_mode: StructuredMode = "json_schema",
         temperature: float | None = 0.0,
         sdk_client: Any = None,
+        sdk_factory: Callable[[str], Any] | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         if max_retries < 0 or repair_attempts < 0:
@@ -195,6 +202,10 @@ class OpenAICompatibleClient:
         self._mode = structured_mode
         self._temperature = temperature
         self._sdk = sdk_client
+        self._sdk_factory = sdk_factory
+        self._fixed_sdk = sdk_client is not None and sdk_factory is None  # tests: one scripted SDK, no switching
+        self._keys = [k.get_secret_value() for k in settings.llm_api_keys()]
+        self._key_index = 0
         self._sleep = sleep
 
     def complete_structured[T: BaseModel](
@@ -255,16 +266,31 @@ class OpenAICompatibleClient:
 
     def _client(self) -> Any:
         if self._sdk is None:
-            from openai import OpenAI
+            key = self._keys[self._key_index] if self._keys else _KEYLESS_PLACEHOLDER
+            if self._sdk_factory is not None:
+                self._sdk = self._sdk_factory(key)
+            else:
+                from openai import OpenAI
 
-            key = self._settings.llm_api_key
-            self._sdk = OpenAI(
-                api_key=key.get_secret_value() if key is not None else _KEYLESS_PLACEHOLDER,
-                base_url=self._settings.llm_base_url or None,
-                timeout=self._timeout,
-                max_retries=0,  # retries are ours, so they are logged and testable
-            )
+                self._sdk = OpenAI(
+                    api_key=key,
+                    base_url=self._settings.llm_base_url or None,
+                    timeout=self._timeout,
+                    max_retries=0,  # retries are ours, so they are logged and testable
+                )
         return self._sdk
+
+    def _next_key(self, role: AgentRole) -> bool:
+        """Move to the next API key; False when there is none (or a fixed test SDK is in use)."""
+        if self._fixed_sdk or self._key_index + 1 >= len(self._keys):
+            return False
+        self._key_index += 1
+        self._sdk = None
+        logger.warning(
+            "role=%s API key %d/%d is out of quota; switching to key %d/%d",
+            role, self._key_index, len(self._keys), self._key_index + 1, len(self._keys),
+        )
+        return True
 
     def _request(self, messages: list[dict[str, str]], response_model: type[BaseModel]) -> dict:
         kwargs: dict[str, Any] = {"model": self._settings.llm_model, "messages": messages}
@@ -289,12 +315,21 @@ class OpenAICompatibleClient:
         import openai
 
         kwargs = self._request(messages, response_model)
-        for attempt in range(self._max_retries + 1):
+        attempt = -1
+        while attempt < self._max_retries:
+            attempt += 1
             try:
                 return self._client().chat.completions.create(**kwargs)
             except openai.RateLimitError as exc:
                 error: LLMError = LLMRateLimitError(_describe(exc))
                 retry_after = _retry_after(exc)
+                daily = _quota_exhausted(exc)
+                if (daily or attempt == self._max_retries) and self._next_key(role):
+                    attempt = -1  # a fresh key gets the full retry allowance
+                    continue
+                if daily:  # waiting does not bring a daily quota back
+                    logger.error("role=%s %s; every API key is out of quota", role, error)
+                    raise error from None
             except (openai.APITimeoutError, openai.APIConnectionError) as exc:
                 error = LLMProviderOutageError(_describe(exc))
                 retry_after = None
@@ -320,6 +355,15 @@ def _describe(exc: Exception) -> str:
     """Error class and status only: provider messages may echo the prompt or key fragments."""
     status = getattr(exc, "status_code", None)
     return f"{type(exc).__name__}" + (f" (HTTP {status})" if status is not None else "")
+
+
+def _quota_exhausted(exc: Exception) -> bool:
+    """True when a 429 says a per-day quota is used up (Gemini: quota id ``...PerDay...``), not a per-minute limit.
+
+    The provider's body is inspected but never logged: it may echo request details.
+    """
+    text = f"{getattr(exc, 'body', '')} {getattr(exc, 'message', '')}".lower().replace(" ", "")
+    return "perday" in text
 
 
 def _retry_after(exc: Exception) -> float | None:

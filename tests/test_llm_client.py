@@ -354,3 +354,77 @@ class TestRegressions:
         with pytest.raises(LLMStructuredOutputError, match="truncated") as info:
             ask(c)
         assert info.value.usage.total_tokens == 60
+
+
+# --------------------------------------------------------------------------- #
+# Several API keys, used one after another
+# --------------------------------------------------------------------------- #
+
+KEYS = ("sk-pool-key-one-0001", "sk-pool-key-two-0002", "sk-pool-key-three-0003")
+POOL = Settings.from_env({"LLM_MODEL": "m-1", **{f"LLM_API_KEY_{i}": k for i, k in enumerate(KEYS, 1)}})
+
+
+def daily_quota():  # the shape of Gemini's per-day quota 429 (the body is never logged)
+    request = httpx.Request("POST", "https://llm.example/v1/chat/completions")
+    body = {"error": {"code": 429, "status": "RESOURCE_EXHAUSTED",
+                      "details": [{"violations": [{"quotaId": "GenerateRequestsPerDayPerProjectPerModel-FreeTier"}]}]}}
+    return openai.RateLimitError("quota", response=httpx.Response(429, request=request), body=body)
+
+
+def pool_client(per_key: dict[str, list], **kw):
+    used: list[str] = []
+    sdks = {k: FakeSDK(*items) for k, items in per_key.items()}
+
+    def factory(key: str):
+        used.append(key)
+        return sdks[key]
+    sleeps: list[float] = []
+    return OpenAICompatibleClient(POOL, sdk_factory=factory, sleep=sleeps.append, **kw), used, sleeps
+
+
+class TestKeyPool:
+    __test__ = True
+
+    def test_keys_are_used_in_order_and_a_daily_quota_switches_at_once(self) -> None:
+        c, used, sleeps = pool_client({KEYS[0]: [daily_quota()], KEYS[1]: [reply(json.dumps(VALID))]})
+        assert ask(c).parsed.group_id == "g1"
+        assert used == [KEYS[0], KEYS[1]] and sleeps == []  # no waiting on a used-up day quota
+        assert ask_again_uses_same_key(c, used)
+
+    def test_per_minute_limit_is_retried_on_the_same_key(self) -> None:
+        c, used, sleeps = pool_client({KEYS[0]: [status_error(openai.RateLimitError, 429), reply(json.dumps(VALID))]})
+        assert ask(c).parsed.group_id == "g1"
+        assert used == [KEYS[0]] and sleeps == [1.0]
+
+    def test_rate_limits_outlasting_the_retries_move_to_the_next_key(self) -> None:
+        limited = [status_error(openai.RateLimitError, 429) for _ in range(2)]
+        c, used, sleeps = pool_client({KEYS[0]: limited, KEYS[1]: [reply(json.dumps(VALID))]}, max_retries=1)
+        assert ask(c).parsed.group_id == "g1"
+        assert used == [KEYS[0], KEYS[1]] and sleeps == [1.0]
+
+    def test_every_key_exhausted_is_an_api_failure_not_an_agent_error(self) -> None:
+        c, used, _ = pool_client({k: [daily_quota()] for k in KEYS})
+        with pytest.raises(LLMRateLimitError) as info:
+            ask(c)
+        assert used == list(KEYS)
+        assert info.value.to_error_record("e1").counted_against_agent is False
+
+    def test_switch_logs_key_positions_never_keys(self) -> None:
+        stream = io.StringIO()
+        handler = logging.StreamHandler(stream)
+        log = logging.getLogger("testorcode")
+        log.addHandler(handler)
+        try:
+            c, _, _ = pool_client({KEYS[0]: [daily_quota()], KEYS[1]: [reply(json.dumps(VALID))]})
+            ask(c)
+        finally:
+            log.removeHandler(handler)
+        text = stream.getvalue()
+        assert "API key 1/3 is out of quota; switching to key 2/3" in text
+        assert not any(k in text for k in KEYS) and "PerDay" not in text
+
+
+def ask_again_uses_same_key(c: OpenAICompatibleClient, used: list[str]) -> bool:
+    c._sdk.items.append(reply(json.dumps(VALID)))  # the switched-to key stays in use for later calls
+    ask(c)
+    return used == [KEYS[0], KEYS[1]]

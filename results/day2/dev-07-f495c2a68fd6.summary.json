@@ -1,0 +1,66 @@
+{
+  "run_id": "dev-07-f495c2a68fd6",
+  "episode_id": "dev-07",
+  "scenario": "S3",
+  "condition": "A2",
+  "model_id": "gemini-3.5-flash",
+  "prompt_version": "triage-v1+intent-v2+repair-v2+guard-v1",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "groups": [],
+  "run_status": "api_failure",
+  "final_test_status": "not_run",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": false,
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "llm_calls": null
+  },
+  "test_runs": [],
+  "patches": [],
+  "predictions": [],
+  "escalation": null,
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 1,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "triage",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_listutils.py::test_barrel_list",
+          "tests/test_listutils.py::test_barrel_list_del_stepped_slice_matches_list",
+          "tests/test_queueutils.py::test_sorted_queue",
+          "tests/test_strutils.py::test_bytes2human"
+        ]
+      },
+      "error": null
+    }
+  ],
+  "errors": [
+    {
+      "error_id": "err-1",
+      "category": "rate_limit",
+      "message": "RateLimitError (HTTP 429)",
+      "operation": "triage",
+      "tool": null,
+      "retries": 0,
+      "recovered": false,
+      "fatal": true,
+      "counted_against_agent": false
+    }
+  ],
+  "worktree_changed_files_after_run": [
+    "boltons/listutils.py",
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/listutils.py",
+    " M boltons/strutils.py"
+  ]
+}

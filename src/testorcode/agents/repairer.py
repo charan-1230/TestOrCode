@@ -5,24 +5,26 @@ exact ``old`` -> ``new`` snippet replacements; this module checks each ``old``
 occurs exactly once in an editable file of the right scope and builds the
 unified diff with ``difflib``.  If the edits cannot be placed, the model is
 told why once; a second failure becomes an ``EscalationRequest``.  The
-orchestrator re-validates the diff with ``patch_tools`` either way.
+orchestrator re-validates the diff with ``patch_tools`` either way.  Prompt: ``prompts.REPAIR_SYSTEM``.
 """
 
 from __future__ import annotations
 
 import difflib
 import re
-from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from testorcode.agents._common import (
-    changed_windows,
-    clip,
-    function_source,
-    read_worktree_file,
-    split_diff_by_file,
+from testorcode.agents._common import clip, read_worktree_file
+from testorcode.agents.prompts import (
+    REPAIR_SCOPE_RULES,
+    REPAIR_SYSTEM,
+    TOOL_INSTRUCTIONS,
+    RepairReply,
+    RepairStep,
+    SnippetEdit,
+    build_repair_user,
 )
+from testorcode.agents.tool_loop import run_tool_loop
+from testorcode.agents.tools import AgentTools
 from testorcode.llm_client import LLMClient
 from testorcode.logging_config import get_logger
 from testorcode.schemas.contracts import (
@@ -40,61 +42,7 @@ from testorcode.tools.patch_tools import scope_for_decision
 
 logger = get_logger(__name__)
 
-PROMPT_VERSION = "repair-v1"
-
-
-class SnippetEdit(BaseModel):
-    """Replace ``old`` (copied exactly from the file, occurring once) with ``new``."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    path: str = Field(min_length=1, description="Repository-relative path, e.g. tests/test_x.py")
-    old: str = Field(min_length=1, description="Exact existing text, including indentation; must occur once.")
-    new: str = Field(description="Replacement text.")
-
-
-class RepairReply(BaseModel):
-    """What the model returns; turned into ``PatchProposal`` or ``EscalationRequest`` here."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    # Every field is required: with optional arrays, Gemini's structured output tended to omit ``edits``.
-    action: Literal["patch", "escalate"]
-    edits: list[SnippetEdit] = Field(description="At least one edit for action 'patch'; [] for 'escalate'.")
-    rationale: str = Field(min_length=1)
-    evidence_ids: list[str] = Field(description="Ids the analysis cited; [] if none.")
-
-
-_SCOPE_RULES = {
-    PatchScope.TEST: (
-        "Edit ONLY test files listed under FILES.  The test encodes outdated behaviour.  You may ONLY change the "
-        "expected literal value in an existing `assert <expr> == <literal>` or `assert <expr> != <literal>` "
-        "statement.  Do not add, delete or rename tests or assertions, do not change inputs, imports, fixtures or "
-        "the tested expression, do not add skips.  Any other change is rejected automatically; if the fix needs "
-        "one, choose action \"escalate\"."
-    ),
-    PatchScope.SRC: (
-        "Edit ONLY source files listed under FILES.  The code regressed: restore the intended behaviour with the "
-        "smallest change.  Never edit tests, conftest.py or configuration, and never add pytest imports, skips "
-        "or process exits."
-    ),
-}
-
-SYSTEM_PROMPT = """\
-You are the Repairer of a CI triage system.  The Intent Analyst has decided which side is wrong for one group of
-failing tests.  Produce the smallest repair on that side only, as exact snippet replacements.
-
-Each edit: "path" (repository-relative), "old" (text copied EXACTLY from the file shown, including indentation,
-long enough to occur only once, without the line-number prefix), "new" (replacement).
-
-{scope_rule}
-
-For action "patch", "edits" MUST contain at least one edit.
-If you cannot repair safely within these rules, reply with action "escalate", "edits": [] and explain why in rationale.
-evidence_ids: copy the ids the analysis cited (required when updating tests; [] if none).
-Reply with one JSON object matching the RepairReply schema and nothing else.
-"""
-
+TOOL_STEPS = 4  # model calls per attempt when the Repairer may use tools
 
 def propose_repair(
     context: EpisodeContext,
@@ -103,11 +51,19 @@ def propose_repair(
     *,
     llm: LLMClient,
     previous_rejection: GuardResult | None = None,
+    rejection_reasons: tuple[str, ...] = (),
+    tools: AgentTools | None = None,
 ) -> RepairerOutput:
     """Return a ``PatchProposal``, or an ``EscalationRequest`` if it cannot repair safely.
 
-    ``previous_rejection`` is set on the single permitted revision.  The proposal
-    must stay inside ``context.edit_policy``; the orchestrator re-validates it.
+    On the single permitted revision, ``previous_rejection`` carries a Guard
+    rejection and ``rejection_reasons`` a rejection from patch validation,
+    application or the direction check.  The proposal must stay inside
+    ``context.edit_policy``; the orchestrator re-validates it.
+
+    With ``tools`` the model may call ``search_repo``/``read_file``/``run_tests``
+    first (at most ``TOOL_STEPS`` model calls per attempt); running out of steps
+    is an escalation.  Without ``tools`` it answers in one call.
 
     Raises:
         LLMError, ToolError.
@@ -116,22 +72,35 @@ def propose_repair(
     if analysis.recommended_decision is DecisionLabel.ESCALATE:
         return EscalationRequest(group_id=group_id, trigger="insufficient_evidence", summary="analysis escalated")
     scope = scope_for_decision(analysis.recommended_decision)
-    files = _editable_files(context, group, scope)
+    files = editable_files(context, group, scope)
     if not files:
         return EscalationRequest(
             group_id=group_id, trigger="insufficient_evidence",
             summary=f"no editable {scope.value} file is in scope for this group",
         )
-    system = SYSTEM_PROMPT.format(scope_rule=_SCOPE_RULES[scope])
-    user = _user_prompt(context, group, analysis, files, previous_rejection)
-    revision = 1 if previous_rejection is not None else 0
+    system = REPAIR_SYSTEM.format(scope_rule=REPAIR_SCOPE_RULES[scope])
+    if tools is not None:
+        system = f"{system}\n{TOOL_INSTRUCTIONS}\nFinal actions: \"patch\" or \"escalate\".\n"
+    user = build_repair_user(context, group, analysis, files, previous_rejection, rejection_reasons)
+    revision = 1 if previous_rejection is not None or rejection_reasons else 0
 
     problem = ""
     for attempt in range(2):
         prompt = user if not problem else f"{user}\n\nYOUR PREVIOUS EDITS COULD NOT BE APPLIED: {problem}\nTry again."
-        reply = llm.complete_structured(
-            role=AgentRole.REPAIRER, system=system, user=prompt, response_model=RepairReply
-        ).parsed
+        if tools is None:
+            reply = llm.complete_structured(
+                role=AgentRole.REPAIRER, system=system, user=prompt, response_model=RepairReply
+            ).parsed
+        else:
+            reply = run_tool_loop(
+                llm, role=AgentRole.REPAIRER, system=system, user=prompt, step_model=RepairStep,
+                tools=tools, max_steps=TOOL_STEPS,
+            )
+            if reply is None:
+                return EscalationRequest(
+                    group_id=group_id, trigger="insufficient_evidence",
+                    summary=f"repairer used all {TOOL_STEPS} steps without proposing a repair",
+                )
         if reply.action == "escalate":
             return EscalationRequest(
                 group_id=group_id, trigger="insufficient_evidence", summary=clip(reply.rationale, 1000)
@@ -222,50 +191,10 @@ def _trim_trailing_blank_context(diff: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _editable_files(context: EpisodeContext, group: FailureGroupDetail, scope: PatchScope) -> list[str]:
+def editable_files(context: EpisodeContext, group: FailureGroupDetail, scope: PatchScope) -> list[str]:
     if scope is PatchScope.TEST:
         candidates = [t.test_file for t in group.failing_tests]
     else:
         candidates = list(group.affected_files)
     return [p for p in dict.fromkeys(candidates) if context.edit_policy.is_editable(p, scope)]
 
-
-def _user_prompt(
-    context: EpisodeContext,
-    group: FailureGroupDetail,
-    analysis: IntentAnalysis,
-    files: list[str],
-    previous_rejection: GuardResult | None,
-) -> str:
-    parts = [
-        f"GROUP ID: {group.group.group_id}",
-        (f"DECISION: {analysis.recommended_decision.value}  (hypothesis {analysis.hypothesis.kind.value}, "
-        f"confidence {analysis.confidence:.2f})"),
-        f"ANALYSIS: {clip(analysis.hypothesis.explanation, 1500)}",
-        f"EXPECTED BEHAVIOUR: {clip(analysis.expected_behaviour, 600) or '(not stated)'}",
-        f"CITED EVIDENCE IDS: {', '.join(analysis.cited_evidence_ids) or '(none)'}",
-        "",
-        "FAILING TESTS:",
-    ]
-    for test in group.failing_tests:
-        parts += [f"- {test.test_id}", "  message: " + clip(test.failure_message, 800)]
-    diffs = split_diff_by_file(group.diff_context or "")
-    parts += ["", "FILES (line numbers are for orientation only; do not copy them):"]
-    for path in files:
-        text = read_worktree_file(context.worktree_path, path) or ""
-        if path in diffs:
-            shown = changed_windows(text, diffs[path])
-        else:
-            names = [t.test_name.split("[", 1)[0] for t in group.failing_tests if t.test_file == path]
-            bodies = [b for n in dict.fromkeys(names) if (b := function_source(text, n))]
-            shown = "\n\n".join(bodies) or clip(text, 12000)
-        parts += [f"--- {path} ---", shown]
-    if group.diff_context:
-        parts += ["", "CI SOURCE DIFF (what the commit changed):", clip(group.diff_context, 5000)]
-    if previous_rejection is not None:
-        parts += [
-            "",
-            "YOUR PREVIOUS REPAIR WAS REJECTED:",
-            *[f"- {clip(r, 600)}" for r in previous_rejection.reasons],
-        ]
-    return "\n".join(parts)

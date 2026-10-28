@@ -16,6 +16,7 @@ __pycache__/
 results/*
 !results/.gitkeep
 !results/day1/
+!results/day2/
 *.log
 
 # docs

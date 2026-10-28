@@ -48,8 +48,8 @@ from typing import Final
 from testorcode.errors import ToolError
 from testorcode.logging_config import get_logger
 from testorcode.schemas.contracts import PytestExecution
-from testorcode.schemas.episode_schemas import FailingTest
-from testorcode.schemas.result_schemas import TestRunStatus
+from testorcode.schemas.episode_schemas import FailingTest, ToolName
+from testorcode.schemas.result_schemas import TestRunStatus, ToolCallStatus
 from testorcode.tools.sandbox import (
     Isolation,
     Layout,
@@ -58,6 +58,7 @@ from testorcode.tools.sandbox import (
     stop_container,
     wrap_command,
 )
+from testorcode.tools.trace import tool_call
 
 logger = get_logger(__name__)
 
@@ -164,15 +165,27 @@ def run_tests(
 
     Raises:
         ToolError: pytest cannot be started at all, or no sandbox is available.
+        BudgetExceededError: the episode's tool-call budget is used up.
     """
-    return run_pytest(
-        worktree_path,
-        selectors,
-        timeout_seconds=timeout_seconds,
-        python_executable=python_executable,
-        isolation=isolation,
-        docker_image=docker_image,
-    ).execution
+    logged = [selectors] if isinstance(selectors, str) else [str(x) for x in list(selectors)[:50]]
+    with tool_call(ToolName.RUN_TESTS, selectors=logged) as call:
+        execution = run_pytest(
+            worktree_path,
+            selectors,
+            timeout_seconds=timeout_seconds,
+            python_executable=python_executable,
+            isolation=isolation,
+            docker_image=docker_image,
+        ).execution
+        if execution.status is TestRunStatus.TIMEOUT:
+            call.fail(ToolCallStatus.TIMEOUT, f"pytest killed after {timeout_seconds}s")
+        elif execution.status in (TestRunStatus.ERROR, TestRunStatus.COLLECTION_ERROR):
+            invalid = (execution.error_message or "").startswith("invalid test selector")
+            call.fail(
+                ToolCallStatus.INVALID_ARGUMENTS if invalid else ToolCallStatus.ERROR,
+                execution.error_message or execution.status.value,
+            )
+    return execution
 
 
 def run_pytest(

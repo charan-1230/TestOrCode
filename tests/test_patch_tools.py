@@ -1051,3 +1051,66 @@ def test_unsuccessful_revert_keeps_unrelated_changes_and_the_record(repo: Path) 
     mod.write_text(SRC_FIX)
     revert_patch(repo, diff)  # still revertible once the conflict is gone
     assert mod.read_text() == FILES["src/pkg/mod.py"]
+
+
+# --------------------------------------------------------------------------- #
+# Setup-call keyword arguments (UPDATE_TEST when an intended change moved a default)
+# --------------------------------------------------------------------------- #
+
+SETUP_BASE = (
+    "import pytest\nfrom pkg.mod import add\n\n\n"
+    "def helper():\n    return add(0, 0)\n\n\n"
+    "def test_add():\n    total = add(1, 2, carry=True)\n    assert total == 3\n"
+    "    with pytest.raises(TypeError):\n        add(None, 1)\n"
+)
+
+
+def _setup_patch(repo: Path, new_text: str):
+    (repo / "tests/test_mod.py").write_text(SETUP_BASE)
+    git(repo, "-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-qam", "setup base")
+    diff = diff_for(repo, "tests/test_mod.py", new_text)
+    return diff, validate_patch(repo, diff, policy=POLICY, scope=TEST)
+
+
+@pytest.mark.parametrize(
+    "updated",
+    [
+        SETUP_BASE.replace("add(1, 2, carry=True)", "add(1, 2, carry=True, scoped=False)"),
+        SETUP_BASE.replace("carry=True", "carry=False"),
+        SETUP_BASE.replace("add(1, 2, carry=True)", "add(1, 2, carry=True, mode='x')").replace("== 3", "== 4"),
+    ],
+    ids=["keyword-added", "keyword-value-changed", "keyword-and-expected-literal"],
+)
+def test_literal_keyword_changes_in_test_setup_are_accepted(repo: Path, updated: str) -> None:
+    diff, result = _setup_patch(repo, updated)
+    assert result.ok, result.rejection_reasons
+    apply_patch(repo, diff, policy=POLICY, scope=TEST)
+    revert_patch(repo, diff)
+    assert (repo / "tests/test_mod.py").read_text() == SETUP_BASE
+
+
+@pytest.mark.parametrize(
+    ("updated", "reason"),
+    [
+        (SETUP_BASE.replace(", carry=True", ""), "removes keyword argument"),
+        (SETUP_BASE.replace("add(1, 2, carry=True)", "add(1, 3, carry=True)"), STRUCTURAL),
+        (SETUP_BASE.replace("carry=True", "carry=add"), STRUCTURAL),
+        (SETUP_BASE.replace("assert total == 3", "assert add(1, 2, x=1) == 3"), STRUCTURAL),
+        (SETUP_BASE.replace("pytest.raises(TypeError)", "pytest.raises(TypeError, match='x')"), STRUCTURAL),
+        (SETUP_BASE.replace("return add(0, 0)", "return add(0, 0, scoped=False)"), STRUCTURAL),
+        (SETUP_BASE.replace("    assert total == 3\n", ""), STRUCTURAL),
+    ],
+    ids=[
+        "keyword-removed",
+        "positional-input-changed",
+        "non-literal-keyword",
+        "keyword-inside-assert",
+        "pytest-helper-call",
+        "non-test-helper-function",
+        "assertion-removed",
+    ],
+)
+def test_other_setup_changes_are_still_rejected(repo: Path, updated: str, reason: str) -> None:
+    _, result = _setup_patch(repo, updated)
+    assert not result.ok
+    assert any(reason in r for r in result.rejection_reasons), result.rejection_reasons

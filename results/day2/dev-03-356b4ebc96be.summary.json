@@ -1,0 +1,269 @@
+{
+  "run_id": "dev-03-356b4ebc96be",
+  "episode_id": "dev-03",
+  "scenario": "S2",
+  "condition": "B1",
+  "model_id": "gemini-3.5-flash",
+  "prompt_version": "b1-v2",
+  "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+  "failure_groups": [
+    {
+      "group_id": "g1",
+      "function_qualname": null,
+      "test_ids": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ],
+      "mapped_by": null,
+      "stability_runs": 5,
+      "decision": "FIX_CODE",
+      "guard_decision": null,
+      "guard_reasons": [],
+      "integrity": null,
+      "patch_ids": [
+        "g1-r0"
+      ],
+      "verification_run_ids": [
+        "g1-r0-post",
+        "g1-r0-regression"
+      ],
+      "disposition": "accepted",
+      "final_failing_test_ids": []
+    }
+  ],
+  "unstable_test_ids": [],
+  "run_status": "completed",
+  "final_test_status": "passed",
+  "guard_decision": "not_run",
+  "guard_reasons": [],
+  "revisions_used": 0,
+  "tokens": {
+    "reported": true,
+    "input_tokens": 15783,
+    "output_tokens": 567,
+    "total_tokens": 20062,
+    "llm_calls": 3
+  },
+  "test_runs": [
+    {
+      "phase": "pre_repair",
+      "status": "failed",
+      "passed": 0,
+      "failed": 1,
+      "failing": [
+        "tests/test_strutils.py::test_strip_ansi"
+      ]
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 1,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "post_repair",
+      "status": "passed",
+      "passed": 441,
+      "failed": 0,
+      "failing": []
+    },
+    {
+      "phase": "final",
+      "status": "passed",
+      "passed": 441,
+      "failed": 0,
+      "failing": []
+    }
+  ],
+  "patches": [
+    {
+      "patch_id": "g1-r0",
+      "scope": "src",
+      "files": [
+        "boltons/strutils.py"
+      ],
+      "status": "applied",
+      "apply_error": null
+    }
+  ],
+  "predictions": [
+    {
+      "test_id": "tests/test_strutils.py::test_strip_ansi",
+      "predicted": "FIX_CODE",
+      "hypothesis": "regression",
+      "direction": "FIX_CODE",
+      "cited": [
+        "docstring:strutils.strip_ansi"
+      ],
+      "decided_by": "single_agent",
+      "gold": "FIX_CODE",
+      "match": true,
+      "direction_match": true
+    }
+  ],
+  "escalation": null,
+  "maintainer_approved": null,
+  "memory_writes": [],
+  "tool_calls": 13,
+  "tool_events": [
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 337,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "search_repo",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "query_chars": 10,
+        "top_k": 8,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "read_file",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "path": "boltons/strutils.py",
+        "start_line": 393,
+        "end_line": 407,
+        "budget": "agent"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "operation": "validate",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "apply_patch",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "operation": "apply",
+        "scope": "src",
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests/test_strutils.py::test_strip_ansi"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "single_agent",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "operational"
+      },
+      "error": null
+    },
+    {
+      "tool": "run_tests",
+      "by": "orchestrator",
+      "status": "ok",
+      "args": {
+        "selectors": [
+          "tests"
+        ],
+        "budget": "exempt"
+      },
+      "error": null
+    }
+  ],
+  "errors": [],
+  "worktree_changed_files_after_run": [
+    "boltons/strutils.py"
+  ],
+  "worktree_status_after_run": [
+    " M boltons/strutils.py"
+  ]
+}

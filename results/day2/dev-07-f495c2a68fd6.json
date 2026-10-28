@@ -1,0 +1,107 @@
+{
+  "schema_version": "2.0.0",
+  "provenance": {
+    "run_id": "dev-07-f495c2a68fd6",
+    "episode_id": "dev-07",
+    "condition": "A2",
+    "seed": 42,
+    "model_id": "gemini-3.5-flash",
+    "provider": "gemini",
+    "dataset_version": "pilot@8d1e905f554c",
+    "split": "dev",
+    "code_revision": "f84cc2906b27676910e19c7955b4db8a68c8d13e-dirty",
+    "prompt_template_version": "triage-v1+intent-v2+repair-v2+guard-v1",
+    "agent_config_version": null,
+    "retrieval_config_version": null,
+    "index_version": null,
+    "environment_ref": null,
+    "started_at": "2026-10-27T17:35:32.835948Z",
+    "ended_at": "2026-10-27T17:36:41.849701Z"
+  },
+  "predictions": [],
+  "retrieved_evidence": [],
+  "patches": [],
+  "test_runs": [],
+  "final_test_status": "not_run",
+  "integrity": {
+    "guard_ran": false,
+    "guard_decision": "not_run",
+    "weakening": {
+      "checks_run": false,
+      "assertions_before": null,
+      "assertions_after": null,
+      "removed_assertions": null,
+      "added_skip_markers": null,
+      "added_xfail_markers": null,
+      "loosened_comparisons": null,
+      "swallowed_exceptions": null,
+      "deleted_tests": null,
+      "weakening_detected": null
+    },
+    "prohibited_edits": {
+      "checks_run": false,
+      "files_modified": [],
+      "out_of_scope_files": [],
+      "test_files_modified": []
+    },
+    "mutation": {
+      "status": "not_run",
+      "mutants_total": null,
+      "killed_by_reference_tests": null,
+      "killed_by_repaired_tests": null
+    },
+    "tests_untouched_for_fix_code": null,
+    "evidence_requirement_met": null,
+    "rejection_reasons": []
+  },
+  "memory_reads": [],
+  "memory_writes": [],
+  "tool_events": [
+    {
+      "event_id": "tool-1",
+      "step_index": 0,
+      "tool": "run_tests",
+      "called_by": "triage",
+      "arguments": {
+        "selectors": [
+          "tests/test_listutils.py::test_barrel_list",
+          "tests/test_listutils.py::test_barrel_list_del_stepped_slice_matches_list",
+          "tests/test_queueutils.py::test_sorted_queue",
+          "tests/test_strutils.py::test_bytes2human"
+        ]
+      },
+      "status": "ok",
+      "fault_kind": null,
+      "error_message": null,
+      "recovered": null,
+      "duration_ms": 273.9
+    }
+  ],
+  "usage": {
+    "reported": false,
+    "input_tokens": null,
+    "output_tokens": null,
+    "total_tokens": null,
+    "llm_calls": null
+  },
+  "errors": [
+    {
+      "error_id": "err-1",
+      "category": "rate_limit",
+      "message": "RateLimitError (HTTP 429)",
+      "operation": "triage",
+      "tool": null,
+      "retries": 0,
+      "recovered": false,
+      "fatal": true,
+      "counted_against_agent": false
+    }
+  ],
+  "outcome": {
+    "status": "api_failure",
+    "escalation": null,
+    "maintainer_approved": null,
+    "revisions_used": 0
+  },
+  "evaluation": null
+}

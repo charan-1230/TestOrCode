@@ -16,12 +16,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-from testorcode.agents.intent_analyst import (
-    PROMPT_VERSION,
-    SYSTEM_PROMPT,
-    build_user_prompt,
-    group_queries,
-)
+from testorcode.agents.intent_analyst import group_queries
+from testorcode.agents.prompts import INTENT_SYSTEM, INTENT_VERSION, build_intent_user
 from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, load_agent_inputs
 from testorcode.llm_client import create_llm_client
@@ -65,8 +61,8 @@ def main() -> int:
     started = time.monotonic()
     response = llm.complete_structured(
         role=AgentRole.INTENT_ANALYST,
-        system=SYSTEM_PROMPT,
-        user=build_user_prompt(context, group, evidence, []),
+        system=INTENT_SYSTEM,
+        user=build_intent_user(context, group, evidence, []),
         response_model=IntentAnalysis,
     )
     elapsed = time.monotonic() - started
@@ -83,7 +79,7 @@ def main() -> int:
         "requested_model": settings.llm_model,
         "model_id": response.model_id,
         "structured_mode": settings.llm_structured_mode,
-        "prompt_version": PROMPT_VERSION,
+        "prompt_version": INTENT_VERSION,
         "latency_seconds": round(elapsed, 2),
         "usage": response.usage.model_dump(mode="json"),
         "retrieved_evidence_ids": retrieved,
