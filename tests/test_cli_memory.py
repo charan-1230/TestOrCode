@@ -76,7 +76,7 @@ def run_cli(tmp_path: Path, monkeypatch, condition: str, memory: Path) -> tuple[
     monkeypatch.setattr(cli, "_materializer", lambda: (lambda repo, dest, episode: dest))  # already built above
     monkeypatch.setattr(cli, "load_agent_inputs", lambda path: [agent_input])
     monkeypatch.setattr(cli, "load_episodes", lambda path: [full])
-    monkeypatch.setattr(cli, "_dataset_version", lambda split: "fixture")
+    monkeypatch.setattr(cli, "dataset_version", lambda split: "fixture")
     monkeypatch.setattr(cli, "configure_logging", lambda *a, **k: None)  # global logger state must not leak
     monkeypatch.setattr(cli, "create_llm_client", lambda settings: FakeLLMClient({
         AgentRole.INTENT_ANALYST: [{"group_id": "g1", "hypothesis": {"kind": "outdated_test", "explanation": "s"},

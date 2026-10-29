@@ -32,15 +32,15 @@ from pathlib import Path
 from testorcode.conditions import profile_for
 from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
+from testorcode.experiment import dataset_version, simulated_maintainer
 from testorcode.llm_client import create_llm_client
 from testorcode.logging_config import configure_logging
 from testorcode.memory import JsonlMemoryStore, memory_namespace
-from testorcode.orchestrator import Maintainer, run_episode
+from testorcode.orchestrator import run_episode
 from testorcode.schemas.episode_schemas import DecisionLabel, HypothesisKind
 from testorcode.schemas.result_schemas import (
     ExperimentCondition,
     ExperimentRunRecord,
-    TestRunStatus,
 )
 from testorcode.tools.git_tools import run_git
 
@@ -96,10 +96,10 @@ def main() -> int:
     gold = full.gold_actions()
     record = run_episode(
         episode, worktree_path=worktree, settings=settings, llm=llm, memory=memory,
-        maintainer=_simulated_maintainer(gold),
+        maintainer=simulated_maintainer(gold),
     )
     record = record.model_copy(update={"provenance": record.provenance.model_copy(
-        update={"split": args.split, "dataset_version": _dataset_version(args.split)}
+        update={"split": args.split, "dataset_version": dataset_version(args.split)}
     )})
     summary = _summary(record, gold, full.scenario, worktree)
 
@@ -109,21 +109,6 @@ def main() -> int:
     (out / f"{record.provenance.run_id}.summary.json").write_text(json.dumps(summary, indent=2) + "\n")
     _print(record, summary, out)
     return 0
-
-
-def _simulated_maintainer(gold: dict[str, DecisionLabel]) -> Maintainer:
-    """Proposal section 9: approve when the direction matches the gold label and the tests pass."""
-
-    def approve(group, decision, result) -> bool:
-        passed = result.post_repair_run is not None and result.post_repair_run.status is TestRunStatus.PASSED
-        return passed and all(gold.get(t) == decision for t in group.group.test_ids)
-
-    return approve
-
-
-def _dataset_version(split: str) -> str:
-    manifest = json.loads((ROOT / "datasets" / "pilot_manifest.json").read_text())
-    return "pilot@" + manifest["files_sha256"][f"pilot_{split}_agent_view.jsonl"][:12]
 
 
 def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) -> dict:
