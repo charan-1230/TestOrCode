@@ -53,6 +53,7 @@ The proposal's Table: "Analyst sees only failing output and diff". A1 is FULL mi
 | Analyst's BM25 intent retrieval | 3 fused queries, top 8 | **none** (`retriever=None`; prompt: "evidence retrieval is disabled") | `orchestrator._intent_analysis`, `intent_analyst.analyse_intent` |
 | Corpus in the episode view | 100+ items (100 commit messages, docs, docstrings, changelog) | **`items=[]`** | `conditions.episode_for_condition` |
 | Repairer `search_repo` tool | offered | **not offered**; a call anyway is refused (`not_permitted`) | `allowed_tools`, `prompts.tool_instructions` |
+| Repairer `read_file` on README / CHANGELOG / `docs/` / other non-code files (added after the Day-3 audit) | readable | **refused at runtime** (`not_permitted`; path and symlink target); Python source under the source roots and files under the test roots stay readable | `AgentTools(code_only=True)` from `orchestrator._agent_tools`; `agents/tools._code_only_problem` |
 | Memory | probe-gated | **same** (citable) | unchanged |
 | Triage, Repairer `read_file`/`run_tests`, Guard, decision policy, budgets | — | **same** | unchanged |
 
@@ -73,6 +74,14 @@ stated purpose ("the view a condition may see"). It affects only profiles with n
 | `test_agents.py::test_intent_analyst_without_retriever_searches_nothing_and_says_so` | no corpus id reaches the prompt |
 | `test_orchestrator.py::test_a1_*` (3) | runs with memory, no `search_repo` event, empty `retrieved_evidence`; a corpus-id citation escalates (`insufficient_evidence`); no store → explicit setup error |
 | `test_pipeline_integration.py::test_a1_real_pipeline_...` | **real** Triage / Repairer / Guard (mutation check + probe) / git / pytest: the Analyst cites a probe-passing memory record → FIX_CODE → Guard APPROVE. The Repairer's `search_repo` attempt is refused and logged. Neither the commit message nor any corpus id appears in the Analyst prompt; `search_repo` is absent from the Repairer system prompt |
+
+### 2.2a Remaining A1 exposure, by design
+
+- **Memory** stays in A1 (proposal: A1 removes intent retrieval only). Seeded `visible_memory` records are dataset-made;
+  e.g. dev-07's `mem-dev-s1-cacheutils` has an earlier commit's subject line as its `behaviour_signature`. This is
+  memory, not retrieval, and was **not** changed. Flag for Human 3 / team.
+- **Source code** (docstrings, comments) stays readable, as the Analyst's "diff" and the Repairer's repair need it.
+- **Test output** from `run_tests` (existing tests only, on unpatched code) stays available.
 
 ### 2.3 Open question for Human 3 / team: A1 and the decision policy
 

@@ -15,7 +15,14 @@ from testorcode.agents.prompts import PROMPT_VERSION
 from testorcode.config import Settings
 from testorcode.errors import ConfigError, LLMRateLimitError, PatchError, ToolError
 from testorcode.llm_client import FakeLLMClient, OpenAICompatibleClient
-from testorcode.orchestrator import Agents, EpisodeRun, PatchTools, Stage, run_episode
+from testorcode.orchestrator import (
+    Agents,
+    EpisodeRun,
+    PatchTools,
+    SingleAgentRun,
+    Stage,
+    run_episode,
+)
 from testorcode.schemas.contracts import (
     EpisodeContext,
     EscalationRequest,
@@ -696,6 +703,16 @@ def test_a1_citing_corpus_evidence_escalates() -> None:
     assert record.outcome.status is RunStatus.ESCALATED
     assert record.outcome.escalation.trigger == "insufficient_evidence"
     assert Stage.REPAIR not in stages(er) and record.patches == []
+
+
+@pytest.mark.parametrize(("condition", "code_only"), [("FULL", False), ("A2", False), ("B1", False), ("A1", True)])
+def test_only_a1_limits_read_file_to_code(condition: str, code_only: bool) -> None:
+    # The restriction follows the profile (no retrieval of any kind); FULL/A2/B1 keep the unrestricted read_file.
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
+    runner = SingleAgentRun if condition == "B1" else EpisodeRun
+    er = runner(S1, worktree_path=WT, settings=settings, llm=FakeLLMClient(), memory=FakeMemory(),
+                retriever=FakeRetriever(), patch_tools=FakePatchTools().tools())
+    assert er._agent_tools().code_only is code_only
 
 
 def test_a1_without_memory_store_fails_explicitly() -> None:

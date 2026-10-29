@@ -152,3 +152,63 @@ def test_read_file_refuses_symlinks_to_protected_or_outside_files(worktree: Path
     assert via_name.startswith("INVALID") and "LLM_API_KEY" not in via_name
     assert escape.startswith("INVALID") and "outside secret" not in escape
     assert [e.status for e in recorder.events] == [ToolCallStatus.INVALID_ARGUMENTS] * 2
+
+
+# --------------------------------------------------------------------------- #
+# code_only (A1: no retrieval): read_file is limited to source and test files
+# --------------------------------------------------------------------------- #
+
+INTENT = "INTENT-MARKER: the change was deliberate"
+
+
+@pytest.fixture
+def repo_with_docs(worktree: Path) -> Path:
+    files = {
+        "CHANGELOG.md": INTENT, "README.md": INTENT, "docs/guide.rst": INTENT, "docs/conf.py": INTENT,
+        "TODO.rst": INTENT, "setup.cfg": INTENT, "src/synthlib/NOTES.txt": INTENT, "tests/README.md": INTENT,
+        "src/synthlib/HISTORY": INTENT,
+        "tests/test_core.py": "def test_x():\n    assert True\n", "tests/data.txt": "fixture line\n",
+    }
+    for rel, text in files.items():
+        (worktree / rel).parent.mkdir(parents=True, exist_ok=True)
+        (worktree / rel).write_text(text)
+    (worktree / "src/synthlib/link.py").symlink_to(worktree / "CHANGELOG.md")  # a .py name pointing at a change note
+    return worktree
+
+
+def code_only_tools(worktree: Path) -> AgentTools:
+    return AgentTools(EpisodeContext.from_episode_input(S1, worktree), retriever=Searcher(), timeout_seconds=30,
+                      code_only=True)
+
+
+@pytest.mark.parametrize("path", [
+    "CHANGELOG.md", "./CHANGELOG.md", "README.md", "docs/guide.rst", "docs/conf.py", "TODO.rst", "setup.cfg",
+    "src/synthlib/NOTES.txt", "src/synthlib/HISTORY", "tests/README.md", "src/synthlib/link.py",
+])
+def test_code_only_refuses_documentation_change_notes_and_non_code(repo_with_docs: Path, path: str) -> None:
+    tools = code_only_tools(repo_with_docs)
+    recorder = ToolRecorder()
+    with recording(recorder):
+        text = tools.read_file(path)
+    assert text.startswith("REFUSED") and "INTENT-MARKER" not in text
+    [event] = recorder.events
+    assert event.tool is ToolName.READ_FILE and event.status is ToolCallStatus.NOT_PERMITTED
+
+
+@pytest.mark.parametrize(("path", "expected"), [
+    ("src/synthlib/core.py", "line 1"), ("./src/synthlib/core.py", "line 1"),
+    ("tests/test_core.py", "def test_x"), ("tests/data.txt", "fixture line"),  # test modules and fixture data
+])
+def test_code_only_still_reads_source_and_test_files(repo_with_docs: Path, path: str, expected: str) -> None:
+    recorder = ToolRecorder()
+    with recording(recorder):
+        text = code_only_tools(repo_with_docs).read_file(path)
+    assert expected in text and not text.startswith(("REFUSED", "INVALID"))
+    assert recorder.events[0].status is ToolCallStatus.OK
+
+
+@pytest.mark.parametrize("path", ["CHANGELOG.md", "docs/guide.rst", "src/synthlib/link.py"])
+def test_without_code_only_documentation_stays_readable(repo_with_docs: Path, path: str) -> None:
+    # FULL/A2/B1 (code_only False, the default): unchanged behaviour.
+    tools, _ = make_tools(repo_with_docs)
+    assert INTENT in tools.read_file(path)

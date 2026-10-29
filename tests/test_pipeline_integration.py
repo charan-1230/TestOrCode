@@ -364,11 +364,18 @@ class _ProbedMemory:
 
 def test_a1_real_pipeline_uses_memory_but_no_retrieval_commit_message_or_search(worktree: Path) -> None:
     a1 = SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.A1_NO_INTENT_RETRIEVAL})
+    (worktree / "CHANGELOG.md").write_text("INTENT-MARKER: normalise now capitalises on purpose\n")
     fix = analysis(DecisionLabel.FIX_CODE) | {"cited_evidence_ids": ["mem-lower"]}  # memory is still evidence
     llm = FakeLLMClient({
         AgentRole.INTENT_ANALYST: [fix],
-        # The Repairer is not told about search_repo; if it calls it anyway, the call is refused, not run.
-        AgentRole.REPAIRER: [tool_step("search_repo", query="normalise intent"), edit(*LOWER)],
+        # The Repairer is not told about search_repo or change notes; if it asks anyway, the calls are refused at
+        # runtime, while reading source code still works.
+        AgentRole.REPAIRER: [
+            tool_step("search_repo", query="normalise intent"),
+            tool_step("read_file", path="CHANGELOG.md"),
+            tool_step("read_file", path="src/synthlib/core.py"),
+            edit(*LOWER),
+        ],
         AgentRole.INTEGRITY_GUARD: [CONSISTENT],
     })
     record = run_episode(
@@ -389,4 +396,28 @@ def test_a1_real_pipeline_uses_memory_but_no_retrieval_commit_message_or_search(
     assert S1.ci_event.commit_message not in analyst["user"] and "[ev-msg]" not in analyst["user"]
     repairer_calls = [c for c in llm.calls if c["role"] is AgentRole.REPAIRER]
     assert all("search_repo(" not in c["system"] for c in repairer_calls)
+    assert all("changelog files are not readable" in c["system"] for c in repairer_calls)
     assert "REFUSED: search_repo" in repairer_calls[1]["user"]
+    reads = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
+    assert [(e.arguments["path"], e.status) for e in reads] == [
+        ("CHANGELOG.md", ToolCallStatus.NOT_PERMITTED), ("src/synthlib/core.py", ToolCallStatus.OK)]
+    assert all("INTENT-MARKER" not in c["user"] for c in llm.calls)  # never reached any prompt
+    # The withheld commit message reaches no role's prompt (Analyst, Repairer, Guard review).
+    assert {c["role"] for c in llm.calls} == {AgentRole.INTENT_ANALYST, AgentRole.REPAIRER, AgentRole.INTEGRITY_GUARD}
+    assert all(S1.ci_event.commit_message not in c["user"] + c["system"] for c in llm.calls)
+    # The source read did reach the Repairer (its tool-result header; the prompt's FILES section alone has no such line).
+    assert "src/synthlib/core.py lines 1-2 of 2:" in repairer_calls[3]["user"]
+
+
+def test_full_repairer_may_still_read_change_notes(worktree: Path) -> None:
+    # Positive control: outside A1 the same read is permitted (FULL/A2/B1 behaviour unchanged).
+    (worktree / "CHANGELOG.md").write_text("INTENT-MARKER: normalise now capitalises on purpose\n")
+    llm = FakeLLMClient({
+        AgentRole.INTENT_ANALYST: [analysis(DecisionLabel.FIX_CODE)],
+        AgentRole.REPAIRER: [tool_step("read_file", path="CHANGELOG.md"), edit(*LOWER)],
+        AgentRole.INTEGRITY_GUARD: [CONSISTENT],
+    })
+    record = run_episode(S1, worktree_path=worktree, settings=SETTINGS, llm=llm)
+    [read] = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
+    assert read.status is ToolCallStatus.OK
+    assert "INTENT-MARKER" in [c for c in llm.calls if c["role"] is AgentRole.REPAIRER][1]["user"]

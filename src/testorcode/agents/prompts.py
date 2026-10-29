@@ -87,12 +87,22 @@ _SEARCH_TOOL_LINES = """- search_repo(query): search commit messages, changelog,
 """
 
 
-def tool_instructions(allowed_tools: Iterable[ToolName]) -> str:
-    """``TOOL_INSTRUCTIONS`` without ``search_repo`` when the episode does not allow it (A1: no retrieval), so the
-    model is not told about a tool that would only be refused.  Unchanged whenever ``search_repo`` is allowed."""
-    if ToolName.SEARCH_REPO in set(allowed_tools):
-        return TOOL_INSTRUCTIONS
-    return TOOL_INSTRUCTIONS.replace(_SEARCH_TOOL_LINES, "")
+_READ_FILE_LINE = "- read_file(path, start_line, end_line): read lines of a repository file (max 200 lines per call)."
+_READ_CODE_LINE = ("- read_file(path, start_line, end_line): read lines of a source or test file (max 200 lines per call);\n"
+                   "  documentation, README and changelog files are not readable in this run.")
+
+
+def tool_instructions(allowed_tools: Iterable[ToolName], *, code_only: bool = False) -> str:
+    """``TOOL_INSTRUCTIONS`` adjusted to what the episode's tools really do (A1: no retrieval), so the model is not
+    sent to calls that would only be refused: without ``search_repo`` its line is dropped; with ``code_only`` the
+    ``read_file`` line names the narrower scope (the restriction itself is enforced by ``AgentTools.read_file``).
+    Unchanged for FULL/A2/B1 (``search_repo`` allowed, ``code_only`` False)."""
+    text = TOOL_INSTRUCTIONS
+    if ToolName.SEARCH_REPO not in set(allowed_tools):
+        text = text.replace(_SEARCH_TOOL_LINES, "")
+    if code_only:
+        text = text.replace(_READ_FILE_LINE, _READ_CODE_LINE)
+    return text
 
 
 # --------------------------------------------------------------------------- #

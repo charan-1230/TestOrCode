@@ -797,6 +797,9 @@ class EpisodeRun:
             self._tools = AgentTools(
                 self.context, retriever=self._ensure_retriever(),
                 timeout_seconds=self.settings.test_timeout_seconds, python_executable=self.settings.test_python,
+                # A condition without any retrieval (A1) may not read documentation or change notes either: they
+                # carry the change-intent evidence it withholds.  Enforced in AgentTools.read_file, not by the prompt.
+                code_only=not (self.profile.intent_retrieval or self.profile.standard_rag),
             )
         return self._tools
 

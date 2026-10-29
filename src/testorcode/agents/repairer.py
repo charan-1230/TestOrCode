@@ -80,7 +80,8 @@ def propose_repair(
         )
     system = REPAIR_SYSTEM.format(scope_rule=REPAIR_SCOPE_RULES[scope])
     if tools is not None:
-        system = f"{system}\n{tool_instructions(context.allowed_tools)}\nFinal actions: \"patch\" or \"escalate\".\n"
+        instructions = tool_instructions(context.allowed_tools, code_only=getattr(tools, "code_only", False))
+        system = f"{system}\n{instructions}\nFinal actions: \"patch\" or \"escalate\".\n"
     user = build_repair_user(context, group, analysis, files, previous_rejection, rejection_reasons)
     revision = 1 if previous_rejection is not None or rejection_reasons else 0
 
