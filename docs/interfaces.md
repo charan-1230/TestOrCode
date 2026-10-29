@@ -97,10 +97,10 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 
 | Module | Signature | Owner branch |
 |---|---|---|| `tools.patch_tools` | `validate_patch`, `apply_patch`, `revert_patch` | sandbox |
-| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None, retriever=None, agents=None, patch_tools=None, maintainer=None) -> ExperimentRunRecord` (`retriever`/`agents`/`patch_tools` are injections for tests; `maintainer(group, decision, guard_result) -> bool` is the harness's simulated maintainer) | agent-core |
+| `orchestrator` | `run_episode(episode: EpisodeInput, *, worktree_path, settings, llm, memory=None, retriever=None, agents=None, patch_tools=None, maintainer=None) -> ExperimentRunRecord` (`retriever`/`agents`/`patch_tools` are injections for tests; `maintainer(group, decision, guard_result) -> bool` is the harness's simulated maintainer). The single entry point for **every** condition: the trivial baselines return `baselines.trivial_record` (no model, worktree or memory; `llm` may be `None`) | agent-core |
 | `llm_client` | `LLMClient.complete_structured(*, role, system, user, response_model) -> LLMResponse[T]`; `create_llm_client(settings)` | agent-core |
 | `agents.triage` | `run_triage(context, ci_event, *, llm, settings) -> TriageResult` | agent-core |
-| `agents.intent_analyst` | `analyse_intent(context, group, *, retriever, memory, llm) -> IntentAnalysis` | agent-core |
+| `agents.intent_analyst` | `analyse_intent(context, group, *, retriever, memory, llm) -> IntentAnalysis` (`retriever=None` = no intent retrieval, A1: no search, the prompt says retrieval is disabled; `memory=None` = no memory) | agent-core |
 | `agents.repairer` | `propose_repair(context, group, analysis, *, llm, previous_rejection=None, rejection_reasons=(), tools=None) -> RepairerOutput` (`previous_rejection` = a Guard rejection; `rejection_reasons` = a validation/apply/direction rejection; `tools: AgentTools` enables the tool loop, at most 4 model calls per attempt) | agent-core |
 | `agents.single_agent` | `run_single_agent(context, ci_event, tests, *, llm, tools, rejection_reasons=()) -> B1Step \| None` (B1; used by `orchestrator.SingleAgentRun`) | agent-core |
 | `agents.tools` | `AgentTools(context, *, retriever, timeout_seconds, python_executable=None)`: `search_repo(query)`, `read_file(path, start_line, end_line)`, `run_tests(selectors)` → text for the model; permission/argument checks; every call is a `ToolEvent` | agent-core |
@@ -241,14 +241,25 @@ retrieval corpus from a worktree; `ConditionSummary` is provisional.  (`memory.J
 (`triage-v1+intent-v4+repair-v5+guard-v1`) goes into `RunProvenance.prompt_template_version` for the multi-agent
 pipeline; B1 runs record `b1-v2` (`B1_SYSTEM`). All share `COMMON_RULES` (green build is not the goal, cite only listed
 ids, proposal 11.1 unsafe actions). Every field of a reply model is required. Bump a role's version whenever its prompt
-changes.
+changes. Condition-dependent text (A1, Day 3) is not a version change: `tool_instructions(allowed_tools)` drops the
+`search_repo` line only when the episode does not allow it, and `build_intent_user(..., retrieval=False)` says retrieval
+is disabled; FULL/A2/B1 prompts are byte-identical to before.
 
 **Orchestrator.**
-- *Conditions:* `settings.experiment_condition` selects the episode view (`conditions.episode_for_condition`) and memory
-  (`profile_for(...).memory`; otherwise `memory` is ignored). Each run class executes only its own conditions:
-  `EpisodeRun` → A2 (the `Settings` default) and FULL (needs a `MemoryStore`); `SingleAgentRun` → B1. `run_episode`
-  picks the class. Conditions without a code path (A1, A3, and the non-proposal B0, B2, A4, A5, trivial), or a
-  condition sent to the wrong class, fail explicitly as `ORCHESTRATOR_ERROR` at stage `setup`.
+- *Conditions:* `settings.experiment_condition` selects the episode view (`conditions.episode_for_condition`) and the
+  run reads its `ConditionProfile` (`EpisodeRun.profile`): `memory` (otherwise `memory` is ignored; a profile with
+  memory needs a `MemoryStore`) and `intent_retrieval`. Each run class executes only its own conditions:
+  `EpisodeRun` → FULL, A1 (both need a `MemoryStore`) and A2 (the `Settings` default); `SingleAgentRun` → B1;
+  `run_episode` itself answers the trivial baselines (`TRIVIAL_UPDATE_TEST`, `TRIVIAL_FIX_CODE`). Conditions without a
+  code path (A3 — Human 2's Day-3 switch — and the non-proposal B0, B2, A4, A5), or a condition sent to the wrong
+  class, fail explicitly as `ORCHESTRATOR_ERROR` at stage `setup`.
+- *A1 (no intent retrieval, Day 3):* FULL minus every route to change-intent text. The episode view withholds the CI
+  commit message, the corpus (`items=[]`) and `search_repo` (the pilot corpora contain the CI commit's own message as
+  `msg:<sha>`, so withholding only the message would leak it); the Analyst is called with `retriever=None`; the
+  Repairer's tool list omits `search_repo` (a call anyway is refused, `not_permitted`). Memory, Triage, the Guard and
+  the decision policy are unchanged, so A1 can decide UPDATE_TEST/FIX_CODE only when it can cite a usable memory
+  record and otherwise escalates; its *direction* is still scored from `hypothesis`. The record's
+  `retrieved_evidence` is empty (evaluation reports no recall for it).
 - *B1* (`SingleAgentRun`): shared `stable_failures` baseline, one agent with standard RAG (`naive_query` through
   `search_repo`) and the same three tools, at most `TOOL_STEPS_PER_TEST` (6) model calls per failing test it is asked
   about; its own grouping (`B1Decision` items); the same evidence and decision-policy checks; one placement re-ask for
@@ -261,7 +272,9 @@ changes.
   unsupported patch id rejects the patch.
 - *Tools:* `tools.trace` records every tool call of the episode (`run_tests`, `read_file`, `apply_patch` with
   `operation=validate|apply|revert`, `search_repo`, `memory.read`, `memory.write`) as a `ToolEvent` with the acting role
-  (refused calls as `not_permitted`, bad arguments as `invalid_arguments`) and its budget category in
+  (refused calls as `not_permitted`, bad arguments as `invalid_arguments`; in B1 the agent's own calls are its
+  searches/reads/test runs and its patch handling, while stability runs and verification reruns are the orchestrator's)
+  and its budget category in
   `arguments["budget"]`: `agent` (calls made while Intent Analysis, the Repairer or B1's decision loop act; limited by
   `budget.max_tool_calls`), `operational` (Triage stability runs, patch validate/apply, Guard or B1 verification runs,
   memory write; limited by a finite safety cap, `OPERATIONAL_CAP_FACTOR` (3) × `max_tool_calls`, or 200 without a
@@ -296,7 +309,9 @@ changes.
 **Configuration.** `TEST_PYTHON` and `TEST_TIMEOUT_SECONDS` reach every test run of an episode (Triage, the Repairer's
 `run_tests`, the Guard, the final suite), whether it is started by `run_episode` or the CLI. `LLM_API_KEY_1..9` are
 used in order (then `LLM_API_KEY`): a 429 naming a per-day quota, or rate limits that outlast the retries, switch to
-the next key; with every key exhausted the call is an `LLMRateLimitError` (API failure). Logs name key positions only; `LLM_STRUCTURED_MODE`,
+the next key; with every key exhausted the call is an `LLMRateLimitError` (API failure). A key whose daily quota ran out
+is remembered process-wide for an hour (by hash), so the next client (the next episode of an experiment) starts at the
+first key not known to be exhausted. Logs name key positions only; `LLM_STRUCTURED_MODE`,
 `LLM_MAX_RETRIES`, `LLM_TIMEOUT_SECONDS`. `patch_tools` restores
 the final newline that contract stripping removes, and the orchestrator reverts with the episode's `EditPolicy`.
 
@@ -316,4 +331,4 @@ the final newline that contract stripping removes, and the orchestrator reverts 
 `Episode` records for the evaluation harness only. Load with `testorcode.dataset` (`load_agent_inputs`, `load_episodes`). Splits,
 rules, the frozen test split and limitations: `datasets/README.md`.
 
-`retrieval` and `conditions` are implemented: BM25 retrieval, the A1/A2/B1 switches, the `search_repo` tool wrapper and metric helpers (`docs/retrieval.md`).
+`retrieval` and `conditions` are implemented: BM25 retrieval, the A1/A2/B1 switches, the `search_repo` tool wrapper and metric helpers (`docs/retrieval.md`). A1 runs end to end since Day 3 (`docs/day3-human1.md`).

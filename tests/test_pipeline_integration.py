@@ -20,22 +20,26 @@ from testorcode.agents import tools as agent_tools
 from testorcode.config import Settings
 from testorcode.llm_client import FakeLLMClient
 from testorcode.orchestrator import Agents, run_episode
+from testorcode.schemas.contracts import MemoryReadResult, MemoryRecordCheck
 from testorcode.schemas.episode_schemas import (
     DecisionLabel,
     EvidenceItem,
     EvidenceSourceType,
+    RepairDirection,
     ToolName,
 )
 from testorcode.schemas.result_schemas import (
     AgentRole,
+    ExperimentCondition,
     GuardDecision,
     PatchApplicationStatus,
+    ProbeStatus,
     RunStatus,
     TestRunPhase,
     TestRunStatus,
     ToolCallStatus,
 )
-from testorcode.schemas.tests.conftest import make_s1
+from testorcode.schemas.tests.conftest import make_s1, memory_record
 from testorcode.tools.mutation import MutationCheck, mutation_check
 from testorcode.tools.pytest_runner import run_tests
 from testorcode.tools.verification import ProbeCase, TrustedProbe, verify_behaviour
@@ -342,3 +346,47 @@ def test_a2_and_b1_records_on_the_same_input_are_comparable(worktree: Path) -> N
     assert not b1.integrity.guard_ran
     assert a2.provenance.prompt_template_version != b1.provenance.prompt_template_version
     assert set(a2.model_dump()) == set(b1.model_dump())  # one result format for every condition
+
+
+class _ProbedMemory:
+    """A store whose one record passed its probe on the current code (what ``JsonlMemoryStore.read`` reports)."""
+
+    RECORD = memory_record("mem-lower").model_copy(update={
+        "direction": RepairDirection.FIX_CODE, "behaviour_signature": "normalise() returns the lower-cased string",
+    })
+
+    def read(self, context, function_qualname):
+        return MemoryReadResult(checks=(MemoryRecordCheck(record=self.RECORD, probe_status=ProbeStatus.PASSED),))
+
+    def write(self, record, approval):  # pragma: no cover - the A1 run below has no maintainer
+        raise AssertionError("not expected")
+
+
+def test_a1_real_pipeline_uses_memory_but_no_retrieval_commit_message_or_search(worktree: Path) -> None:
+    a1 = SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.A1_NO_INTENT_RETRIEVAL})
+    fix = analysis(DecisionLabel.FIX_CODE) | {"cited_evidence_ids": ["mem-lower"]}  # memory is still evidence
+    llm = FakeLLMClient({
+        AgentRole.INTENT_ANALYST: [fix],
+        # The Repairer is not told about search_repo; if it calls it anyway, the call is refused, not run.
+        AgentRole.REPAIRER: [tool_step("search_repo", query="normalise intent"), edit(*LOWER)],
+        AgentRole.INTEGRITY_GUARD: [CONSISTENT],
+    })
+    record = run_episode(
+        S1, worktree_path=worktree, settings=a1, llm=llm, memory=_ProbedMemory(),
+        agents=Agents(integrity_guard=partial(integrity_guard.verify_repair, probe=PROBE)),
+    )
+
+    assert record.outcome.status is RunStatus.COMPLETED
+    assert record.condition is ExperimentCondition.A1_NO_INTENT_RETRIEVAL
+    assert record.predictions[0].predicted_action is DecisionLabel.FIX_CODE
+    assert record.integrity.guard_decision is GuardDecision.APPROVE and record.retrieved_evidence == []
+    assert [m.record_id for m in record.memory_reads] == ["mem-lower"] and record.memory_reads[0].used_as_evidence
+    [search] = [e for e in record.tool_events if e.tool is ToolName.SEARCH_REPO]
+    assert search.status is ToolCallStatus.NOT_PERMITTED and search.called_by is AgentRole.REPAIRER
+
+    analyst = next(c for c in llm.calls if c["role"] is AgentRole.INTENT_ANALYST)
+    assert "evidence retrieval is disabled" in analyst["user"] and "[mem-lower]" in analyst["user"]
+    assert S1.ci_event.commit_message not in analyst["user"] and "[ev-msg]" not in analyst["user"]
+    repairer_calls = [c for c in llm.calls if c["role"] is AgentRole.REPAIRER]
+    assert all("search_repo(" not in c["system"] for c in repairer_calls)
+    assert "REFUSED: search_repo" in repairer_calls[1]["user"]

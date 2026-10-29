@@ -72,6 +72,7 @@ from testorcode.agents.prompts import B1_VERSION, PROMPT_VERSION, B1Decision, B1
 from testorcode.agents.repairer import build_diff, editable_files
 from testorcode.agents.single_agent import run_single_agent
 from testorcode.agents.tools import AgentTools
+from testorcode.baselines import is_trivial, trivial_record
 from testorcode.conditions import episode_for_condition, profile_for
 from testorcode.config import Settings
 from testorcode.errors import (
@@ -173,6 +174,12 @@ _STAGE_ROLE = {
     Stage.PATCH_APPLICATION: AgentRole.REPAIRER,
     Stage.INTEGRITY_GUARD: AgentRole.INTEGRITY_GUARD,
 }
+# B1 has one agent and no Triage agent or Guard: its stability runs and verification reruns are the orchestrator's.
+_B1_STAGE_ROLE = {
+    Stage.REPAIR: AgentRole.SINGLE_AGENT,
+    Stage.PATCH_VALIDATION: AgentRole.SINGLE_AGENT,
+    Stage.PATCH_APPLICATION: AgentRole.SINGLE_AGENT,
+}
 # Stages in which an agent is acting: tool calls made then are the agent's own and use the episode tool budget.
 # Every other stage is mandatory harness work and uses the operational safety cap.
 _AGENT_STAGES = frozenset({Stage.INTENT_ANALYSIS, Stage.REPAIR})
@@ -182,15 +189,16 @@ _AGENT_STAGES = frozenset({Stage.INTENT_ANALYSIS, Stage.REPAIR})
 # a runaway loop.
 OPERATIONAL_CAP_FACTOR = 3
 OPERATIONAL_CAP_DEFAULT = 200
-# Conditions that run on the multi-agent pipeline today; the memory ones need a MemoryStore.
-_NO_MEMORY_CONDITIONS = frozenset({ExperimentCondition.A2_NO_MEMORY, ExperimentCondition.B1})
-# Which run class executes which condition; any other pairing is refused, so a condition can never run
-# under another one's pipeline (e.g. B1 through the multi-agent EpisodeRun).
-_MULTI_AGENT_CONDITIONS = frozenset({ExperimentCondition.FULL, ExperimentCondition.A2_NO_MEMORY})
+# Which run class executes which condition; any other pairing is refused, so a condition can never run under
+# another one's pipeline (e.g. B1 through the multi-agent EpisodeRun).  What a condition may see and use comes from
+# its ``ConditionProfile`` (``conditions.profile_for``): memory (a profile with memory needs a MemoryStore), intent
+# retrieval (A1: none), the commit message and the corpus (``episode_for_condition``).  Not runnable yet: A3 (no
+# Integrity Guard; Human 2's Day-3 switch), A4 (coarse memory, not in the proposal; its profile equals FULL's, so it
+# would silently run as FULL), A5, B0, B2.  The trivial baselines never reach a run class (``run_episode``).
+_MULTI_AGENT_CONDITIONS = frozenset(
+    {ExperimentCondition.FULL, ExperimentCondition.A1_NO_INTENT_RETRIEVAL, ExperimentCondition.A2_NO_MEMORY}
+)
 _SINGLE_AGENT_CONDITIONS = frozenset({ExperimentCondition.B1})
-# A4 (coarse memory) is not in the submitted proposal and has no implementation of its own, so it is refused
-# rather than run as FULL under another label.
-_MEMORY_CONDITIONS = frozenset({ExperimentCondition.FULL})
 _ALTERNATIVE = {
     "outdated_test": "regression: the change broke behaviour the test rightly checks (FIX_CODE)",
     "regression": "outdated_test: the change was intended and the test encodes the old behaviour (UPDATE_TEST)",
@@ -367,8 +375,9 @@ class EpisodeRun:
         if llm is None:
             raise ConfigError("run_episode requires an LLMClient")
         self.condition = settings.experiment_condition
+        self.profile = profile_for(self.condition)
         self.condition_problem = _condition_problem(self.condition, memory, self.CONDITIONS)
-        if not profile_for(self.condition).memory:
+        if not self.profile.memory:
             memory = None
         episode = episode_for_condition(episode, self.condition)
         self.episode = episode
@@ -483,9 +492,11 @@ class EpisodeRun:
     # -- group stages ----------------------------------------------------- #
 
     def _intent_analysis(self, g: GroupState) -> Stage:
-        self._ensure_retriever()
+        # A1 (no intent retrieval): the Analyst gets no retriever and sees only the failing output, the diff and
+        # memory.  The episode view has no corpus and no search_repo either (``episode_for_condition``).
+        retriever = self._ensure_retriever() if self.profile.intent_retrieval else None
         analysis = self.agents.intent_analyst(
-            self.context, g.detail, retriever=self.retriever, memory=self.memory, llm=self.llm
+            self.context, g.detail, retriever=retriever, memory=self.memory, llm=self.llm
         )
         _require(isinstance(analysis, IntentAnalysis), "intent analyst must return IntentAnalysis")
         _require(analysis.group_id == g.group_id, "intent analysis is for a different group")
@@ -1020,11 +1031,11 @@ class _ConditionNotImplemented(TestOrCodeError):
 def _condition_problem(
     condition: ExperimentCondition, memory: MemoryStore | None, runnable: frozenset[ExperimentCondition]
 ) -> str | None:
-    if condition not in _NO_MEMORY_CONDITIONS | _MEMORY_CONDITIONS:
+    if condition not in _MULTI_AGENT_CONDITIONS | _SINGLE_AGENT_CONDITIONS:
         return f"condition {condition.value} is not implemented in run_episode yet"
     if condition not in runnable:
         return f"condition {condition.value} is not executed by this pipeline (use run_episode)"
-    if condition in _MEMORY_CONDITIONS and memory is None:
+    if profile_for(condition).memory and memory is None:
         return f"condition {condition.value} needs a MemoryStore; none was given"
     return None
 
@@ -1104,8 +1115,11 @@ class SingleAgentRun(EpisodeRun):
             return self._build_record(started_at)
 
     def _enter(self, group_id: str | None, stage: Stage) -> None:
+        """The agent acts while it decides and while its own patches are validated/applied on its behalf (as the
+        Repairer's are); the shared stability runs and the post-repair verification are harness work, so they are
+        logged as the orchestrator's, not as calls the agent made."""
         super()._enter(group_id, stage)
-        self.recorder.role = AgentRole.SINGLE_AGENT
+        self.recorder.role = _B1_STAGE_ROLE.get(stage, AgentRole.ORCHESTRATOR)
 
     def _handlers(self) -> dict[Stage, Callable[[GroupState], Stage]]:
         return {
@@ -1251,7 +1265,7 @@ def run_episode(
     *,
     worktree_path: Path,
     settings: Settings,
-    llm: LLMClient,
+    llm: LLMClient | None,
     memory: MemoryStore | None = None,
     retriever: Retriever | None = None,
     agents: Agents | None = None,
@@ -1259,6 +1273,10 @@ def run_episode(
     maintainer: Maintainer | None = None,
 ) -> ExperimentRunRecord:
     """Run one episode and return its run record.
+
+    Every condition enters here.  The deterministic sanity baselines (``TRIVIAL_UPDATE_TEST``/``TRIVIAL_FIX_CODE``)
+    are answered by ``baselines.trivial_record``: no model, tool, worktree or memory is used (``llm`` may be None
+    for them); B1 runs ``SingleAgentRun``; every other condition ``EpisodeRun``.
 
     Takes ``EpisodeInput`` (never ``Episode``) so gold labels cannot reach the
     agents.  The condition comes from ``settings.experiment_condition``; memory is
@@ -1275,6 +1293,10 @@ def run_episode(
     Raises:
         ConfigError: no model id is known, so no valid record can be written.
     """
+    if is_trivial(settings.experiment_condition):
+        return trivial_record(
+            episode, settings.experiment_condition, seed=settings.random_seed, code_revision=_code_revision()
+        )
     runner = SingleAgentRun if settings.experiment_condition is ExperimentCondition.B1 else EpisodeRun
     return runner(
         episode,

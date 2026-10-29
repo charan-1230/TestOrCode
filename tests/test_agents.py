@@ -280,6 +280,19 @@ def test_intent_analyst_reply_that_breaks_the_contract_is_rejected(repo: Path) -
         )
 
 
+def test_intent_analyst_without_retriever_searches_nothing_and_says_so(repo: Path) -> None:
+    # A1: no retriever -> no search, no corpus ids in the prompt; the model is told retrieval is disabled.
+    reply = analysis(DecisionLabel.ESCALATE, HypothesisKind.UNKNOWN, cited=())
+    fake = FakeLLMClient({AgentRole.INTENT_ANALYST: [reply.model_dump(mode="json")]})
+    out = intent_analyst.analyse_intent(
+        EpisodeContext.from_episode_input(S1, repo), group_detail(core_diff()), retriever=None, memory=None, llm=fake,
+    )
+    assert out == reply
+    [call] = fake.calls
+    assert "evidence retrieval is disabled" in call["user"]
+    assert not any(f"[{i.evidence_id}]" in call["user"] for i in S1.corpus.items)
+
+
 def test_intent_queries_use_function_diff_and_commit_message() -> None:
     queries = intent_analyst.group_queries(group_detail(core_diff()))
     assert any("normalise" in q for q in queries) and any("upper" in q for q in queries)

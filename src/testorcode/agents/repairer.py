@@ -17,11 +17,11 @@ from testorcode.agents._common import clip, read_worktree_file
 from testorcode.agents.prompts import (
     REPAIR_SCOPE_RULES,
     REPAIR_SYSTEM,
-    TOOL_INSTRUCTIONS,
     RepairReply,
     RepairStep,
     SnippetEdit,
     build_repair_user,
+    tool_instructions,
 )
 from testorcode.agents.tool_loop import run_tool_loop
 from testorcode.agents.tools import AgentTools
@@ -80,7 +80,7 @@ def propose_repair(
         )
     system = REPAIR_SYSTEM.format(scope_rule=REPAIR_SCOPE_RULES[scope])
     if tools is not None:
-        system = f"{system}\n{TOOL_INSTRUCTIONS}\nFinal actions: \"patch\" or \"escalate\".\n"
+        system = f"{system}\n{tool_instructions(context.allowed_tools)}\nFinal actions: \"patch\" or \"escalate\".\n"
     user = build_repair_user(context, group, analysis, files, previous_rejection, rejection_reasons)
     revision = 1 if previous_rejection is not None or rejection_reasons else 0
 

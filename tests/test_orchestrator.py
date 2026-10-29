@@ -636,7 +636,7 @@ APPROVED = {
 }
 
 
-@pytest.mark.parametrize("condition", ["A1", "A3", "A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
+@pytest.mark.parametrize("condition", ["A3", "A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
 def test_condition_without_a_code_path_fails_explicitly(condition: str) -> None:
     settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
     record, er, _, _ = run(S1, {}, settings=settings)
@@ -651,6 +651,71 @@ def test_full_without_memory_store_fails_explicitly() -> None:
     record, _, _, _ = run(S1, {}, settings=FULL_SETTINGS)
     assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
     assert "needs a MemoryStore" in record.errors[0].message
+
+
+A1_SETTINGS = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A1"})
+
+
+def a1_intent(seen: dict):
+    """An Intent Analyst stand-in that records what A1 hands it and reads memory, as the real one does."""
+
+    def intent(context, group, *, retriever, memory, llm):
+        seen.update(retriever=retriever, allowed_tools=context.allowed_tools)
+        if memory is not None:
+            memory.read(context, group.group.function_qualname)
+        return FakeAgents.ask(llm, AgentRole.INTENT_ANALYST, IntentAnalysis)
+
+    return intent
+
+
+def test_a1_runs_with_memory_but_without_any_retrieval() -> None:
+    seen: dict = {}
+    fake = FakeAgents()
+    fake.intent = a1_intent(seen)
+    record, er, _, _ = run(S1, {
+        # Memory is still citable; a patch citing a corpus id would be rejected (nothing was retrieved).
+        AgentRole.INTENT_ANALYST: [analysis(G1, DecisionLabel.FIX_CODE, cited_evidence_ids=("mem-1",))],
+        AgentRole.REPAIRER: [proposal(G1, RepairDirection.FIX_CODE)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    }, settings=A1_SETTINGS, memory=FakeMemory(), fake=fake)
+    assert record.outcome.status is RunStatus.COMPLETED and record.condition.value == "A1"
+    assert seen["retriever"] is None and ToolName.SEARCH_REPO not in seen["allowed_tools"]
+    assert er.episode.ci_event.commit_message is None and er.episode.corpus.items == []
+    assert record.retrieved_evidence == []
+    assert not any(e.tool is ToolName.SEARCH_REPO for e in record.tool_events)
+    assert [m.record_id for m in record.memory_reads] == ["mem-1"] and record.memory_reads[0].used_as_evidence
+    assert record.provenance.prompt_template_version == PROMPT_VERSION
+
+
+def test_a1_citing_corpus_evidence_escalates() -> None:
+    # Nothing was retrieved, so an id from the (withheld) corpus is an invented citation: escalate, never repair.
+    fake = FakeAgents()
+    fake.intent = a1_intent({})
+    record, er, _, _ = run(S1, {AgentRole.INTENT_ANALYST: [analysis(G1)]}, settings=A1_SETTINGS,
+                           memory=FakeMemory(), fake=fake)
+    assert record.outcome.status is RunStatus.ESCALATED
+    assert record.outcome.escalation.trigger == "insufficient_evidence"
+    assert Stage.REPAIR not in stages(er) and record.patches == []
+
+
+def test_a1_without_memory_store_fails_explicitly() -> None:
+    record, _, _, _ = run(S1, {}, settings=A1_SETTINGS)
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert "needs a MemoryStore" in record.errors[0].message
+
+
+@pytest.mark.parametrize(
+    ("condition", "action"),
+    [("TRIVIAL_UPDATE_TEST", DecisionLabel.UPDATE_TEST), ("TRIVIAL_FIX_CODE", DecisionLabel.FIX_CODE)],
+)
+def test_run_episode_answers_trivial_baselines_without_model_or_worktree(condition, action) -> None:
+    settings = Settings.from_env({"EXPERIMENT_CONDITION": condition, "RANDOM_SEED": "3"})
+    record = run_episode(S1, worktree_path=Path("/nonexistent/worktree"), settings=settings, llm=None)
+    assert record.condition.value == condition and record.provenance.seed == 3
+    assert {p.test_id for p in record.predictions} == {t.test_id for t in S1.ci_event.failing_tests}
+    assert {p.predicted_action for p in record.predictions} == {action}
+    assert record.usage.llm_calls == 0 and record.tool_events == [] and record.patches == []
+    assert record.final_test_status is TestRunStatus.NOT_RUN and record.outcome.status is RunStatus.COMPLETED
 
 
 def test_a2_ignores_a_memory_store_and_hides_visible_memory() -> None:

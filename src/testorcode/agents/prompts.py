@@ -17,6 +17,7 @@ Every field is required: with optional arrays Gemini tended to omit them.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -35,7 +36,7 @@ from testorcode.schemas.contracts import (
     IntentAnalysis,
     PatchProposal,
 )
-from testorcode.schemas.episode_schemas import FailingTest, PatchScope
+from testorcode.schemas.episode_schemas import FailingTest, PatchScope, ToolName
 from testorcode.schemas.result_schemas import RetrievedEvidence
 
 TRIAGE_VERSION = "triage-v1"
@@ -81,6 +82,17 @@ Tools (set "action" to the tool name and fill its arguments; leave the other arg
 - run_tests(selectors): run tests (ids or files under the test roots) on the CURRENT code; your edits are NOT
   applied yet.
 Every call costs budget; you have a small number of steps.  Do not repeat a call whose result you already have."""
+_SEARCH_TOOL_LINES = """- search_repo(query): search commit messages, changelog, docs and docstrings up to the CI commit; results carry
+  evidence ids you may cite.
+"""
+
+
+def tool_instructions(allowed_tools: Iterable[ToolName]) -> str:
+    """``TOOL_INSTRUCTIONS`` without ``search_repo`` when the episode does not allow it (A1: no retrieval), so the
+    model is not told about a tool that would only be refused.  Unchanged whenever ``search_repo`` is allowed."""
+    if ToolName.SEARCH_REPO in set(allowed_tools):
+        return TOOL_INSTRUCTIONS
+    return TOOL_INSTRUCTIONS.replace(_SEARCH_TOOL_LINES, "")
 
 
 # --------------------------------------------------------------------------- #
@@ -176,7 +188,10 @@ def build_intent_user(
     group: FailureGroupDetail,
     evidence: list[RetrievedEvidence],
     memory_lines: list[str],
+    *,
+    retrieval: bool = True,
 ) -> str:
+    """``retrieval=False`` (A1, no intent retrieval): the evidence section says retrieval is disabled."""
     parts = [
         f"REPOSITORY: {context.repo.repo_id}    CI COMMIT: {context.commit_sha[:12]}",
         f"GROUP ID: {group.group.group_id}    FUNCTION: {group.group.function_qualname or '(not named)'}",
@@ -198,7 +213,9 @@ def build_intent_user(
     parts += ["", "EVIDENCE (cite only these ids):"]
     for item in evidence:
         parts.append(f"[{item.evidence_id}] ({item.source_type}) {clip(item.snippet, 700)}")
-    if not evidence:
+    if not retrieval:
+        parts.append("(evidence retrieval is disabled in this run; only MEMORY records below, if any, are citable)")
+    elif not evidence:
         parts.append("(nothing retrieved)")
     if memory_lines:
         parts += ["", "MEMORY (approved earlier, probe passed on the current code; citable by record id):", *memory_lines]
