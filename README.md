@@ -247,7 +247,9 @@ testorcode/
 └── scripts/
 ```
 
-Most modules are interface stubs that raise `NotImplementedError`; `docs/interfaces.md` says which parts are stable.
+All Day-2 modules are implemented (only `tools.git_tools.git_log/git_show/git_blame` remain stubs);
+`docs/interfaces.md` lists the modules, their contracts and owners.  Experiments: `scripts/run_experiment.py` then
+`scripts/summarize_results.py <out>/runs.jsonl`.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
 

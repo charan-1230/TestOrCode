@@ -5,7 +5,8 @@ to an agent.  Trivial baselines need no repository and no API key; every other c
 ``orchestrator.run_episode`` on a safe, disposable worktree.  The frozen test split needs ``final=True``.
 
 Output directory: ``runs.jsonl`` (one scored ``ExperimentRunRecord`` per line, appended as runs finish, so an
-interrupted experiment resumes where it stopped) and ``config.json`` (what was run; never a secret).
+interrupted experiment resumes where it stopped), ``config.json`` (what was run; never a secret) and, for
+conditions with memory, ``memory/<condition>/seed-<seed>/<split>.jsonl`` (one store per condition, seed and stream).
 """
 
 from __future__ import annotations
@@ -20,9 +21,13 @@ from typing import Final
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from testorcode.baselines import is_trivial, trivial_record
+from testorcode.conditions import profile_for
+from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
 from testorcode.errors import TestOrCodeError
 from testorcode.evaluation import evaluate_run
+from testorcode.llm_client import LLMClient
+from testorcode.memory import JsonlMemoryStore, memory_namespace, memory_path
 from testorcode.schemas.episode_schemas import DecisionLabel, Episode, EpisodeInput
 from testorcode.schemas.result_schemas import (
     ExperimentCondition,
@@ -118,6 +123,8 @@ def load_split(config: ExperimentConfig) -> list[tuple[EpisodeInput, Episode]]:
     missing = [e for e in wanted if e not in inputs]
     if missing:
         raise ValueError(f"unknown {config.split} episodes: {missing}")
+    # Chronological stream order, whatever order the ids were given in: memory carries over in that order.
+    wanted = sorted(dict.fromkeys(wanted), key=lambda e: (gold[e].stream_id, gold[e].stream_position))
     return [(inputs[e], gold[e]) for e in wanted]
 
 
@@ -131,24 +138,57 @@ def _key(record: ExperimentRunRecord) -> tuple[str, str, int | None]:
     return (record.episode_id, record.condition.value, record.provenance.seed)
 
 
-def default_run_one(config: ExperimentConfig) -> RunOne:
-    """Trivial baselines directly; every other condition through the orchestrator on a safe worktree."""
+def memory_dir(config: ExperimentConfig) -> Path:
+    """Where the experiment keeps its memory stores: ``<out>/memory/<condition>/seed-<seed>/<split>.jsonl``."""
+    return config.out / "memory"
+
+
+def default_run_one(
+    config: ExperimentConfig,
+    *,
+    settings: Settings | None = None,
+    llm_factory: Callable[[Settings], LLMClient] | None = None,
+    materializer: Callable[[Path, Path, dict], object] | None = None,
+) -> RunOne:
+    """Trivial baselines directly; every other condition through the orchestrator on a safe worktree.
+
+    Conditions whose profile uses memory (FULL) get one ``JsonlMemoryStore`` per (condition, seed) for the split: the
+    store isolation contract of ``memory`` (``memory_path``/``memory_namespace``), so memory carries over between the
+    episodes of one stream (run in stream order by ``run_experiment``) and never between conditions, seeds or splits.
+    Each episode's declared prior memory (``visible_memory``) is seeded into it before any agent acts.  Every other
+    condition runs with ``memory=None``.  ``settings``/``llm_factory``/``materializer`` default to ``.env``, the hosted
+    client and the pilot materialiser (tests inject fixtures).
+    """
+    stores: dict[tuple[str, int], JsonlMemoryStore] = {}
+
+    def store_for(condition: ExperimentCondition, seed: int, run_settings: Settings, episode: EpisodeInput):
+        key = (condition.value, seed)
+        if key not in stores:
+            stores[key] = JsonlMemoryStore(
+                memory_path(memory_dir(config), condition.value, seed, config.split),
+                python_executable=run_settings.test_python, timeout_seconds=run_settings.test_timeout_seconds,
+                docker_image=episode.environment.docker_image,
+                namespace=memory_namespace(condition.value, seed, config.split),
+            )
+        return stores[key]
 
     def run_one(episode: EpisodeInput, gold: Episode, condition: ExperimentCondition, seed: int) -> ExperimentRunRecord:
         if is_trivial(condition):
             return trivial_record(episode, condition, seed=seed, code_revision=_code_revision())
-        from testorcode.config import Settings
         from testorcode.llm_client import create_llm_client
         from testorcode.orchestrator import run_episode
 
-        settings = Settings.from_env(env_file=ROOT / ".env").model_copy(
-            update={"experiment_condition": condition, "random_seed": seed}
-        )
-        llm = create_llm_client(settings)
+        base = settings if settings is not None else Settings.from_env(env_file=ROOT / ".env")
+        run_settings = base.model_copy(update={"experiment_condition": condition, "random_seed": seed})
+        llm = (llm_factory or create_llm_client)(run_settings)
         worktree = (config.worktrees / f"{episode.episode_id}-{condition.value}-{seed}").absolute()
-        _materializer()(config.repo, worktree, episode.model_dump(mode="json"))
+        (materializer or _materializer())(config.repo, worktree, episode.model_dump(mode="json"))
+        memory = None
+        if profile_for(condition).memory:
+            memory = store_for(condition, seed, run_settings, episode)
+            memory.seed(episode.visible_memory or [], worktree_path=worktree)  # harness side, before any agent acts
         return run_episode(
-            episode, worktree_path=worktree, settings=settings, llm=llm, memory=None,
+            episode, worktree_path=worktree, settings=run_settings, llm=llm, memory=memory,
             maintainer=simulated_maintainer(gold.gold_actions()),
         )  # fmt: skip
 

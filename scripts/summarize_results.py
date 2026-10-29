@@ -3,6 +3,9 @@
     python scripts/summarize_results.py results/experiments/latest/runs.jsonl
 
 Only the harness reads the gold labels: they are taken from the split recorded in each record's provenance.
+Records made with another revision of that split (``provenance.dataset_version``) are set aside and counted in
+``n_incompatible_records``, never scored.  ``direction_macro_f1`` is the proposal's per-test UPDATE_TEST-vs-FIX_CODE
+metric (an escalation counts by the side its hypothesis blamed); ``macro_f1``/``accuracy`` score final actions.
 Metrics that cannot be computed are shown as '-' (never 0); see the notes under the table.
 """
 
@@ -15,10 +18,11 @@ from pathlib import Path
 
 from testorcode.dataset import episode_path, load_episodes
 from testorcode.evaluation import ConditionSummary, summarize
-from testorcode.experiment import read_records
+from testorcode.experiment import dataset_version, read_records
 
 SHOWN = (
-    "n_runs", "n_execution_failures", "n_tests_scored", "accuracy", "macro_f1", "masked_regression_rate",
+    "n_runs", "n_incompatible_records", "n_execution_failures", "n_direction_scored", "direction_macro_f1",
+    "direction_accuracy", "n_direction_undecided", "n_tests_scored", "accuracy", "macro_f1", "masked_regression_rate",
     "reverted_intent_rate", "escalation_precision", "escalation_recall", "unnecessary_escalation_rate",
     "repair_success_rate", "n_repair_unverifiable", "gold_evidence_recall@3", "gold_evidence_recall@5",
     "gold_evidence_recall@8", "citation_existence_rate", "mean_tool_calls", "mean_total_tokens",
@@ -56,8 +60,10 @@ def main() -> int:
     if len(splits) != 1 or None in splits:
         sys.stderr.write(f"records must come from exactly one known split, found {sorted(map(str, splits))}\n")
         return 2
-    episodes = load_episodes(episode_path(splits.pop()))
-    summaries = summarize(records, episodes)
+    split = splits.pop()
+    episodes = load_episodes(episode_path(split))
+    # Records made with another revision of the dataset are set aside and reported, never scored against it.
+    summaries = summarize(records, episodes, dataset_version=dataset_version(split))
     (args.runs.parent / "summary.json").write_text(
         json.dumps([s.model_dump(mode="json") for s in summaries], indent=2) + "\n", encoding="utf-8"
     )

@@ -51,10 +51,16 @@ LABELS: Final[tuple[DecisionLabel, ...]] = (DecisionLabel.UPDATE_TEST, DecisionL
 NOT_COMPUTED: Final[tuple[str, ...]] = (
     "citation_support_rate: whether a cited item supports the claim needs a judge",
     "stale_evidence_error_rate: evidence freshness is not labelled",
-    "mutant_kill_retention: episodes carry no mutation_fixtures yet",
-    "memory_over_generalisation: needs the MemoryStore",
+    ("mutant_kill_retention: needs kills by the reference tests; episodes carry no mutation_fixtures with "
+     "reference_killed_mutant_ids (the Guard's own counts are in each record's integrity.mutation)"),
+    "memory_over_generalisation: needs decoy-specific scoring of memory citations (S4); not implemented",
     "tool_call_accuracy: no reference traces",
 )
+DIRECTIONS: Final[tuple[RepairDirection, ...]] = (RepairDirection.UPDATE_TEST, RepairDirection.FIX_CODE)
+_HYPOTHESIS_DIRECTION: Final[dict[HypothesisKind, RepairDirection]] = {
+    HypothesisKind.OUTDATED_TEST: RepairDirection.UPDATE_TEST,
+    HypothesisKind.REGRESSION: RepairDirection.FIX_CODE,
+}
 
 
 class ConditionSummary(BaseModel):
@@ -66,6 +72,7 @@ class ConditionSummary(BaseModel):
     n_runs: int
     metrics: dict[str, float | None]
     notes: tuple[str, ...] = ()
+    incompatible_run_ids: tuple[str, ...] = ()  # set aside, never scored (see ``incompatibility``)
 
 
 # --------------------------------------------------------------------------- #
@@ -245,20 +252,95 @@ def _macro_f1(pairs: Sequence[tuple[DecisionLabel, DecisionLabel | None]]) -> fl
     return _mean(f1s)
 
 
-def summarize(records: Sequence[ExperimentRunRecord], episodes: Sequence[Episode]) -> list[ConditionSummary]:
-    """Aggregate evaluated runs per condition (macro-F1, rates, Recall@k, ...).
+def predicted_direction(prediction: PredictedDecision | None) -> RepairDirection | None:
+    """The side the agent blamed: the repair it chose, or for an escalation the side its hypothesis named.
+
+    ``None`` = undecided (no prediction, or an escalation with an ``unknown``/missing hypothesis).
+    """
+    if prediction is None:
+        return None
+    if prediction.predicted_action is DecisionLabel.UPDATE_TEST:
+        return RepairDirection.UPDATE_TEST
+    if prediction.predicted_action is DecisionLabel.FIX_CODE:
+        return RepairDirection.FIX_CODE
+    return _HYPOTHESIS_DIRECTION.get(prediction.hypothesis) if prediction.hypothesis is not None else None
+
+
+def incompatibility(record: ExperimentRunRecord, episode: Episode, dataset_version: str | None) -> str | None:
+    """Why ``record`` cannot be scored against ``episode`` (another dataset revision), or None.
+
+    A record made with another revision of the dataset may reuse an episode id for a different episode; scoring it
+    against the current gold labels would turn unmatched tests into zero accuracy or zero success.
+    """
+    recorded = record.provenance.dataset_version
+    if dataset_version is not None and recorded != dataset_version:
+        return f"dataset {recorded or 'unknown'} (current {dataset_version})"
+    labelled = {lbl.test_id for lbl in episode.ground_truth.per_test_labels}
+    unknown = sorted({p.test_id for p in record.predictions} - labelled)
+    if unknown:
+        return f"predictions name {len(unknown)} test(s) the episode does not have"
+    return None
+
+
+def _direction_macro_f1(pairs: Sequence[tuple[RepairDirection, RepairDirection | None]]) -> float | None:
+    """Macro-F1 over UPDATE_TEST and FIX_CODE.  An undecided prediction (``None``) is a false negative for the gold
+    side and a false positive for neither; a side that occurs in neither gold nor predictions is skipped."""
+    f1s = []
+    for side in DIRECTIONS:
+        tp = sum(1 for g, p in pairs if g is side and p is side)
+        fp = sum(1 for g, p in pairs if g is not side and p is side)
+        fn = sum(1 for g, p in pairs if g is side and p is not side)
+        if tp + fp + fn:
+            f1s.append(2 * tp / (2 * tp + fp + fn))
+    return _mean(f1s)
+
+
+def summarize(
+    records: Sequence[ExperimentRunRecord],
+    episodes: Sequence[Episode],
+    *,
+    dataset_version: str | None = None,
+) -> list[ConditionSummary]:
+    """Aggregate evaluated runs per condition (direction macro-F1, rates, Recall@k, ...).
+
+    ``dataset_version`` (``experiment.dataset_version(split)``): records made with another revision of the dataset
+    are set aside, like records whose predictions name tests the episode does not have.  Set-aside records are
+    counted in ``n_incompatible_records``, listed in ``incompatible_run_ids`` and explained in ``notes``; they are
+    never scored.
 
     Raises:
-        ValueError: a record names an episode that is not in ``episodes``.
+        ValueError: a compatible record names an episode that is not in ``episodes``.
     """
     by_id = {e.episode_id: e for e in episodes}
     grouped: dict[ExperimentCondition, list[ExperimentRunRecord]] = defaultdict(list)
+    set_aside: dict[ExperimentCondition, list[tuple[str, str]]] = defaultdict(list)
     for rec in records:
-        if rec.episode_id not in by_id:
+        episode = by_id.get(rec.episode_id)
+        other_revision = dataset_version is not None and rec.provenance.dataset_version != dataset_version
+        if episode is None and not other_revision:
             msg = f"record {rec.provenance.run_id!r} is for unknown episode {rec.episode_id!r}"
             raise ValueError(msg)
+        if other_revision:
+            reason = f"dataset {rec.provenance.dataset_version or 'unknown'} (current {dataset_version})"
+        else:
+            reason = incompatibility(rec, episode, None)
+        if reason:
+            set_aside[rec.condition].append((rec.provenance.run_id, reason))
+            continue
         grouped[rec.condition].append(rec)
-    return [_summarize_condition(c, grouped[c], by_id) for c in sorted(grouped, key=lambda c: c.value)]
+    summaries = []
+    for condition in sorted(set(grouped) | set(set_aside), key=lambda c: c.value):
+        summary = _summarize_condition(condition, grouped[condition], by_id)
+        aside = set_aside[condition]
+        if aside:
+            reasons = sorted({r for _, r in aside})
+            summary = summary.model_copy(update={
+                "notes": (*summary.notes, *(f"set aside, not scored: {r}" for r in reasons)),
+                "incompatible_run_ids": tuple(run_id for run_id, _ in aside),
+            })
+        summary.metrics["n_incompatible_records"] = float(len(aside))
+        summaries.append(summary)
+    return summaries
 
 
 def _summarize_condition(
@@ -268,6 +350,7 @@ def _summarize_condition(
     scored_runs = [r for r in runs if r.outcome.status not in EXECUTION_FAILURES]
 
     pairs: list[tuple[DecisionLabel, DecisionLabel | None]] = []
+    directions: list[tuple[RepairDirection, RepairDirection | None]] = []  # (gold, predicted side or undecided)
     by_scenario: dict[str, list[bool]] = defaultdict(list)
     masked = reverted = 0
     gold_fix = gold_update = 0
@@ -282,10 +365,13 @@ def _summarize_condition(
         evaluation = evaluate_run(rec, episode)
         labels = {lbl.test_id: lbl for lbl in episode.ground_truth.per_test_labels}
         retrieved = _ranked_ids(rec)
+        predictions = {p.test_id: p for p in rec.predictions}
         for score in evaluation.decisions:
             if score.predicted_action is None:  # no decision for this test (e.g. unstable): not scored
                 continue
             pairs.append((score.expected_action, score.predicted_action))
+            if score.expected_action is not DecisionLabel.ESCALATE:  # S5 cases are scored as escalation, not side
+                directions.append((score.gold_direction, predicted_direction(predictions.get(score.test_id))))
             by_scenario[str(episode.scenario.value)].append(score.correct)
             masked += score.wrong_side == "masked_regression"
             reverted += score.wrong_side == "reverted_intent"
@@ -320,7 +406,13 @@ def _summarize_condition(
         "n_execution_failures": float(len(failed)),
         "n_tests_scored": float(len(pairs)),
         "accuracy": _ratio(sum(1 for g, p in pairs if g is p), len(pairs)),
-        "macro_f1": _macro_f1(pairs),
+        "macro_f1": _macro_f1(pairs),  # over final actions (UPDATE_TEST / FIX_CODE / ESCALATE)
+        # The proposal's primary metric: per failing test, the side blamed (UPDATE_TEST vs FIX_CODE), whether or not
+        # the repair was then verified.  Gold-ESCALATE tests are excluded; an undecided test counts as a miss.
+        "direction_macro_f1": _direction_macro_f1(directions),
+        "direction_accuracy": _ratio(sum(1 for g, p in directions if g is p), len(directions)),
+        "n_direction_scored": float(len(directions)),
+        "n_direction_undecided": float(sum(1 for _, p in directions if p is None)),
         "masked_regression_rate": _ratio(masked, gold_fix),
         "reverted_intent_rate": _ratio(reverted, gold_update),
         "escalation_precision": _ratio(true_escalate, predicted_escalate),

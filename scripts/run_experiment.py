@@ -29,6 +29,8 @@ def main() -> int:
     parser.add_argument("--seeds", default="0", help="comma separated integers")
     parser.add_argument("--out", default=str(ROOT / "results" / "experiments" / "latest"))
     parser.add_argument("--repo", default=str(ROOT.parent / "boltons"), help="clone of the pinned repository")
+    parser.add_argument("--worktrees", default=str(ROOT.parent / "episode-worktrees"),
+                        help="directory for the disposable episode worktrees (outside the clone and this project)")
     args = parser.parse_args()
     try:
         config = ExperimentConfig(
@@ -39,6 +41,7 @@ def main() -> int:
             seeds=tuple(int(s) for s in args.seeds.split(",") if s.strip()),
             out=Path(args.out),
             repo=Path(args.repo),
+            worktrees=Path(args.worktrees),
         )
     except (ValidationError, ValueError) as exc:
         sys.stderr.write(f"refusing: {exc}\n")

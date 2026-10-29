@@ -25,7 +25,9 @@ src/testorcode/
 ├── memory.py            MemoryStore, JsonlMemoryStore,
 │                        record_from_repair                        implemented (Day 2, Human 2)
 ├── conditions.py        ConditionProfile, episode_for_condition    implemented
-├── evaluation.py        evaluate_run, summarize                   stub
+├── evaluation.py        evaluate_run, summarize                   implemented (Human 3)
+├── baselines.py         trivial always-UPDATE_TEST/FIX_CODE      implemented (Human 3)
+├── experiment.py        ExperimentConfig, run_experiment          implemented (Human 3; FULL memory wiring Day 2)
 ├── agents/              triage, intent_analyst, repairer,
 │                        integrity_guard                           implemented (see below)
 │   ├── prompts.py       four role prompts + B1 prompt, reply models implemented
@@ -112,7 +114,8 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 | `tools.mutation` | `generate_mutants(source, file_path, function, *, module=None, limit=6, seed=7) -> list[MutantSpec]` (deterministic, memoised); `run_mutants(worktree_path, mutants, selectors, *, timeout_seconds, python_executable=None, isolation="auto", docker_image=None, overrides=None, deadline=None) -> MutationRun` (scratch copy; outcomes `killed`/`survived`/`timeout`/`error`/`invalid`/`not_run`, only `killed` is a kill); `mutation_check(context, group, proposal, pre_patch, *, timeout_seconds, ..., mutants=None, deadline_seconds=300) -> MutationCheck(result: MutationResult, problems, gaps, killed_by_file_after, killed_by_file_before)` (UPDATE_TEST: baseline = the same tests before the repair, never the reference repair, lost kills → problem, unproven strength → gap; FIX_CODE: oracle sensitivity, no group kill → gap; `result.killed_by_repaired_tests` = kills by the failure group's own tests; one `run_mutants` tool event); `load_cached_mutants(path) -> {function: [MutantSpec]}` (validated specifications only, never stored outcomes) | sandbox |
 | `retrieval` | `build_retriever(corpus, worktree_path=None) -> Retriever`; `Retriever.search(query, *, top_k)`; implemented (BM25), see `docs/retrieval.md` | agent-core |
 | `memory` | `MemoryStore.read(context, function_qualname) -> MemoryReadResult`; `MemoryStore.write(record, approval)`. `JsonlMemoryStore(path, *, python_executable=None, timeout_seconds=120, isolation="auto", docker_image=None, stale_after_failures=2, check_history=True, namespace=None)`: scoped to `(repo_id, function_qualname)`; every read re-runs each record's probe outside the store lock (PASSED → usable; FAILED → `probe_failed`, flagged stale after 2 consecutive failures; ERROR → `probe_not_run`); superseded, stale and not-yet-approved-at-this-commit (`out_of_scope`) records are blocked without running; writes need a matching `MemoryApproval` (record id and commit) and are atomic; only an approved UPDATE_TEST record supersedes the function's older records (FIX_CODE and seeded records supersede nothing); `seed(records, *, worktree_path)` is the harness-only path for `visible_memory` (before any agent acts). **Isolation contract:** one store per condition, seed and stream: `memory_path(base, condition, seed, stream)`, `namespace=memory_namespace(condition, seed, stream)` (a mismatching namespace raises `ConfigError`) | sandbox (5-day plan: Human 2) |
-| `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes) -> list[ConditionSummary]` | evaluation |
+| `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes, *, dataset_version=None) -> list[ConditionSummary]`: records from another dataset revision (or naming tests the episode lacks) are set aside (`n_incompatible_records`, `incompatible_run_ids`), never scored; `direction_macro_f1`/`direction_accuracy` score the side blamed per failing test (an escalation by its hypothesis; gold-ESCALATE tests excluded; undecided = miss), `macro_f1`/`accuracy` the final action | evaluation |
+| `experiment` | `run_experiment(config, *, run_one=None)`; `default_run_one(config, *, settings=None, llm_factory=None, materializer=None)`: episodes in stream order; FULL gets one `JsonlMemoryStore` per condition/seed/split under `<out>/memory/` (`memory_path`/`memory_namespace`), seeded with `visible_memory` before each episode; other conditions `memory=None` | evaluation |
 
 Boundaries:
 
@@ -197,7 +200,7 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** `evaluation`, `tools.git_tools.git_log/git_show/git_blame`, and building a
+**Deferred (raise `NotImplementedError`):** `tools.git_tools.git_log/git_show/git_blame`, and building a
 retrieval corpus from a worktree; `ConditionSummary` is provisional.  (`memory.JsonlMemoryStore` and
 `integrity_guard.build_memory_record` are implemented since Day 2, Human 2: see `docs/day2-human2.md`.)
 

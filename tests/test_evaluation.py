@@ -242,3 +242,75 @@ def test_a_trivial_baseline_has_no_recall_and_zero_cost() -> None:
     m = metrics(runs, ExperimentCondition.TRIVIAL_ALWAYS_FIX_CODE)
     assert m["accuracy"] == pytest.approx(10 / 16) and m["escalation_recall"] == 0.0  # dev gold: 10 FIX_CODE, 2 ESCALATE
     assert m["gold_evidence_recall@3"] is None and m["mean_tool_calls"] == 0 and m["mean_total_tokens"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# Direction macro-F1 (the proposal's per-test UPDATE_TEST vs FIX_CODE choice)
+# --------------------------------------------------------------------------- #
+
+
+def decision(test_id: str, action: D, hypothesis: HypothesisKind | None) -> PredictedDecision:
+    return PredictedDecision(test_id=test_id, predicted_action=action, hypothesis=hypothesis,
+                             decided_by=AgentRole.INTENT_ANALYST)  # fmt: skip
+
+
+def test_direction_macro_f1_matches_a_hand_computed_example() -> None:
+    t = gold_tests("dev-08")  # gold actions: UPDATE_TEST, FIX_CODE, FIX_CODE, FIX_CODE
+    run = record("dev-08", None).model_copy(update={"predictions": [
+        decision(t[0], D.ESCALATE, HypothesisKind.OUTDATED_TEST),  # unverified repair: the side blamed was right
+        decision(t[1], D.FIX_CODE, HypothesisKind.REGRESSION),     # right
+        decision(t[2], D.ESCALATE, HypothesisKind.UNKNOWN),        # undecided: a miss, no false positive
+        decision(t[3], D.UPDATE_TEST, HypothesisKind.OUTDATED_TEST),  # wrong side
+    ]})
+    m = metrics([run])
+    # UPDATE_TEST: tp 1, fp 1, fn 0 -> 2/3.  FIX_CODE: tp 1, fp 0, fn 2 -> 2/4.  Macro = (2/3 + 1/2) / 2 = 7/12.
+    assert m["direction_macro_f1"] == pytest.approx(7 / 12)
+    assert m["direction_accuracy"] == pytest.approx(2 / 4)
+    assert (m["n_direction_scored"], m["n_direction_undecided"]) == (4, 1)
+    assert m["accuracy"] == pytest.approx(1 / 4)  # final actions: only the FIX_CODE one matches; scored separately
+
+
+def test_gold_escalate_cases_are_not_direction_cases() -> None:
+    run = record("dev-01", None).model_copy(update={"predictions": [
+        decision(t, D.ESCALATE, HypothesisKind.OUTDATED_TEST) for t in gold_tests("dev-01")]})  # S5: gold ESCALATE
+    m = metrics([run])
+    assert m["n_direction_scored"] == 0 and m["direction_macro_f1"] is None and m["direction_accuracy"] is None
+    assert m["escalation_recall"] == 1.0
+
+
+# --------------------------------------------------------------------------- #
+# Records from another dataset revision are set aside, never scored as zero
+# --------------------------------------------------------------------------- #
+
+
+def with_version(run: ExperimentRunRecord, version: str | None) -> ExperimentRunRecord:
+    return run.model_copy(update={"provenance": run.provenance.model_copy(update={"dataset_version": version})})
+
+
+def test_records_from_another_dataset_revision_are_set_aside() -> None:
+    current = with_version(record("dev-05", D.UPDATE_TEST), "pilot@current")
+    old = with_version(record("dev-02", D.FIX_CODE), "pilot@old")
+    gone = record("dev-02", None)  # an episode id the current split no longer has
+    gone = gone.model_copy(update={"provenance": gone.provenance.model_copy(
+        update={"episode_id": "dev-99-gone", "run_id": "dev-99-gone-r"})})
+    unknown = with_version(gone, "pilot@old")
+    [summary] = summarize([current, old, unknown], list(DEV.values()), dataset_version="pilot@current")
+    assert summary.metrics["n_runs"] == 1 and summary.metrics["n_incompatible_records"] == 2
+    assert summary.metrics["accuracy"] == 1.0  # only the compatible record is scored
+    assert set(summary.incompatible_run_ids) == {"dev-02-r", "dev-99-gone-r"}
+    assert any("pilot@old" in n and "pilot@current" in n for n in summary.notes)
+
+
+def test_a_condition_with_only_incompatible_records_reports_nothing_as_measured() -> None:
+    old = with_version(record("dev-05", D.UPDATE_TEST), None)
+    [summary] = summarize([old], list(DEV.values()), dataset_version="pilot@current")
+    m = summary.metrics
+    assert m["n_runs"] == 0 and m["n_incompatible_records"] == 1
+    assert m["accuracy"] is None and m["direction_macro_f1"] is None and m["repair_success_rate"] is None
+
+
+def test_predictions_for_tests_the_episode_does_not_have_are_set_aside() -> None:
+    stale = record("dev-05", {"tests/test_cacheutils.py::test_unscoped_cached_dec": D.UPDATE_TEST})  # old dev-05
+    [summary] = summarize([stale], list(DEV.values()))
+    assert summary.metrics["n_incompatible_records"] == 1 and summary.metrics["n_tests_scored"] == 0
+    assert any("does not have" in n for n in summary.notes)
