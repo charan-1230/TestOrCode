@@ -90,6 +90,7 @@ def run_cli(tmp_path: Path, monkeypatch, condition: str, memory: Path) -> tuple[
     }))
     for key in ("EXPERIMENT_CONDITION", "RANDOM_SEED", "TEST_PYTHON", "LLM_MODEL"):
         monkeypatch.delenv(key, raising=False)
+    monkeypatch.setattr(cli, "ROOT", tmp_path)  # the CLI reads ROOT/.env: never the developer's own
     out = tmp_path / f"out-{condition}"
     monkeypatch.setattr(sys, "argv", ["run_episode.py", "--episode", full.episode_id, "--condition", condition,
                                       "--worktree", str(worktree), "--out", str(out), "--memory", str(memory)])

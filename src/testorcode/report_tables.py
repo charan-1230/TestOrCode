@@ -72,6 +72,7 @@ def condition_rows(
             "condition": condition.value, "evaluated": evaluated,
             "episodes_run": c.get("scored", 0) if c else 0, "execution_failures": c.get("failed", 0) if c else 0,
             "direction_macro_f1": m.get("direction_macro_f1") if evaluated else None,
+            "final_action_accuracy": m.get("accuracy") if evaluated else None,
             "direction_correct": round((m.get("direction_accuracy") or 0) * (m.get("n_direction_scored") or 0))
             if evaluated and m.get("direction_accuracy") is not None else None,
             "direction_scored": int(m.get("n_direction_scored") or 0) if evaluated else None,
@@ -92,20 +93,20 @@ def markdown_table(rows: list[dict[str, Any]], *, title: str, notes: Sequence[st
          f"that has not run is marked *{NOT_EVALUATED}*. Execution failures (API/tool errors) are counted apart and "
          "never scored."), "",
         ("| Condition | Episodes run | Execution failures | Direction macro-F1 | Direction accuracy | "
-         "Correct-repair rate | Masked regressions |"),
-        "|---|---|---|---|---|---|---|",
+         "Final-action accuracy | Correct-repair rate | Masked regressions |"),
+        "|---|---|---|---|---|---|---|---|",
     ]
     for r in rows:
         if not r["evaluated"]:
             failed = str(r["execution_failures"]) if r["execution_failures"] else "0"
-            lines.append(f"| {r['condition']} | {NOT_EVALUATED} | {failed} | - | - | - | - |")
+            lines.append(f"| {r['condition']} | {NOT_EVALUATED} | {failed} | - | - | - | - | - |")
             continue
         repair = _frac(r["repairs_ok"], r["repairs"])
         if r["repair_unverifiable"]:
             repair += f" +{r['repair_unverifiable']} unverifiable"
         lines.append(
             f"| {r['condition']} | {r['episodes_run']} | {r['execution_failures']} | {_f(r['direction_macro_f1'])} | "
-            f"{_frac(r['direction_correct'], r['direction_scored'])} | {repair} | {_frac(r['masked'], r['gold_fix'])} |"
+            f"{_frac(r['direction_correct'], r['direction_scored'])} | {_f(r['final_action_accuracy'])} | {repair} | {_frac(r['masked'], r['gold_fix'])} |"
         )
     if notes:
         lines += ["", *[f"- {n}" for n in notes]]
@@ -129,15 +130,22 @@ def integrity_lines(audit_jsonl: Path) -> list[str]:
                 c["weakened"] += bool(g["weakened"])
             c["wrong_side_accepted"] += bool(g["wrong_side"])
             c["partial_or_unmeasured"] += g["status"] != "measured"
+            denom, ret = g.get("retention_denominator"), g.get("retention")
+            if g["scope"] == "test" and ret is not None and denom:
+                c["retention_groups"] += 1
+                c["retained"] += round(ret * denom)
+                c["retention_denominator"] += denom
     return [
         f"Integrity audit, {cond}: {v['groups']} accepted repair(s) in {v['runs']} run(s); "
         f"weakened {v['weakened']}/{v['weakening_measured']} measured test patches; "
-        f"{v['wrong_side_accepted']} accepted on the wrong side; {v['partial_or_unmeasured']} not fully measured"
+        f"{v['wrong_side_accepted']} accepted on the wrong side; {v['partial_or_unmeasured']} not fully measured; "
+        + (f"mutant-kill retention {v['retained']}/{v['retention_denominator']} reference-killed mutants over "
+           f"{v['retention_groups']} test patch(es)" if v["retention_groups"] else "mutant-kill retention not measurable")
         for cond, v in sorted(per.items())
     ]
 
 
-def write_plots(rows: list[dict[str, Any]], out_dir: Path) -> list[Path]:
+def write_plots(rows: list[dict[str, Any]], out_dir: Path, split: str = "dev") -> list[Path]:
     """PNG plots for the evaluated conditions only (a missing condition is omitted, never drawn as 0)."""
     import matplotlib
 
@@ -162,7 +170,7 @@ def write_plots(rows: list[dict[str, Any]], out_dir: Path) -> list[Path]:
     fig, ax = plt.subplots(figsize=(7, 4))
     bars(ax, [r["condition"] for r in shown], [r["direction_macro_f1"] for r in shown],
          [f"{_f(r['direction_macro_f1'])}\nn={r['direction_scored']}" for r in shown], "direction macro-F1")
-    ax.set_title("Direction macro-F1 (preliminary, dev split, 1 seed)")
+    ax.set_title(f"Direction macro-F1 (preliminary, {split} split, 1 seed)")
     fig.tight_layout()
     paths.append(out_dir / "direction_macro_f1.png")
     fig.savefig(paths[-1], dpi=140)

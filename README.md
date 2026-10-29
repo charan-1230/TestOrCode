@@ -251,7 +251,23 @@ All Day-2 modules are implemented (only `tools.git_tools.git_log/git_show/git_bl
 `docs/interfaces.md` lists the modules, their contracts and owners.  Experiments: `scripts/run_experiment.py` then
 `scripts/summarize_results.py <out>/runs.jsonl`, and for test integrity across conditions (A3 and B1 have no Guard
 report) `scripts/audit_integrity.py --runs <out>/runs.jsonl --python ../boltons-venv/bin/python`.  Conditions that run:
-FULL, A2, A3 (no Integrity Guard), B1 and the trivial baselines; Day-3 Human-2 work: `docs/day3-human2.md`.
+FULL, A1 (no intent retrieval), A2 (no memory), A3 (no Integrity Guard), B1 and the trivial baselines (A4, A5, B0, B2 are refused).
+Per-day logs: `docs/day3-human1.md`, `docs/day3-human2.md`, `docs/day3-human3.md`, `docs/day4-human{1,2,3}.md`.
+
+### Results and the mid-submission report
+
+Saved runs (live, `gemini-3.5-flash-lite`, seed 0; smoke-level, not a statistical comparison):
+`results/day3/pilot-dev-5cond/` (9 dev episodes) and `results/day4/pilot-test-5cond/` (4 frozen test episodes, run once with `--final`;
+do not tune on that split). Each holds `runs.jsonl`, `summary.md`, `integrity_audit.md`, `report.md` and plots. Rebuild a table with
+`python scripts/make_report.py <dir>/runs.jsonl`.
+
+The report is in `docs/report/`: `report.tex` (LaTeX source) and `report.pdf`, both written by
+`python docs/report/build_report.py` (needs `pip install -e .[report]`, i.e. matplotlib and reportlab). Every result table is read from the
+saved `runs.jsonl` files. **No TeX distribution was available when it was built, so `report.pdf` is rendered with reportlab from the same
+content and is not the output of compiling `report.tex`.** To compile the source: `cd docs/report && pdflatex report.tex` (twice).
+
+A fresh-environment check (Python 3.12 venv, `pip install -r requirements-lock.txt`, `pip install --no-deps -e .`) gives `pip check`
+clean and the imports work; see `docs/day4-human2.md`. `reportlab` is an optional report dependency and is not in `requirements-lock.txt`.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
 

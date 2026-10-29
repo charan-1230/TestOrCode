@@ -40,14 +40,14 @@ def main(argv: list[str] | None = None) -> int:
     notes = [(f"Split `{split}` ({len(episodes)} episodes), dataset `{dataset_version(split)}`; seeds {seeds}; "
               f"model(s): {', '.join(models) or 'none (baselines only)'}."),
              "One seed and a small episode set: not a statistical comparison.",
-             "`mutant_kill_retention` is not computed on these runs (the reference tests kill none of the cached mutants)."]
+             "Mutant-kill retention comes from the post-hoc integrity audit lines below (pooled raw counts; undefined where the reference tests kill no mutant)."]
     audit = args.audit or args.runs.parent / "integrity_audit.jsonl"
     if audit.is_file():
         notes += integrity_lines(audit)
     else:
         notes.append("No integrity audit found next to the runs; integrity columns are not reported.")
     out = args.runs.parent
-    plots = [] if args.no_plots else write_plots(rows, out)
+    plots = [] if args.no_plots else write_plots(rows, out, split)
     text = markdown_table(rows, title=f"Results table, {args.runs.parent.name}", notes=notes)
     if plots:
         text += "\n" + "\n".join(f"![{p.stem}]({p.name})" for p in plots) + "\n"

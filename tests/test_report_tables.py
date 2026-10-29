@@ -101,3 +101,17 @@ def test_cli_writes_report_next_to_runs(tmp_path, capsys) -> None:
     assert "| B1 | 1 |" in text and "not a statistical comparison" in text and "No integrity audit" in text
     (tmp_path / "empty.jsonl").write_text("")
     assert cli.main([str(tmp_path / "empty.jsonl")]) == 2
+
+
+def test_integrity_lines_pool_retention_as_raw_counts_and_skip_undefined(tmp_path) -> None:
+    group = {"scope": "test", "weakened": False, "wrong_side": False, "status": "measured"}
+    runs = [
+        {"condition": "B1", "groups": [{**group, "retention": 0.5, "retention_denominator": 4}]},
+        {"condition": "B1", "groups": [{**group, "retention": 1.0, "retention_denominator": 2}]},
+        {"condition": "FULL", "groups": [{**group, "retention": None, "retention_denominator": 0}]},
+    ]
+    path = tmp_path / "integrity_audit.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in runs), encoding="utf-8")
+    lines = integrity_lines(path)
+    assert any("B1" in ln and "retention 4/6" in ln and "2 test patch" in ln for ln in lines)
+    assert any("FULL" in ln and "retention not measurable" in ln for ln in lines)

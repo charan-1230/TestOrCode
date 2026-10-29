@@ -18,6 +18,7 @@ results/*
 !results/day1/
 !results/day2/
 !results/day3/
+!results/day4/
 !results/mutants/
 *.log
 
