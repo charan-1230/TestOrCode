@@ -17,6 +17,7 @@ results/*
 !results/.gitkeep
 !results/day1/
 !results/day2/
+!results/day3/
 !results/mutants/
 *.log
 

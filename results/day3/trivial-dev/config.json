@@ -1,0 +1,29 @@
+{
+  "split": "dev",
+  "episodes": [
+    "dev-01",
+    "dev-02",
+    "dev-03",
+    "dev-04",
+    "dev-05",
+    "dev-06",
+    "dev-07",
+    "dev-08",
+    "dev-09"
+  ],
+  "conditions": [
+    "TRIVIAL_UPDATE_TEST",
+    "TRIVIAL_FIX_CODE"
+  ],
+  "seeds": [
+    0
+  ],
+  "dataset_files_sha256": {
+    "pilot_dev.jsonl": "c6f0a20631cd5e50bd3fab21773c27d2a172b875c464bf94ae8d9e0e2afddffc",
+    "pilot_dev_agent_view.jsonl": "87d1398471c02cb913dc1277f9581c0a44370d69b1c2f993718ddacb0603afcd",
+    "pilot_test.jsonl": "fa3f12230cb27fd33c8dad88fabe8fc3727042338833e16aae188430d54649e7",
+    "pilot_test_agent_view.jsonl": "e21791d4fdae54dc86fa42bf97799ac8f08223cff671670d9e94b7401f9f9fa8"
+  },
+  "code_revision": "a6563189fd3b9c3750c69d343795fb813685819c",
+  "final": false
+}
