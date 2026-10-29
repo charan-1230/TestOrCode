@@ -153,8 +153,13 @@ def test_b1_repairs_both_directions_and_records_each_test(mixed) -> None:
     # runs, patch handling and reruns are operational, the final suite is exempt.
     budgets = {(e.called_by, e.arguments["budget"]) for e in record.tool_events}
     assert budgets == {(AgentRole.SINGLE_AGENT, "agent"), (AgentRole.SINGLE_AGENT, "operational"),
-                       (AgentRole.ORCHESTRATOR, "exempt")}
+                       (AgentRole.ORCHESTRATOR, "operational"), (AgentRole.ORCHESTRATOR, "exempt")}
     assert {e.tool for e in record.tool_events if e.arguments["budget"] == "agent"} == {ToolName.SEARCH_REPO}
+    # Attribution: the agent's own calls are its searches and the handling of its patches; the stability runs and
+    # verification reruns are the harness's (it ran no test itself here), as Triage/Guard runs are in A2.
+    by_agent = {e.tool for e in record.tool_events if e.called_by is AgentRole.SINGLE_AGENT}
+    assert by_agent == {ToolName.SEARCH_REPO, ToolName.APPLY_PATCH}
+    assert all(e.called_by is AgentRole.ORCHESTRATOR for e in record.tool_events if e.tool is ToolName.RUN_TESTS)
 
 
 def test_a2_approves_the_probed_fix_while_the_other_group_stays_failing(mixed, monkeypatch) -> None:

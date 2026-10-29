@@ -20,22 +20,26 @@ from testorcode.agents import tools as agent_tools
 from testorcode.config import Settings
 from testorcode.llm_client import FakeLLMClient
 from testorcode.orchestrator import Agents, run_episode
+from testorcode.schemas.contracts import MemoryReadResult, MemoryRecordCheck
 from testorcode.schemas.episode_schemas import (
     DecisionLabel,
     EvidenceItem,
     EvidenceSourceType,
+    RepairDirection,
     ToolName,
 )
 from testorcode.schemas.result_schemas import (
     AgentRole,
+    ExperimentCondition,
     GuardDecision,
     PatchApplicationStatus,
+    ProbeStatus,
     RunStatus,
     TestRunPhase,
     TestRunStatus,
     ToolCallStatus,
 )
-from testorcode.schemas.tests.conftest import make_s1
+from testorcode.schemas.tests.conftest import make_s1, memory_record
 from testorcode.tools.mutation import MutationCheck, mutation_check
 from testorcode.tools.pytest_runner import run_tests
 from testorcode.tools.verification import ProbeCase, TrustedProbe, verify_behaviour
@@ -383,3 +387,78 @@ def test_a3_accepts_the_test_repair_that_the_guard_escalates(worktree: Path, mon
     assert without.patches[0].application_status is PatchApplicationStatus.APPLIED
     assert without.final_test_status is TestRunStatus.PASSED
     assert "== 'A'" in (worktree / "tests/test_synthlib.py").read_text()  # the unverified test edit stays
+
+
+class _ProbedMemory:
+    """A store whose one record passed its probe on the current code (what ``JsonlMemoryStore.read`` reports)."""
+
+    RECORD = memory_record("mem-lower").model_copy(update={
+        "direction": RepairDirection.FIX_CODE, "behaviour_signature": "normalise() returns the lower-cased string",
+    })
+
+    def read(self, context, function_qualname):
+        return MemoryReadResult(checks=(MemoryRecordCheck(record=self.RECORD, probe_status=ProbeStatus.PASSED),))
+
+    def write(self, record, approval):  # pragma: no cover - the A1 run below has no maintainer
+        raise AssertionError("not expected")
+
+
+def test_a1_real_pipeline_uses_memory_but_no_retrieval_commit_message_or_search(worktree: Path) -> None:
+    a1 = SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.A1_NO_INTENT_RETRIEVAL})
+    (worktree / "CHANGELOG.md").write_text("INTENT-MARKER: normalise now capitalises on purpose\n")
+    fix = analysis(DecisionLabel.FIX_CODE) | {"cited_evidence_ids": ["mem-lower"]}  # memory is still evidence
+    llm = FakeLLMClient({
+        AgentRole.INTENT_ANALYST: [fix],
+        # The Repairer is not told about search_repo or change notes; if it asks anyway, the calls are refused at
+        # runtime, while reading source code still works.
+        AgentRole.REPAIRER: [
+            tool_step("search_repo", query="normalise intent"),
+            tool_step("read_file", path="CHANGELOG.md"),
+            tool_step("read_file", path="src/synthlib/core.py"),
+            edit(*LOWER),
+        ],
+        AgentRole.INTEGRITY_GUARD: [CONSISTENT],
+    })
+    record = run_episode(
+        S1, worktree_path=worktree, settings=a1, llm=llm, memory=_ProbedMemory(),
+        agents=Agents(integrity_guard=partial(integrity_guard.verify_repair, probe=PROBE)),
+    )
+
+    assert record.outcome.status is RunStatus.COMPLETED
+    assert record.condition is ExperimentCondition.A1_NO_INTENT_RETRIEVAL
+    assert record.predictions[0].predicted_action is DecisionLabel.FIX_CODE
+    assert record.integrity.guard_decision is GuardDecision.APPROVE and record.retrieved_evidence == []
+    assert [m.record_id for m in record.memory_reads] == ["mem-lower"] and record.memory_reads[0].used_as_evidence
+    [search] = [e for e in record.tool_events if e.tool is ToolName.SEARCH_REPO]
+    assert search.status is ToolCallStatus.NOT_PERMITTED and search.called_by is AgentRole.REPAIRER
+
+    analyst = next(c for c in llm.calls if c["role"] is AgentRole.INTENT_ANALYST)
+    assert "evidence retrieval is disabled" in analyst["user"] and "[mem-lower]" in analyst["user"]
+    assert S1.ci_event.commit_message not in analyst["user"] and "[ev-msg]" not in analyst["user"]
+    repairer_calls = [c for c in llm.calls if c["role"] is AgentRole.REPAIRER]
+    assert all("search_repo(" not in c["system"] for c in repairer_calls)
+    assert all("changelog files are not readable" in c["system"] for c in repairer_calls)
+    assert "REFUSED: search_repo" in repairer_calls[1]["user"]
+    reads = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
+    assert [(e.arguments["path"], e.status) for e in reads] == [
+        ("CHANGELOG.md", ToolCallStatus.NOT_PERMITTED), ("src/synthlib/core.py", ToolCallStatus.OK)]
+    assert all("INTENT-MARKER" not in c["user"] for c in llm.calls)  # never reached any prompt
+    # The withheld commit message reaches no role's prompt (Analyst, Repairer, Guard review).
+    assert {c["role"] for c in llm.calls} == {AgentRole.INTENT_ANALYST, AgentRole.REPAIRER, AgentRole.INTEGRITY_GUARD}
+    assert all(S1.ci_event.commit_message not in c["user"] + c["system"] for c in llm.calls)
+    # The source read did reach the Repairer (its tool-result header; the prompt's FILES section alone has no such line).
+    assert "src/synthlib/core.py lines 1-2 of 2:" in repairer_calls[3]["user"]
+
+
+def test_full_repairer_may_still_read_change_notes(worktree: Path) -> None:
+    # Positive control: outside A1 the same read is permitted (FULL/A2/B1 behaviour unchanged).
+    (worktree / "CHANGELOG.md").write_text("INTENT-MARKER: normalise now capitalises on purpose\n")
+    llm = FakeLLMClient({
+        AgentRole.INTENT_ANALYST: [analysis(DecisionLabel.FIX_CODE)],
+        AgentRole.REPAIRER: [tool_step("read_file", path="CHANGELOG.md"), edit(*LOWER)],
+        AgentRole.INTEGRITY_GUARD: [CONSISTENT],
+    })
+    record = run_episode(S1, worktree_path=worktree, settings=SETTINGS, llm=llm)
+    [read] = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
+    assert read.status is ToolCallStatus.OK
+    assert "INTENT-MARKER" in [c for c in llm.calls if c["role"] is AgentRole.REPAIRER][1]["user"]

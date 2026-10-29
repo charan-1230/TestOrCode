@@ -11,6 +11,7 @@ import httpx
 import openai
 import pytest
 
+from testorcode import llm_client
 from testorcode.config import Settings
 from testorcode.errors import (
     ConfigError,
@@ -382,8 +383,47 @@ def pool_client(per_key: dict[str, list], **kw):
     return OpenAICompatibleClient(POOL, sdk_factory=factory, sleep=sleeps.append, **kw), used, sleeps
 
 
+@pytest.fixture(autouse=True)
+def _fresh_quota_memo(monkeypatch):
+    """Every test starts with no key known to be out of quota (the memo is process-wide)."""
+    monkeypatch.setattr(llm_client, "_EXHAUSTED", {})
+
+
 class TestKeyPool:
     __test__ = True
+
+    def test_a_new_client_skips_keys_known_to_be_out_of_daily_quota(self) -> None:
+        # The experiment runner builds one client per episode: the second must not re-spend a request on key 1.
+        first, used, _ = pool_client({KEYS[0]: [daily_quota()], KEYS[1]: [reply(json.dumps(VALID))]})
+        ask(first)
+        assert used == [KEYS[0], KEYS[1]]
+        second, used2, _ = pool_client({KEYS[1]: [reply(json.dumps(VALID))]})
+        assert ask(second).parsed.group_id == "g1" and used2 == [KEYS[1]]
+
+    def test_a_per_minute_limit_is_not_remembered(self) -> None:
+        first, _, _ = pool_client({KEYS[0]: [status_error(openai.RateLimitError, 429), reply(json.dumps(VALID))]})
+        ask(first)
+        second, used, _ = pool_client({KEYS[0]: [reply(json.dumps(VALID))]})
+        ask(second)
+        assert used == [KEYS[0]]
+
+    def test_a_remembered_quota_expires(self, monkeypatch) -> None:
+        first, _, _ = pool_client({KEYS[0]: [daily_quota()], KEYS[1]: [reply(json.dumps(VALID))]})
+        ask(first)
+        monkeypatch.setattr(llm_client, "_EXHAUSTED_TTL_SECONDS", 0.0)  # the day's quota may have reset
+        second, used, _ = pool_client({KEYS[0]: [reply(json.dumps(VALID))]})
+        ask(second)
+        assert used == [KEYS[0]]
+
+    def test_every_key_remembered_exhausted_still_fails_as_an_api_failure(self) -> None:
+        first, _, _ = pool_client({k: [daily_quota()] for k in KEYS})
+        with pytest.raises(LLMRateLimitError):
+            ask(first)
+        second, used, _ = pool_client({KEYS[2]: [daily_quota()]})
+        with pytest.raises(LLMRateLimitError):
+            ask(second)
+        assert used == [KEYS[2]]  # one confirming request on the last key, none on the known-exhausted ones
+        assert not any(k in repr(llm_client._EXHAUSTED) for k in KEYS)  # hashes only, never the keys
 
     def test_keys_are_used_in_order_and_a_daily_quota_switches_at_once(self) -> None:
         c, used, sleeps = pool_client({KEYS[0]: [daily_quota()], KEYS[1]: [reply(json.dumps(VALID))]})

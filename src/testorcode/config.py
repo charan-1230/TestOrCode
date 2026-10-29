@@ -85,8 +85,8 @@ class Settings(BaseModel):
     github_token: SecretStr | None = None
 
     # Experiment.
-    # Default A2 (needs no MemoryStore).  run_episode executes FULL, A2, A3 (FULL and A3 need a MemoryStore) and B1;
-    # conditions without a code path fail explicitly.
+    # Default A2: the only multi-agent condition that needs no MemoryStore.  run_episode also runs FULL, A1 and A3
+    # (with a store), B1 and the trivial baselines; the non-proposal conditions fail explicitly.
     experiment_condition: ExperimentCondition = ExperimentCondition.A2_NO_MEMORY
     random_seed: int = 42
     dataset_path: Path = Path("datasets/pilot_dev.jsonl")

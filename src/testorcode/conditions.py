@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from testorcode.schemas.episode_schemas import Availability, EpisodeInput
+from testorcode.schemas.episode_schemas import Availability, EpisodeInput, ToolName
 from testorcode.schemas.result_schemas import ExperimentCondition as C
 
 
@@ -54,6 +54,10 @@ def episode_for_condition(episode: EpisodeInput, condition: C) -> EpisodeInput:
 
     * No memory -> ``visible_memory=None`` (the schema's "memory disabled"; ``[]`` would mean enabled but empty).
     * A1 -> the commit message is withheld (``WITHHELD``) because the Analyst sees only failing output and the diff.
+    * No retrieval at all (A1: neither intent retrieval nor standard RAG) -> the corpus is withheld (``items=[]``,
+      genuinely empty) and ``search_repo`` is removed from ``allowed_tools``.  Withholding the commit message alone is
+      not enough: every pilot corpus also holds the CI commit's own message (``msg:<sha>``), which any search would
+      return.  Memory stays available when the profile has it.
     """
     profile = profile_for(condition)
     update: dict = {}
@@ -66,4 +70,7 @@ def episode_for_condition(episode: EpisodeInput, condition: C) -> EpisodeInput:
             update={"commit_message": None, "commit_message_availability": Availability.WITHHELD}
         )
         update["ci_event"] = event
+    if profile.uses_llm and not (profile.intent_retrieval or profile.standard_rag):
+        update["corpus"] = episode.corpus.model_copy(update={"items": []})
+        update["allowed_tools"] = [t for t in episode.allowed_tools if t is not ToolName.SEARCH_REPO]
     return episode.model_copy(update=update) if update else episode

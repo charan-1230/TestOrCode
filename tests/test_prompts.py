@@ -155,3 +155,14 @@ def test_b1_and_tool_prompts_name_the_tools_and_final_action() -> None:
     assert 'Final action: "finish"' in b1 and "exactly one item" in b1
     assert prompts.B1_VERSION == "b1-v2"
     assert "not merely the absence of intent evidence" in b1
+
+
+def test_tool_instructions_omit_search_only_when_it_is_not_allowed() -> None:
+    from testorcode.schemas.episode_schemas import ToolName
+
+    assert prompts.tool_instructions(list(ToolName)) == prompts.TOOL_INSTRUCTIONS  # FULL/A2/B1: byte-identical
+    no_search = prompts.tool_instructions([ToolName.READ_FILE, ToolName.RUN_TESTS])  # A1
+    assert "search_repo" not in no_search and "read_file(" in no_search and "run_tests(" in no_search
+    a1 = prompts.tool_instructions([ToolName.READ_FILE, ToolName.RUN_TESTS], code_only=True)
+    assert "read lines of a source or test file" in a1 and "changelog files are not readable" in a1
+    assert "read lines of a repository file" not in a1

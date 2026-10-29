@@ -19,13 +19,18 @@ Several API keys (``LLM_API_KEY_1..9``) are used one after another: when the
 provider says the current key's daily quota is used up (or rate limits outlast
 the retries), the client switches to the next key.  Only key positions are
 logged.  When every key is exhausted the call fails as ``LLMRateLimitError``
-(an API failure, never counted against the agent).
+(an API failure, never counted against the agent).  A key whose daily quota ran
+out is remembered for this process (by a hash, never the key; for
+``_EXHAUSTED_TTL_SECONDS``), so the next client, e.g. the next episode of an
+experiment, starts at the first key not known to be used up instead of spending
+a rejected request on each exhausted one again.
 
 Never log prompts, replies or keys: only role, model, attempt numbers and token counts.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from collections import defaultdict, deque
@@ -52,6 +57,19 @@ StructuredMode = Literal["json_schema", "json_object", "prompt"]
 _KEYLESS_PLACEHOLDER = "not-needed"
 _MAX_BACKOFF_SECONDS = 30.0
 _RETRYABLE_4XX = frozenset({408})  # Request Timeout; 429 has its own branch
+# (model, key hash) -> monotonic time its daily quota was reported used up.  Process-wide, so clients built one per
+# episode share it.  An entry expires after the TTL: a daily quota resets, and one rejected request is cheap.
+_EXHAUSTED: dict[tuple[str, str], float] = {}
+_EXHAUSTED_TTL_SECONDS = 3600.0
+
+
+def _key_id(model: str | None, key: str) -> tuple[str, str]:
+    return (model or "", hashlib.sha256(key.encode()).hexdigest()[:16])
+
+
+def _known_exhausted(model: str | None, key: str) -> bool:
+    since = _EXHAUSTED.get(_key_id(model, key))
+    return since is not None and time.monotonic() - since < _EXHAUSTED_TTL_SECONDS
 
 
 class LLMResponse[T: BaseModel](BaseModel):
@@ -205,7 +223,14 @@ class OpenAICompatibleClient:
         self._sdk_factory = sdk_factory
         self._fixed_sdk = sdk_client is not None and sdk_factory is None  # tests: one scripted SDK, no switching
         self._keys = [k.get_secret_value() for k in settings.llm_api_keys()]
+        # Start at the first key not known to be out of its daily quota (the last key if all are: one request then
+        # confirms it and the call fails as an API failure).  A fixed test SDK never switches keys.
         self._key_index = 0
+        if not self._fixed_sdk:
+            while self._key_index + 1 < len(self._keys) and _known_exhausted(settings.llm_model, self._keys[self._key_index]):
+                self._key_index += 1
+            if self._key_index:
+                logger.info("starting at API key %d/%d: earlier keys are out of quota", self._key_index + 1, len(self._keys))
         self._sleep = sleep
 
     def complete_structured[T: BaseModel](
@@ -324,6 +349,8 @@ class OpenAICompatibleClient:
                 error: LLMError = LLMRateLimitError(_describe(exc))
                 retry_after = _retry_after(exc)
                 daily = _quota_exhausted(exc)
+                if daily and self._keys and not self._fixed_sdk:
+                    _EXHAUSTED[_key_id(self._settings.llm_model, self._keys[self._key_index])] = time.monotonic()
                 if (daily or attempt == self._max_retries) and self._next_key(role):
                     attempt = -1  # a fresh key gets the full retry allowance
                     continue

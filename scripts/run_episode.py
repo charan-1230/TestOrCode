@@ -16,7 +16,9 @@ without the Integrity Guard (a green rerun decides; nothing writes memory). FULL
 ``--memory PATH``: a ``JsonlMemoryStore`` (persistent across runs, so a stream of episodes shares it) seeded with the
 episode's declared prior memory (``visible_memory``) before any agent acts.  The store is bound to
 ``<condition>/seed=<RANDOM_SEED>/<split>`` and refuses any other (use ``memory.memory_path`` for one file each);
-conditions without memory ignore ``--memory``.  Conditions without a code path are recorded as not implemented.
+conditions without memory ignore ``--memory``.  A1 (no intent retrieval) is FULL without the corpus, ``search_repo``
+and the commit message, and also needs ``--memory``.  The sanity baselines (TRIVIAL_UPDATE_TEST, TRIVIAL_FIX_CODE)
+need no repository, worktree or API key.  Conditions without a code path are recorded as not implemented.
 
     python scripts/run_episode.py --episode dev-05 --repo ../boltons
 """
@@ -29,15 +31,17 @@ import json
 import sys
 from pathlib import Path
 
+from testorcode.baselines import is_trivial
 from testorcode.conditions import profile_for
 from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
+from testorcode.evaluation import predicted_direction
 from testorcode.experiment import dataset_version, simulated_maintainer
 from testorcode.llm_client import create_llm_client
 from testorcode.logging_config import configure_logging
 from testorcode.memory import JsonlMemoryStore, memory_namespace
 from testorcode.orchestrator import run_episode
-from testorcode.schemas.episode_schemas import DecisionLabel, HypothesisKind
+from testorcode.schemas.episode_schemas import DecisionLabel
 from testorcode.schemas.result_schemas import (
     ExperimentCondition,
     ExperimentRunRecord,
@@ -45,7 +49,13 @@ from testorcode.schemas.result_schemas import (
 from testorcode.tools.git_tools import run_git
 
 ROOT = Path(__file__).resolve().parents[1]
-_DIRECTION = {HypothesisKind.OUTDATED_TEST: DecisionLabel.UPDATE_TEST, HypothesisKind.REGRESSION: DecisionLabel.FIX_CODE}
+
+
+def _direction(prediction) -> DecisionLabel | None:
+    """The side blamed, exactly as the metrics score it (``evaluation.predicted_direction``): the chosen repair, or
+    for an escalation its hypothesis.  Trivial baselines have no hypothesis but still blame a side."""
+    direction = predicted_direction(prediction)
+    return DecisionLabel(direction.value) if direction is not None else None
 
 
 def _materializer():
@@ -75,10 +85,12 @@ def main() -> int:
 
     episode = next(e for e in load_agent_inputs(agent_view_path(args.split)) if e.episode_id == args.episode)
     worktree = Path(args.worktree or ROOT.parent / "episode-worktrees" / args.episode).absolute()
-    _materializer()(args.repo, worktree, episode.model_dump(mode="json"))
+    trivial = is_trivial(condition)  # deterministic baseline: no worktree, memory or model
+    if not trivial:
+        _materializer()(args.repo, worktree, episode.model_dump(mode="json"))
 
     memory = None
-    if args.memory and profile_for(condition).memory:
+    if args.memory and profile_for(condition).memory and not trivial:
         # One store per condition, seed and stream (split): a store opened under another namespace is refused.
         memory = JsonlMemoryStore(
             args.memory, python_executable=settings.test_python, timeout_seconds=settings.test_timeout_seconds,
@@ -90,7 +102,7 @@ def main() -> int:
         if seeded:
             print(f"memory: seeded {seeded}")
 
-    llm = create_llm_client(settings)
+    llm = None if trivial else create_llm_client(settings)
     # Harness side: gold labels feed only the simulated maintainer and the scoring below.
     full = next(e for e in load_episodes(episode_path(args.split)) if e.episode_id == args.episode)
     gold = full.gold_actions()
@@ -101,7 +113,7 @@ def main() -> int:
     record = record.model_copy(update={"provenance": record.provenance.model_copy(
         update={"split": args.split, "dataset_version": dataset_version(args.split)}
     )})
-    summary = _summary(record, gold, full.scenario, worktree)
+    summary = _summary(record, gold, full.scenario, None if trivial else worktree)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -111,9 +123,9 @@ def main() -> int:
     return 0
 
 
-def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) -> dict:
-    status = run_git(worktree, ["status", "--porcelain", "--", "boltons", "tests"]).stdout
-    ci_dirty = run_git(worktree, ["diff", "--name-only"]).stdout.split()
+def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path | None) -> dict:
+    status = run_git(worktree, ["status", "--porcelain", "--", "boltons", "tests"]).stdout if worktree else ""
+    ci_dirty = run_git(worktree, ["diff", "--name-only"]).stdout.split() if worktree else []
     return {
         "run_id": record.provenance.run_id,
         "episode_id": record.provenance.episode_id,
@@ -143,9 +155,9 @@ def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path) 
         # model blamed (from its hypothesis), scored separately against the gold direction.
         "predictions": [
             {"test_id": p.test_id, "predicted": p.predicted_action, "hypothesis": p.hypothesis,
-             "direction": _DIRECTION.get(p.hypothesis), "cited": p.cited_evidence_ids, "decided_by": p.decided_by,
+             "direction": _direction(p), "cited": p.cited_evidence_ids, "decided_by": p.decided_by,
              "gold": gold.get(p.test_id), "match": gold.get(p.test_id) == p.predicted_action,
-             "direction_match": _DIRECTION.get(p.hypothesis) == gold.get(p.test_id)}
+             "direction_match": _direction(p) == gold.get(p.test_id)}
             for p in record.predictions
         ],
         "escalation": record.outcome.escalation.model_dump(mode="json") if record.outcome.escalation else None,

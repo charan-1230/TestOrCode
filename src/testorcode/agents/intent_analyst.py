@@ -32,7 +32,7 @@ def analyse_intent(
     context: EpisodeContext,
     group: FailureGroupDetail,
     *,
-    retriever: Retriever,
+    retriever: Retriever | None,
     memory: MemoryStore | None,
     llm: LLMClient,
 ) -> IntentAnalysis:
@@ -40,12 +40,15 @@ def analyse_intent(
 
     Every cited id must come from ``retriever`` or ``memory`` (the orchestrator
     verifies with ``unknown_evidence_ids``).  Insufficient or conflicting
-    evidence yields ``ESCALATE``, not a guess.  ``memory=None`` = disabled.
+    evidence yields ``ESCALATE``, not a guess.  ``memory=None`` = disabled;
+    ``retriever=None`` = no intent retrieval (A1): no search is made and the
+    prompt says retrieval is disabled, so only memory records are citable.
 
     Raises:
         LLMError, ToolError.
     """
-    evidence = search_many(retriever, group_queries(group), top_k=TOP_K)
+    retrieval = retriever is not None
+    evidence = search_many(retriever, group_queries(group), top_k=TOP_K) if retrieval else []
     memory_lines: list[str] = []
     if memory is not None and group.group.function_qualname:
         for record in memory.read(context, group.group.function_qualname).usable:
@@ -53,7 +56,7 @@ def analyse_intent(
                 f"[{record.record_id}] (approved memory, probe passed) {record.function_qualname}: "
                 f"{clip(record.behaviour_signature, 400)} -> {record.direction.value}"
             )
-    user = build_intent_user(context, group, evidence, memory_lines)
+    user = build_intent_user(context, group, evidence, memory_lines, retrieval=retrieval)
     logger.info("intent: group %s, %d evidence items, %d memory items", group.group.group_id, len(evidence), len(memory_lines))
     response = llm.complete_structured(
         role=AgentRole.INTENT_ANALYST, system=INTENT_SYSTEM, user=user, response_model=IntentAnalysis
