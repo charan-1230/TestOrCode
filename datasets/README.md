@@ -68,7 +68,7 @@ Ids are opaque and follow the commit-chronological stream order of each split. S
 | test-04 | S4 decoy memory | hard | `bd46e5ab` | 1 | `fileutils.rotate_file` (memory from test-03) | 2 |
 
 Two dev episodes carry a tool-fault plan (dev-05: the first `apply_patch` call fails; dev-04: the second `run_tests` call gets an invalid test selector). The plan
-exists only in the full records. The full old-to-new id mapping is in `docs/dataset_revision_audit.md`.
+exists only in the full records. The revision-2 id shift is described under "Revision 2" below (`docs/dataset_revision_audit.md`, which `scripts/pilot/audit_revision.py --write` produces, is not in the repository, so the per-field audit is not available).
 
 ## Split rules (checked by `tests/test_dataset.py` and the builder)
 
@@ -152,7 +152,20 @@ Built outside `datasets/`, validated, audited against the previous version, then
 - **dev-06 (`8408ab57`) is unchanged** (label, gold evidence, corpus: it has no eligible comments).
 - **All other episodes keep labels, failing tests, diffs, reference repairs, mutants and memory identical**; only corpus items were
   appended (including two frozen test episodes, test-03 and test-04) and the corpus version became `pilot-2`. Dev ids shifted by one
-  because the 2015 episode sorts first. `docs/dataset_revision_audit.md` lists every id and every changed field.
+  because the 2015 episode sorts first. The per-id/per-field audit file was not kept in the repository; `scripts/pilot/audit_revision.py` can only compare a candidate against a committed ref, so it cannot reproduce it now.
+
+## Review status (2026-10-29)
+
+Human 3 reports the pilot labels and gold evidence as finalised. This note records what that covers, so the data and the text cannot drift
+(`tests/test_dataset.py::test_gold_evidence_coverage_is_the_documented_one` checks it):
+
+- **Episodes with gold evidence ids** (5 of 13): dev-05, dev-06, dev-08 (on its UPDATE_TEST test only), dev-09 and test-03 (on its two
+  UPDATE_TEST tests). They are all UPDATE_TEST labels, where a stated intent exists to cite.
+- **Episodes without any** (8 of 13): dev-01 (S5), dev-02, dev-03, dev-04, dev-07, test-01, test-02, test-04 (S2/S4/S5 and the FIX_CODE
+  tests of mixed episodes). This is intentional, not a gap: nothing states a changed intent there. Gold-evidence Recall@k is undefined
+  (`None`, shown as "-") for them; do not read it as 0.
+- No gold id was invented for the episodes above. The "needs a human pass" limitation below remains about whether each id *states* the intent;
+  this note does not add a stronger claim.
 
 ## Limitations (needs a human pass before relying on it)
 

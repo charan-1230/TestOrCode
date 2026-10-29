@@ -1,5 +1,9 @@
 # Day 2 — Human 1 (agent core): what was built, how it works, and how to verify it
 
+> **Historical (Day 2).** Statements below that A1 or A3 are not implemented were true at the time. Since then A1 (Human 1) and A3
+> (Human 2) are implemented and all five conditions ran live on the dev split; see `docs/day3-human1.md`, `docs/day3-human2.md`,
+> `docs/day3-human3.md`. The condition table (§ "Conditions") and the "Not done" row for A1/A3 are updated below.
+
 This document covers **all of Human 1's Day-2 work** from the 5-day plan (`docs/TestOrCode_5-day_emergency_execution_plan.pdf`).
 The design follows the final proposal (`docs/ProjectIdeaProposal.pdf`), with `docs/DetailedProjectIdea.pdf` as a
 supplement; when they differ, the plan wins, then the proposal.
@@ -84,7 +88,7 @@ myvenv/bin/python -m ruff check src/testorcode/agents src/testorcode/orchestrato
 | Feature | Where | Behaviour |
 |---|---|---|
 | State machine | `EpisodeRun.execute`, `_handlers` | `TRIAGE → per group: INTENT_ANALYSIS → REPAIR → PATCH_VALIDATION → PATCH_APPLICATION → INTEGRITY_GUARD → DECIDED/ESCALATED`, then the final suite run, then `DONE`. Exceptions become an `ErrorRecord` with the matching `RunStatus`; API, tool and budget failures are never escalations |
-| Conditions | `_condition_problem`, class attribute `CONDITIONS` | Default **A2**. `EpisodeRun` runs A2 and FULL (FULL needs a `MemoryStore`); `SingleAgentRun` runs B1. Everything else (A1, A3; non-proposal B0/B2/A4/A5/trivial), or a condition sent to the wrong class, fails at stage `setup` |
+| Conditions | `_condition_problem`, class attribute `CONDITIONS` | Default **A2**. `EpisodeRun` runs A2 and FULL (FULL needs a `MemoryStore`); `SingleAgentRun` runs B1 (Day 2; since Day 3 also A1 and A3 on `EpisodeRun`, and the trivial baselines in `run_episode`). Everything else (A1, A3; non-proposal B0/B2/A4/A5/trivial), or a condition sent to the wrong class, fails at stage `setup` |
 | Evidence ids | `_intent_analysis`, `_patch_validation`, B1 `_decide` | Every cited id (analysis or patch) must have been retrieved this episode, or be a usable memory record |
 | Decision policy | `contracts.decision_policy_problem` | §2.3 |
 | Revision | `_rejected` | One revision. Pre-Guard rejections reach the Repairer as `rejection_reasons`, Guard rejections as `previous_rejection`. A second rejection escalates |
@@ -359,7 +363,7 @@ is ever fabricated.
 | CLI option to pass a `MemoryStore` | Not done | No store exists yet | Human 1, after Human 2 | No |
 | Review of the widened test-patch rule (`patch_content.py`) | Pending | Changes Human 2's module | Human 2 | No |
 | Metrics (direction F1 from `hypothesis`, correct-repair rate, citation faithfulness) | Not done | `evaluation.py` stub | Human 3 | No |
-| A1 / A3 switches, sanity baselines | Not done | Day-3 tasks | Human 1 / 2 / 3, Day 3 | No |
+| A1 / A3 switches, sanity baselines | **Done on Day 3** | A1 Human 1, A3 Human 2, baselines Human 3 | Human 1 / 2 / 3, Day 3 | No |
 | Response caching (proposal §13) | Not done | Not scheduled | Team | No |
 
 ---

@@ -5,7 +5,8 @@
 
 The default split is dev.  The frozen test split is refused unless ``--final`` is given, and the gold labels are
 used only by the harness (simulated maintainer and scoring), never by an agent.  Then summarise with
-``python scripts/summarize_results.py <out>/runs.jsonl``.
+``python scripts/summarize_results.py <out>/runs.jsonl``.  A run that ended in ``api_failure`` counts as done and is
+not re-run unless ``--retry-failed`` is given (then its line is replaced).
 """
 
 from __future__ import annotations
@@ -25,6 +26,9 @@ def main() -> int:
     parser.add_argument("--conditions", required=True, help="comma separated, e.g. TRIVIAL_UPDATE_TEST,A2,B1")
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
     parser.add_argument("--final", action="store_true", help="required for the frozen test split")
+    parser.add_argument("--retry-failed", action="store_true",
+                        help="re-run runs that ended in api_failure, replacing their line (refused for a memory "
+                             "condition when a later episode of the stream already ran)")
     parser.add_argument("--episodes", default="", help="comma separated ids; default: the whole split")
     parser.add_argument("--seeds", default="0", help="comma separated integers")
     parser.add_argument("--out", default=str(ROOT / "results" / "experiments" / "latest"))
@@ -36,6 +40,7 @@ def main() -> int:
         config = ExperimentConfig(
             split=args.split,
             final=args.final,
+            retry_failed=args.retry_failed,
             episode_ids=tuple(e for e in args.episodes.split(",") if e),
             conditions=tuple(ExperimentCondition(c.strip()) for c in args.conditions.split(",") if c.strip()),
             seeds=tuple(int(s) for s in args.seeds.split(",") if s.strip()),
@@ -46,8 +51,12 @@ def main() -> int:
     except (ValidationError, ValueError) as exc:
         sys.stderr.write(f"refusing: {exc}\n")
         return 2
-    result = run_experiment(config)
-    sys.stdout.write(f"ran {result.ran}, already done {result.skipped_done}, unavailable {len(result.skipped_unavailable)}\n")
+    try:
+        result = run_experiment(config)
+    except ValueError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 2
+    sys.stdout.write(f"ran {result.ran} ({result.retried} retried), already done {result.skipped_done}, unavailable {len(result.skipped_unavailable)}\n")
     for line in result.skipped_unavailable:
         sys.stdout.write(f"  unavailable: {line}\n")
     sys.stdout.write(f"records: {config.out / 'runs.jsonl'}\n")

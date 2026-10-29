@@ -1,5 +1,7 @@
 # Day 2 — Human 2 (sandbox, memory, integrity): what was built and how to verify it
 
+> **Historical (Day 2).** The "A3 (Day 3)" item below was implemented on Day 3: see `docs/day3-human2.md`.
+
 Branch `feat/sandbox`, on top of `main` at `b0cd20be`. The design follows the submitted proposal and the 5-day plan.
 
 **Verification labels:**

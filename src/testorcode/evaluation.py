@@ -368,8 +368,8 @@ def _summarize_condition(
         retrieved = _ranked_ids(rec)
         predictions = {p.test_id: p for p in rec.predictions}
         for score in evaluation.decisions:
-            if score.predicted_action is None:  # no decision for this test (e.g. unstable): not scored
-                continue
+            if score.predicted_action is None and score.test_id in rec.unstable_test_ids:
+                continue  # unstable at run time: the harness excluded it on purpose. Any other missing prediction is a miss
             pairs.append((score.expected_action, score.predicted_action))
             if score.expected_action is not DecisionLabel.ESCALATE:  # S5 cases are scored as escalation, not side
                 directions.append((score.gold_direction, predicted_direction(predictions.get(score.test_id))))

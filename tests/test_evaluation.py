@@ -325,3 +325,17 @@ def test_predictions_for_tests_the_episode_does_not_have_are_set_aside() -> None
     [summary] = summarize([stale], list(DEV.values()))
     assert summary.metrics["n_incompatible_records"] == 1 and summary.metrics["n_tests_scored"] == 0
     assert any("does not have" in n for n in summary.notes)
+
+
+def test_a_completed_run_missing_a_prediction_counts_the_test_as_wrong() -> None:
+    tests = gold_tests("dev-03")  # two FIX_CODE tests
+    assert len(tests) == 2
+    m = metrics([record("dev-03", {tests[0]: D.FIX_CODE})])  # no decision for the second test
+    assert m["n_tests_scored"] == 2 and m["accuracy"] == 0.5
+    assert m["n_direction_scored"] == 2 and m["n_direction_undecided"] == 1 and m["direction_accuracy"] == 0.5
+
+
+def test_a_test_the_harness_found_unstable_is_not_scored_as_missed() -> None:
+    tests = gold_tests("dev-03")
+    m = metrics([record("dev-03", {tests[0]: D.FIX_CODE}, unstable_test_ids=[tests[1]])])
+    assert m["n_tests_scored"] == 1 and m["accuracy"] == 1.0

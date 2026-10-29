@@ -14,6 +14,8 @@ from __future__ import annotations
 import importlib.util
 import json
 import logging
+import os
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 from typing import Final
@@ -32,6 +34,7 @@ from testorcode.schemas.episode_schemas import DecisionLabel, Episode, EpisodeIn
 from testorcode.schemas.result_schemas import (
     ExperimentCondition,
     ExperimentRunRecord,
+    RunStatus,
     TestRunStatus,
 )
 
@@ -57,6 +60,10 @@ class ExperimentConfig(BaseModel):
     repo: Path = ROOT.parent / "boltons"
     worktrees: Path = ROOT.parent / "episode-worktrees"
     final: bool = Field(default=False, description="Required to touch the frozen test split.")
+    retry_failed: bool = Field(
+        default=False,
+        description="Re-run runs that ended in api_failure (replacing that line). Off by default: a failed run is done.",
+    )
 
     @model_validator(mode="after")
     def _check(self) -> ExperimentConfig:
@@ -207,8 +214,61 @@ class ExperimentResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     ran: int = 0
+    retried: int = 0  # of ``ran``: runs that replaced an api_failure record (``retry_failed``)
     skipped_done: int = 0
     skipped_unavailable: list[str] = Field(default_factory=list)
+
+
+def _is_api_failure(record: ExperimentRunRecord) -> bool:
+    return record.outcome.status is RunStatus.API_FAILURE
+
+
+def _wrote_memory(record: ExperimentRunRecord) -> bool:
+    return any(w.written for w in record.memory_writes)
+
+
+def unsafe_retries(
+    pairs: list[tuple[EpisodeInput, Episode]], config: ExperimentConfig, records: list[ExperimentRunRecord]
+) -> list[str]:
+    """Why each requested retry of a failed run would break the memory stream, for the conditions that have memory.
+
+    A retry runs an *earlier* episode after later ones, so it could read memory those later episodes wrote or
+    seeded, and a failed attempt that already wrote memory could be replayed into a different record.  Memory-free
+    conditions are always safe to retry.
+    """
+    by_key = {_key(r): r for r in records}
+    problems = []
+    for index, (episode, _) in enumerate(pairs):
+        for condition in config.conditions:
+            if not profile_for(condition).memory:
+                continue
+            for seed in config.seeds:
+                failed = by_key.get((episode.episode_id, condition.value, seed))
+                if failed is None or not _is_api_failure(failed):
+                    continue
+                label = f"{episode.episode_id}/{condition.value}/seed {seed}"
+                if _wrote_memory(failed):
+                    problems.append(f"{label}: the failed attempt already wrote memory, a replay could differ")
+                for later, _ in pairs[index + 1:]:
+                    other = by_key.get((later.episode_id, condition.value, seed))
+                    if other is not None and (_wrote_memory(other) or later.visible_memory):
+                        problems.append(f"{label}: later episode {later.episode_id} already ran and wrote or seeded memory")
+                        break
+    return problems
+
+
+def _replace_run_lines(runs_path: Path, replaced: ExperimentRunRecord, new: ExperimentRunRecord) -> None:
+    """Swap the failed record's line for the new one in a single atomic file replacement (never two lines per run)."""
+    kept = [r for r in read_records(runs_path) if r.provenance.run_id != replaced.provenance.run_id]
+    text = "".join(r.to_jsonl() + "\n" for r in [*kept, new])
+    fd, tmp = tempfile.mkstemp(dir=runs_path.parent, prefix=f".{runs_path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.replace(tmp, runs_path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
 
 
 def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -> ExperimentResult:
@@ -216,18 +276,33 @@ def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -
 
     A run that cannot start (for example no model or API key configured) is skipped and reported in
     ``skipped_unavailable``: without a model id no valid record exists, and a fake one would be worse than none.
+
+    By default any existing record, an ``api_failure`` one included, counts as done.  With ``config.retry_failed`` an
+    ``api_failure`` run is re-run and its line is replaced.  For a condition with memory that is refused (``ValueError``,
+    nothing run) when it would break the stream's chronology: re-run the whole stream into a fresh ``out`` instead.
     """
     pairs = load_split(config)
+    runs_path = config.out / RUNS_FILE
+    existing = read_records(runs_path)
+    failed_by_key = {_key(r): r for r in existing if _is_api_failure(r)} if config.retry_failed else {}
+    if failed_by_key:
+        problems = unsafe_retries(pairs, config, existing)
+        if problems:
+            raise ValueError(
+                "refusing to retry: " + "; ".join(problems) + ". Memory carries over between episodes in stream "
+                "order, so re-run the whole stream for this condition and seed into a fresh --out."
+            )
     run_one = run_one or default_run_one(config)
     config.out.mkdir(parents=True, exist_ok=True)
-    runs_path = config.out / RUNS_FILE
-    done = {_key(r) for r in read_records(runs_path)}
+    done = {_key(r) for r in existing}
     _write_config(config, [e.episode_id for e, _ in pairs])
     result = ExperimentResult()
     for episode, gold in pairs:
         for condition in config.conditions:
             for seed in config.seeds:
-                if (episode.episode_id, condition.value, seed) in done:
+                key = (episode.episode_id, condition.value, seed)
+                retrying = key in failed_by_key
+                if key in done and not retrying:
                     result.skipped_done += 1
                     continue
                 try:
@@ -237,8 +312,12 @@ def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -
                     log.warning("skipped %s %s: %s", episode.episode_id, condition.value, exc)
                     continue
                 final = scored(record, gold, config.split)
-                with runs_path.open("a", encoding="utf-8") as fh:
-                    fh.write(final.to_jsonl() + "\n")
+                if retrying:
+                    _replace_run_lines(runs_path, failed_by_key[key], final)
+                    result.retried += 1
+                else:
+                    with runs_path.open("a", encoding="utf-8") as fh:
+                        fh.write(final.to_jsonl() + "\n")
                 result.ran += 1
     return result
 

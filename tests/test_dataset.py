@@ -192,10 +192,10 @@ def test_loader_types(views: dict[str, list[EpisodeInput]]) -> None:
     assert Path(agent_view_path("dev")).name == "pilot_dev_agent_view.jsonl"
 
 
-# ---- revision 2: source-comment evidence policy, dev-08 as S1, S5 on 353f6bef -------------------------------------------
+# ---- revision 2: source-comment evidence policy, dev-09 as S1, S5 on 353f6bef -------------------------------------------
 
-DEV_08_SHA = "6270b5e35ed902859df6188970eec5bee5ab73d1"  # iterutils remap namedtuples (was S5, now S1)
-DEV_07_SHA = "f387b64c4b7c4267ea94bcfcd229923ab2f598ea"  # strutils bytes2human + listutils mutant (S3)
+DEV_09_SHA = "6270b5e35ed902859df6188970eec5bee5ab73d1"  # iterutils remap namedtuples (was S5, now S1)
+DEV_08_SHA = "f387b64c4b7c4267ea94bcfcd229923ab2f598ea"  # strutils bytes2human + listutils mutant (S3)
 S5_SHA = "353f6befb4739f1d3583a8ce0ab5db761babd411"  # tbutils ParsedException.from_string
 S5_WITHHELD_MESSAGE = "Exception message should not start with whitespace"
 
@@ -234,8 +234,8 @@ def test_gold_evidence_resolves_and_sits_in_the_labelled_function(episodes) -> N
                     assert gid.startswith(f"comment:{module_function}#"), (ep.episode_id, gid)
 
 
-def test_dev_07_update_half_is_supported_by_the_bytes2human_comment_only(episodes) -> None:
-    ep = by_commit(episodes, DEV_07_SHA)
+def test_dev_08_update_half_is_supported_by_the_bytes2human_comment_only(episodes) -> None:
+    ep = by_commit(episodes, DEV_08_SHA)
     corpus = {i.evidence_id: i for i in ep.agent_input.corpus.items or []}
     update = [lbl for lbl in ep.ground_truth.per_test_labels if lbl.expected_action is DecisionLabel.UPDATE_TEST]
     assert len(update) == 1 and update[0].function_qualname == "boltons.strutils.bytes2human"
@@ -246,8 +246,8 @@ def test_dev_07_update_half_is_supported_by_the_bytes2human_comment_only(episode
     assert fix and all(not lbl.gold_evidence_ids for lbl in fix)
 
 
-def test_dev_08_is_a_clean_s1_with_agent_visible_gold_evidence(episodes) -> None:
-    ep = by_commit(episodes, DEV_08_SHA)
+def test_dev_09_is_a_clean_s1_with_agent_visible_gold_evidence(episodes) -> None:
+    ep = by_commit(episodes, DEV_09_SHA)
     assert ep.scenario is S.S1_OUTDATED_TEST and ep.stream_id == "pilot-dev"
     gt, ci = ep.ground_truth, ep.agent_input.ci_event
     assert {lbl.expected_action for lbl in gt.per_test_labels} == {DecisionLabel.UPDATE_TEST}
@@ -256,7 +256,7 @@ def test_dev_08_is_a_clean_s1_with_agent_visible_gold_evidence(episodes) -> None
     assert ci.commit_message and "fix remap namedtuples" in ci.commit_message  # the real, unstripped message
     corpus = {i.evidence_id: i for i in ep.agent_input.corpus.items or []}
     gold = set().union(*(set(lbl.gold_evidence_ids or []) for lbl in gt.per_test_labels))
-    assert f"msg:{DEV_08_SHA[:12]}" in gold
+    assert f"msg:{DEV_09_SHA[:12]}" in gold
     (comment,) = [g for g in gold if g.startswith("comment:")]
     assert "namedtuple, rebuilt in default_exit" in (corpus[comment].text or "")
 
@@ -300,3 +300,16 @@ def test_history_access_tripwire_for_the_provisional_s5() -> None:
     ):
         with pytest.raises(NotImplementedError):
             call()
+
+
+def test_gold_evidence_coverage_is_the_documented_one(episodes) -> None:
+    """datasets/README.md "Review status": which episodes carry gold evidence ids, and that only UPDATE_TEST labels do."""
+    labelled = {}
+    every = [ep for split in episodes.values() for ep in split]
+    for ep in every:
+        gold = [lbl for lbl in ep.ground_truth.per_test_labels if lbl.gold_evidence_ids]
+        if gold:
+            labelled[ep.episode_id] = {lbl.expected_action for lbl in gold}
+    assert set(labelled) == {"dev-05", "dev-06", "dev-08", "dev-09", "test-03"}
+    assert all(actions == {DecisionLabel.UPDATE_TEST} for actions in labelled.values())
+    assert len(every) == 13

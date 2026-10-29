@@ -7,7 +7,7 @@ Scripts (re-runnable, one-off tooling): `scripts/screening/`. Candidate clones w
 > **Supersession notice (2026-10-28).** The pilot size and episode plan written in this record (**"6-12 episodes"** in sections 1 and 10 and the
 > manifest plan in section 10, item 1) are **superseded by the approved pilot: 13 episodes, 9 dev + 4 frozen test**
 > (dev: S1 x3, S2 x3, S3, S4, S5; test: S2 x2, S3, S4). 13 exceeds the 5-day plan's 6-12 target; the project team accepted that deviation.
-> The authoritative description is `datasets/README.md`, with the old-to-new changes in `docs/dataset_revision_audit.md`. Of the 7 verified S1
+> The authoritative description is `datasets/README.md`, with the revision-2 changes summarised there (the per-field audit file is not in the repository). Of the 7 verified S1
 > bases below, 6 are used (`353f6bef` as the S5, `7b577b0f`, `8408ab57`, `6270b5e3`, `f387b64c` as the S3, and `1c2db466` as the test S3);
 > `289edfcd` (partial) is unused. **What still stands:** the screening evidence, the scoring, and the decision to use boltons.
 > Nothing else in this record has been re-assessed.

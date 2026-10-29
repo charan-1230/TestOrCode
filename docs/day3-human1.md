@@ -7,13 +7,19 @@ Branch `worktree-day3-human1`, on top of `ea8c1510`. Code commit `a6563189`.
 - **OFFLINE INTEGRATION:** the real orchestrator, agents, git, pytest and patch tools; only the model is scripted.
 - **LIVE:** a saved real-model run.
 
-**Nothing from Day 3 was run LIVE.** No API quota was spent. `python -m pytest`: **984 passed, 1 skipped** (961 + 23
-new). Ruff is clean on every changed file.
+**Status when this was written:** nothing from Human 1's Day 3 was run LIVE and no API quota was spent; `python -m pytest`
+was **984 passed, 1 skipped** (961 + 23 new).
+
+> **Update (2026-10-29, after the Human-2 and Human-3 Day-3 work was merged):** A3 is implemented and runnable. All five
+> conditions plus the trivial baselines have now been run LIVE on the 9 dev episodes (`results/day3/pilot-dev-5cond/`,
+> gemini-3.5-flash-lite, seed 0; see `docs/day3-human3.md`), including A1. The full suite is **1084 passed, 0 skipped**.
+> The sections below are unchanged, so statements that A3 is refused or that A1 has no live run describe the time of writing.
+> The "Human 3" scoring items in §6 are updated in the table there.
 
 | Slot | Plan task (Human 1) | Status |
 |---|---|---|
 | 09:00–11:00 | Stabilize Full/B1 shared interfaces | **Done.** Conditions are profile-driven. `run_episode` is the one entry point for every condition. B1 tool attribution fixed (§1, §4) |
-| 11:00–13:00 | Implement A1 switch (with Human 3) | **Done in code + offline integration.** One A1 semantics question goes to Human 3 (§2.3). Live A1 runs not done (quota) |
+| 11:00–13:00 | Implement A1 switch (with Human 3) | **Done in code + offline integration.** One A1 semantics question goes to Human 3 (§2.3). Live A1 run done later by Human 3 (`results/day3/pilot-dev-5cond/`): A1 escalated every decision |
 | 13:00–15:00 | Deterministic sanity baselines | **Done.** Implemented by Human 3 on Day 2. Now also reachable through `run_episode` and `run_episode.py`. First table on the dev split (§3) |
 | 15:00–18:00 | Fix common agent failures | **Done for the failures inside Human 1's code** (§4). The rest are dependencies (§6) |
 | 18:00–20:00 | Review decisions and logs | **Done for the saved live records** (§5). New tool: `scripts/review_runs.py` |
@@ -29,7 +35,7 @@ new). Ruff is clean on every changed file.
     - `SingleAgentRun`: B1.
     - `run_episode` itself: the trivial baselines.
   - A4's profile equals FULL's, so a purely profile-based dispatch would silently run A4 as FULL. It stays refused, as
-    do A3, A5, B0 and B2.
+    do A5, B0 and B2. (A3 was refused when this was written; it has since been implemented by Human 2.)
 - **One entry point:**
   - `run_episode(...)` answers `TRIVIAL_UPDATE_TEST` / `TRIVIAL_FIX_CODE` with `baselines.trivial_record`. It uses no
     model, worktree or memory, and `llm` may be `None`.
@@ -142,12 +148,12 @@ The output is from the Day-2 records; the B1 attribution there predates the §4 
 
 | Item | Blocked on | Owner | Note |
 |---|---|---|---|
-| A3 (no Integrity Guard) | Guard-off code path | **Human 2** | `profile.integrity_guard` is in place and A3 is refused explicitly. Adding A3 to `_MULTI_AGENT_CONDITIONS` with a `verify_group`-only branch (as B1's `_verify`) is the expected change; Human 1 can wire it once the semantics (what replaces the Guard verdict) are agreed |
+| A3 (no Integrity Guard) | Guard-off code path | **Human 2** | **Done by Human 2** (`EpisodeRun._verify_without_guard`; merged). Original note: `profile.integrity_guard` is in place and A3 is refused explicitly. Adding A3 to `_MULTI_AGENT_CONDITIONS` with a `verify_group`-only branch (as B1's `_verify`) is the expected change; Human 1 can wire it once the semantics (what replaces the Guard verdict) are agreed |
 | UPDATE_TEST approval in FULL | Mutation strength / mutant selection (`tools.mutation`, `verification.repair_outcome`) | **Human 2** | dev-06. Optionally, the orchestrator could pass `cached_mutants` (`results/mutants/dev_cached_mutants.json`) to the Guard, which is never done today; that needs a settings key agreed with Human 2 |
-| Memory citations scored as invalid | `evaluation._known_ids` / `citation_existence_rate` ignore in-stream memory ids | **Human 3** | FULL citing a memory record written earlier in the stream (or A1 citing memory) lowers `citation_existence_rate`. Fix: treat `record.memory_reads[*].record_id` with a passed probe as known |
-| Tests with no prediction skipped in `summarize` | `evaluation.py:370` | **Human 3** | Contradicts "a missing prediction counts as wrong" |
-| Resuming an experiment after `api_failure` | `experiment.run_experiment` treats an `api_failure` record as done | **Human 3** | Not patched here: for FULL/A1 a retry is only valid if the memory stream is re-run in order (a partial run may already have written memory) |
-| Live A1 / FULL / B1 runs (Day-3 exit) | API quota | Team | Commands below |
+| Memory citations scored as invalid (**Done**: `evaluation.py` counts memory reads with a passed probe as citable; needs Human 3 review) | `evaluation._known_ids` / `citation_existence_rate` ignore in-stream memory ids | **Human 3** | FULL citing a memory record written earlier in the stream (or A1 citing memory) lowers `citation_existence_rate`. Fix: treat `record.memory_reads[*].record_id` with a passed probe as known |
+| Tests with no prediction skipped in `summarize` (**Done**: now counted as wrong; unstable tests still excluded) | `evaluation.py:370` | **Human 3** | Contradicts "a missing prediction counts as wrong" |
+| Resuming an experiment after `api_failure` (**Done**: opt-in `--retry-failed`, refused for memory conditions when it would break stream order; `tests/test_experiment_recovery.py`, `docs/day3-human3.md` §8) | `experiment.run_experiment` treats an `api_failure` record as done | **Human 3** | Not patched here: for FULL/A1 a retry is only valid if the memory stream is re-run in order (a partial run may already have written memory) |
+| Live A1 / FULL / B1 runs (Day-3 exit) | API quota | Team | **Done** for all five conditions on dev (`results/day3/pilot-dev-5cond/`). Commands below are the original plan |
 | always-ESCALATE baseline | New `ExperimentCondition` value | Human 3 / team | Not in the plan; optional |
 | `git_log/show/blame` tools | `tools/git_tools.py` stubs | Human 2 | Not needed by A1 |
 

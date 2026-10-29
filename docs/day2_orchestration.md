@@ -15,7 +15,7 @@ prompts", and the plan's rules add "configuration flags to switch components off
 - 13:00–15:00: Repairer/API tool calling.
 - 15:00–18:00: B1.
 - Human 2's work: memory store, probes, mutants.
-- Day 3: the A1/A3 switches.
+- Day 3: the A1/A3 switches (done in Day 3: Human 1 wrote A1, Human 2 wrote A3; see `docs/day3-human1.md` and `docs/day3-human2.md`).
 
 Numbers below come only from [`results/day2/`](../results/day2/). The code ran with uncommitted changes on top of
 `f84cc290`.
@@ -45,7 +45,7 @@ Numbers below come only from [`results/day2/`](../results/day2/). The code ran w
 1. **Conditions are honoured.**
    - `settings.experiment_condition` selects the episode view and whether memory is used.
    - A2 runs. FULL/A4 need a `MemoryStore`.
-   - B0, B1, B2, A1, A3, A5 and the trivial baselines fail explicitly with "not implemented" at stage `setup`. They are
+   - (At the time of this slot; A1, A3, B1 and the trivial baselines are runnable now.) B0, B1, B2, A1, A3, A5 and the trivial baselines fail explicitly with "not implemented" at stage `setup`. They are
      never silently run as the multi-agent pipeline.
    - The CLI has `--condition` (default A2).
 2. **Revision feedback.** A rejection before the Guard runs now reaches the Repairer through the new keyword
