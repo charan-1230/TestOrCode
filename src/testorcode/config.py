@@ -85,8 +85,8 @@ class Settings(BaseModel):
     github_token: SecretStr | None = None
 
     # Experiment.
-    # A2 is the only condition run_episode can execute today (no MemoryStore yet; B1/A1/A3 have no code
-    # path); the others fail explicitly.  Revisit when they are implemented.
+    # Default A2 (needs no MemoryStore).  run_episode executes FULL, A2, A3 (FULL and A3 need a MemoryStore) and B1;
+    # conditions without a code path fail explicitly.
     experiment_condition: ExperimentCondition = ExperimentCondition.A2_NO_MEMORY
     random_seed: int = 42
     dataset_path: Path = Path("datasets/pilot_dev.jsonl")

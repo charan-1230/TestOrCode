@@ -11,12 +11,12 @@ maintainer (proposal section 9: approve when the direction matches the gold labe
 the orchestrator asks after a Guard APPROVE, and to score the prediction after the run.  They are never
 passed to an agent.
 
-``--condition`` defaults to A2 (no memory). B1 runs the single-agent baseline on the same input. FULL needs
+``--condition`` defaults to A2 (no memory). B1 runs the single-agent baseline on the same input. A3 is FULL
+without the Integrity Guard (a green rerun decides; nothing writes memory). FULL and A3 need
 ``--memory PATH``: a ``JsonlMemoryStore`` (persistent across runs, so a stream of episodes shares it) seeded with the
 episode's declared prior memory (``visible_memory``) before any agent acts.  The store is bound to
 ``<condition>/seed=<RANDOM_SEED>/<split>`` and refuses any other (use ``memory.memory_path`` for one file each);
-conditions without memory ignore ``--memory``.  Conditions without a code path (A1, A3, ...) are recorded as not
-implemented.
+conditions without memory ignore ``--memory``.  Conditions without a code path are recorded as not implemented.
 
     python scripts/run_episode.py --episode dev-05 --repo ../boltons
 """
@@ -64,7 +64,7 @@ def main() -> int:
     parser.add_argument("--worktree", default=None, help="default: ../episode-worktrees/<episode>")
     parser.add_argument("--condition", default="A2", choices=[c.value for c in ExperimentCondition])
     parser.add_argument("--out", default=str(ROOT / "results" / "day2"))
-    parser.add_argument("--memory", default=None, help="JSONL memory store (needed for FULL; ignored without memory)")
+    parser.add_argument("--memory", default=None, help="JSONL memory store (needed for FULL and A3; ignored without memory)")
     args = parser.parse_args()
     if args.split == "test" and not args.allow_test_split:
         parser.error("the test split is frozen; pass --allow-test-split only for the frozen evaluation")

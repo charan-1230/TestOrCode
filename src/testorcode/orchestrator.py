@@ -186,11 +186,13 @@ OPERATIONAL_CAP_DEFAULT = 200
 _NO_MEMORY_CONDITIONS = frozenset({ExperimentCondition.A2_NO_MEMORY, ExperimentCondition.B1})
 # Which run class executes which condition; any other pairing is refused, so a condition can never run
 # under another one's pipeline (e.g. B1 through the multi-agent EpisodeRun).
-_MULTI_AGENT_CONDITIONS = frozenset({ExperimentCondition.FULL, ExperimentCondition.A2_NO_MEMORY})
+_MULTI_AGENT_CONDITIONS = frozenset(
+    {ExperimentCondition.FULL, ExperimentCondition.A2_NO_MEMORY, ExperimentCondition.A3_NO_INTEGRITY_GUARD}
+)
 _SINGLE_AGENT_CONDITIONS = frozenset({ExperimentCondition.B1})
 # A4 (coarse memory) is not in the submitted proposal and has no implementation of its own, so it is refused
 # rather than run as FULL under another label.
-_MEMORY_CONDITIONS = frozenset({ExperimentCondition.FULL})
+_MEMORY_CONDITIONS = frozenset({ExperimentCondition.FULL, ExperimentCondition.A3_NO_INTEGRITY_GUARD})
 _ALTERNATIVE = {
     "outdated_test": "regression: the change broke behaviour the test rightly checks (FIX_CODE)",
     "regression": "outdated_test: the change was intended and the test encodes the old behaviour (UPDATE_TEST)",
@@ -370,6 +372,8 @@ class EpisodeRun:
         self.condition_problem = _condition_problem(self.condition, memory, self.CONDITIONS)
         if not profile_for(self.condition).memory:
             memory = None
+        # A3 (no Integrity Guard): the Guard stage becomes a plain group verification (``_verify_without_guard``).
+        self.guard_enabled = profile_for(self.condition).integrity_guard
         episode = episode_for_condition(episode, self.condition)
         self.episode = episode
         self.settings = settings
@@ -456,7 +460,7 @@ class EpisodeRun:
             Stage.REPAIR: self._repair,
             Stage.PATCH_VALIDATION: self._patch_validation,
             Stage.PATCH_APPLICATION: self._patch_application,
-            Stage.INTEGRITY_GUARD: self._integrity_guard,
+            Stage.INTEGRITY_GUARD: self._integrity_guard if self.guard_enabled else self._verify_without_guard,
         }
 
     def _run_group(self, g: GroupState) -> None:
@@ -470,6 +474,8 @@ class EpisodeRun:
         self._current = (group_id, stage)
         self.trace.append((group_id, stage))
         self.recorder.role = _STAGE_ROLE.get(stage, AgentRole.ORCHESTRATOR)
+        if stage is Stage.INTEGRITY_GUARD and not self.guard_enabled:
+            self.recorder.role = AgentRole.ORCHESTRATOR  # A3: the harness reruns the tests; no Guard acts
         self.recorder.budget = "agent" if stage in _AGENT_STAGES else "operational"
         logger.info("stage=%s group=%s", stage, group_id or "-")
         limit = self.context.budget.wall_clock_seconds
@@ -630,6 +636,33 @@ class EpisodeRun:
             g, "insufficient_evidence",
             "integrity guard escalated: " + "; ".join(result.reasons), AgentRole.INTEGRITY_GUARD,
         )
+
+    def _verify_without_guard(self, g: GroupState) -> Stage:
+        """A3 (no Integrity Guard, proposal Table 5): the repair is accepted on test-level verification alone.
+
+        No weakening, scope-of-group, evidence or semantic review, no mutation check, no maintainer and no memory
+        write (only the Guard writes memory).  Tool-level patch safety still applied before this stage.
+        """
+        return self._verify_tests_only(g, AgentRole.INTENT_ANALYST)
+
+    def _verify_tests_only(self, g: GroupState, decided_by: AgentRole) -> Stage:
+        """The same test-level verification as the Guard (``verify_group``), without the Guard's other checks:
+        the group's tests pass and no previously passing test fails → decided; otherwise revert and reject."""
+        assert g.patch is not None and g.analysis is not None
+        targeted, regression, problems = _integrity_guard.verify_group(
+            self.context, g.detail, self._known_failures(g),
+            timeout_seconds=self.settings.test_timeout_seconds, python_executable=self.settings.test_python,
+        )
+        self._record_verification(g, targeted, regression)
+        if not problems:
+            self._applied_diff = None  # the repair stays
+            g.accepted = True
+            g.decision, g.decided_by = g.analysis.recommended_decision, decided_by
+            return Stage.DECIDED
+        self._revert()
+        g.patch.application_status = PatchApplicationStatus.REVERTED
+        g.patch.apply_error = "; ".join(problems)
+        return self._rejected(g, tuple(problems))
 
     def _record_verification(
         self, g: GroupState, targeted: PytestExecution | None, regression: PytestExecution | None
@@ -1219,23 +1252,8 @@ class SingleAgentRun(EpisodeRun):
         return Stage.PATCH_VALIDATION
 
     def _verify(self, g: GroupState) -> Stage:
-        """The same test-level verification as the Guard (``verify_group``), without the Guard's other checks:
-        the group's tests pass and no previously passing test fails → decided; otherwise revert and reject."""
-        assert g.patch is not None and g.analysis is not None
-        targeted, regression, problems = _integrity_guard.verify_group(
-            self.context, g.detail, self._known_failures(g),
-            timeout_seconds=self.settings.test_timeout_seconds, python_executable=self.settings.test_python,
-        )
-        self._record_verification(g, targeted, regression)
-        if not problems:
-            self._applied_diff = None  # the repair stays
-            g.accepted = True
-            g.decision, g.decided_by = g.analysis.recommended_decision, AgentRole.SINGLE_AGENT
-            return Stage.DECIDED
-        self._revert()
-        g.patch.application_status = PatchApplicationStatus.REVERTED
-        g.patch.apply_error = "; ".join(problems)
-        return self._rejected(g, tuple(problems))
+        """A plain rerun (``verify_group``); B1 has no Guard."""
+        return self._verify_tests_only(g, AgentRole.SINGLE_AGENT)
 
     @staticmethod
     def _item_for(g: GroupState, step: B1Step | None, when: str) -> B1Decision | str:

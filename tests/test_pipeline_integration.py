@@ -342,3 +342,44 @@ def test_a2_and_b1_records_on_the_same_input_are_comparable(worktree: Path) -> N
     assert not b1.integrity.guard_ran
     assert a2.provenance.prompt_template_version != b1.provenance.prompt_template_version
     assert set(a2.model_dump()) == set(b1.model_dump())  # one result format for every condition
+
+
+class _EmptyMemory:
+    """A store with nothing usable (A3 needs one, like FULL); a write would be a failure of the ablation."""
+
+    def read(self, context, function_qualname):
+        from testorcode.schemas.contracts import MemoryReadResult
+
+        return MemoryReadResult(checks=())
+
+    def write(self, record, approval):
+        raise AssertionError("A3 has no Integrity Guard, so nothing may write memory")
+
+
+def test_a3_accepts_the_test_repair_that_the_guard_escalates(worktree: Path, monkeypatch) -> None:
+    """The ablation's effect on one input: the same scripted UPDATE_TEST repair (green, strength unmeasured) is
+    escalated and reverted by the Guard (A2) but accepted on the green rerun alone without it (A3)."""
+    checks = []
+    monkeypatch.setattr(integrity_guard, "mutation_check", lambda *a, **k: checks.append(1) or MutationCheck(
+        gaps=("no executable cached mutant (test harness)",)))
+    repair = edit("tests/test_synthlib.py", "== 'a'", "== 'A'", ["ev-msg"])
+    replies = {AgentRole.INTENT_ANALYST: [analysis(DecisionLabel.UPDATE_TEST)], AgentRole.REPAIRER: [repair],
+               AgentRole.INTEGRITY_GUARD: [CONSISTENT]}
+
+    with_guard = run_episode(S1, worktree_path=worktree, settings=SETTINGS, llm=FakeLLMClient(replies))
+    assert with_guard.integrity.guard_decision is GuardDecision.ESCALATE and len(checks) == 1
+    assert with_guard.final_test_status is TestRunStatus.FAILED
+    assert (worktree / "tests/test_synthlib.py").read_text() == TESTS  # reverted
+
+    a3 = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A3", "TEST_TIMEOUT_SECONDS": "60"})
+    llm = FakeLLMClient(replies)
+    without = run_episode(S1, worktree_path=worktree, settings=a3, llm=llm, memory=_EmptyMemory(),
+                          maintainer=lambda *_: pytest.fail("no Guard approval to review"))
+    assert without.outcome.status is RunStatus.COMPLETED and len(checks) == 1  # no mutation check in A3
+    assert not any(c["role"] is AgentRole.INTEGRITY_GUARD for c in llm.calls)  # no semantic review either
+    [pred] = without.predictions
+    assert pred.predicted_action is DecisionLabel.UPDATE_TEST and pred.decided_by is AgentRole.INTENT_ANALYST
+    assert without.integrity.guard_ran is False and without.memory_writes == []
+    assert without.patches[0].application_status is PatchApplicationStatus.APPLIED
+    assert without.final_test_status is TestRunStatus.PASSED
+    assert "== 'A'" in (worktree / "tests/test_synthlib.py").read_text()  # the unverified test edit stays

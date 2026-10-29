@@ -185,3 +185,26 @@ def test_b1_through_the_runner_has_no_memory(tmp_path, stream, monkeypatch) -> N
     config, result, records = run(tmp_path, stream, monkeypatch, [B1], [0], clients)
     assert result.ran == 2 and all(r.condition is B1 and r.memory_reads == [] for r in records)
     assert not memory_dir(config).exists()
+
+
+def test_a3_through_the_runner_reads_but_never_writes_its_own_store(tmp_path, stream, monkeypatch) -> None:
+    """A3: its own namespaced store (seeded like FULL's), green reruns accepted without a Guard, no writes, and a
+    resumed experiment does not re-run finished episodes."""
+    a3 = ExperimentCondition.A3_NO_INTEGRITY_GUARD
+    llms = [update_test_llm("== 'a'", "== 'A'", "ev-msg"), update_test_llm("== 'b'", "== 'B'", "ev-msg")]
+    clients = {(a3, 0): llms}
+    config, result, records = run(tmp_path, stream, monkeypatch, [a3], [0], clients)
+
+    assert result.ran == 2 and result.skipped_unavailable == []
+    for r in records:
+        assert r.condition is a3 and r.outcome.status is RunStatus.COMPLETED
+        assert r.integrity.guard_ran is False and r.memory_writes == []
+        assert [p.decided_by for p in r.predictions] == [AgentRole.INTENT_ANALYST]
+        assert r.evaluation is not None
+    assert not any(c["role"] is AgentRole.INTEGRITY_GUARD for llm in llms for c in llm.calls)
+    path = memory_path(memory_dir(config), "A3", 0, "dev")
+    assert path.with_name(path.name + ".namespace").read_text().strip() == "A3/seed=0/dev"
+    assert not path.exists() or path.read_text().strip() == ""  # nothing seeded here, nothing written
+
+    again = run_experiment(config, run_one=lambda *a, **k: pytest.fail("finished runs must not be re-run"))
+    assert again.ran == 0 and len(read_records(config.out / "runs.jsonl")) == 2

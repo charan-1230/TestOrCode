@@ -32,6 +32,7 @@ values.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import sys
 import tempfile
@@ -201,6 +202,8 @@ def verify_behaviour(
         python = str(python_executable or "python")
     else:
         python = str(python_executable or sys.executable)
+        if os.sep in python and not os.path.isabs(python):  # as in pytest_runner; absolute paths stay verbatim
+            python = os.path.abspath(python)
 
     token = secrets.token_hex(16)
     with tempfile.TemporaryDirectory(prefix="testorcode-verify-") as tmp:

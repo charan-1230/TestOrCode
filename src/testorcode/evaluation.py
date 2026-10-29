@@ -34,6 +34,7 @@ from testorcode.schemas.result_schemas import (
     IntegrityEvaluation,
     PatchApplicationStatus,
     PredictedDecision,
+    ProbeStatus,
     RepairEvaluation,
     RepairVerificationDimension,
     RunEvaluation,
@@ -385,8 +386,11 @@ def _summarize_condition(
                 value = recall_at_k(retrieved, gold_ids, k)
                 if value is not None:
                     recall[k].append(value)
+        # Citable = what the orchestrator accepts: retrieved this episode, or a memory record whose probe passed.
+        citable = [*retrieved, *(m.record_id for m in rec.memory_reads
+                                 if m.probe_status is ProbeStatus.PASSED and m.blocked_reason is None)]
         for prediction in rec.predictions:
-            rate = citation_existence_rate(prediction.cited_evidence_ids, retrieved)
+            rate = citation_existence_rate(prediction.cited_evidence_ids, citable)
             if rate is not None:
                 citation_rates.append(rate)
         repair = evaluation.repair

@@ -249,7 +249,9 @@ testorcode/
 
 All Day-2 modules are implemented (only `tools.git_tools.git_log/git_show/git_blame` remain stubs);
 `docs/interfaces.md` lists the modules, their contracts and owners.  Experiments: `scripts/run_experiment.py` then
-`scripts/summarize_results.py <out>/runs.jsonl`.
+`scripts/summarize_results.py <out>/runs.jsonl`, and for test integrity across conditions (A3 and B1 have no Guard
+report) `scripts/audit_integrity.py --runs <out>/runs.jsonl --python ../boltons-venv/bin/python`.  Conditions that run:
+FULL, A2, A3 (no Integrity Guard), B1 and the trivial baselines; Day-3 Human-2 work: `docs/day3-human2.md`.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
 

@@ -216,6 +216,17 @@ def test_citation_existence_rate_counts_only_retrieved_citations() -> None:
     assert metrics([run])["citation_existence_rate"] == 0.5
 
 
+def test_a_usable_memory_record_is_a_citable_id_and_a_blocked_one_is_not() -> None:
+    from testorcode.schemas.result_schemas import MemoryReadEvent, ProbeStatus
+
+    ev = RetrievedEvidence(evidence_id="msg:a", source_type="commit_message", source_ref="x", rank=1)
+    reads = [MemoryReadEvent(record_id="mem-ok", probe_status=ProbeStatus.PASSED, used_as_evidence=True),
+             MemoryReadEvent(record_id="mem-bad", probe_status=ProbeStatus.FAILED, blocked_reason="probe_failed")]
+    cited = {"cited_evidence_ids": ["msg:a", "mem-ok", "mem-bad"]}
+    run = record("dev-07", D.FIX_CODE, retrieved_evidence=[ev], memory_reads=reads, pred=cited)
+    assert metrics([run])["citation_existence_rate"] == pytest.approx(2 / 3)
+
+
 def test_tokens_are_averaged_only_over_runs_that_reported_them() -> None:
     reported = record("dev-05", D.UPDATE_TEST, usage=TokenUsage(reported=True, total_tokens=100, input_tokens=60, output_tokens=40))
     unreported = record("dev-06", D.UPDATE_TEST)

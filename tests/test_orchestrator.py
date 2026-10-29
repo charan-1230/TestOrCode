@@ -636,7 +636,7 @@ APPROVED = {
 }
 
 
-@pytest.mark.parametrize("condition", ["A1", "A3", "A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
+@pytest.mark.parametrize("condition", ["A1", "A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
 def test_condition_without_a_code_path_fails_explicitly(condition: str) -> None:
     settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
     record, er, _, _ = run(S1, {}, settings=settings)
@@ -649,6 +649,99 @@ def test_condition_without_a_code_path_fails_explicitly(condition: str) -> None:
 
 def test_full_without_memory_store_fails_explicitly() -> None:
     record, _, _, _ = run(S1, {}, settings=FULL_SETTINGS)
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert "needs a MemoryStore" in record.errors[0].message
+
+
+# --------------------------------------------------------------------------- #
+# Day 3: A3, no Integrity Guard (Human 2)
+# --------------------------------------------------------------------------- #
+
+A3_SETTINGS = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A3"})
+_PASSED_RUN = PytestExecution(selectors=("tests",), command=("pytest",), status=TestRunStatus.PASSED, exit_code=0,
+                              passed=1, failed=0)
+
+
+@pytest.fixture
+def group_verification(monkeypatch):
+    """``verify_group`` stand-in (the worktree here is fictional): pops one problem tuple per call."""
+    from testorcode.agents import integrity_guard
+
+    outcomes: list[tuple[str, ...]] = []
+    calls: list[frozenset[str]] = []
+
+    def verify_group(context, detail, known_failures, *, timeout_seconds, python_executable=None):
+        calls.append(known_failures)
+        return _PASSED_RUN, _PASSED_RUN, (outcomes.pop(0) if outcomes else ())
+
+    monkeypatch.setattr(integrity_guard, "verify_group", verify_group)
+    return outcomes, calls
+
+
+class NoGuardAgents(FakeAgents):
+    def guard(self, *args, **kwargs):  # A3 must never call the Integrity Guard
+        raise AssertionError("the Integrity Guard ran under A3")
+
+
+def run_a3(replies: dict, **kw):
+    return run(S1, replies, settings=A3_SETTINGS, memory=kw.pop("memory", FakeMemory()), fake=NoGuardAgents(), **kw)
+
+
+def test_a3_accepts_a_verified_patch_without_the_guard(group_verification) -> None:
+    _, calls = group_verification
+    store = FakeMemory()
+    record, er, tools, _ = run_a3({
+        AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("mem-1",))],
+        AgentRole.REPAIRER: [proposal(G1)],
+    }, memory=store, maintainer=lambda *_: pytest.fail("A3 has no Guard approval for a maintainer to review"))
+    assert record.outcome.status is RunStatus.COMPLETED
+    assert len(calls) == 1 and tools.applied == [STORED_TEST_DIFF] and tools.reverted == []
+    [pred] = record.predictions
+    assert pred.predicted_action is DecisionLabel.UPDATE_TEST and pred.decided_by is AgentRole.INTENT_ANALYST
+    assert record.integrity.guard_ran is False and record.integrity.guard_decision is GuardDecision.NOT_RUN
+    assert record.memory_writes == [] and store.writes == 0  # only the Guard writes memory
+    assert record.outcome.maintainer_approved is None
+    [event] = record.memory_reads
+    assert event.record_id == "mem-1" and event.used_as_evidence is True  # memory is still read (probe-gated)
+    assert [r.run_id for r in record.test_runs] == ["baseline", f"{G1}-r0-post", f"{G1}-r0-regression"]
+    assert Stage.INTEGRITY_GUARD in stages(er) and stages(er)[-1] is Stage.DECIDED
+    [group] = record.failure_groups
+    assert group.disposition == "accepted" and group.guard_decision is None and group.guard_reasons == []
+
+
+def test_a3_verification_events_are_the_harness_not_the_guard(group_verification) -> None:
+    record, _, _, _ = run_a3({AgentRole.INTENT_ANALYST: [analysis(G1)], AgentRole.REPAIRER: [proposal(G1)]})
+    assert AgentRole.INTEGRITY_GUARD not in {e.called_by for e in record.tool_events}
+
+
+def test_a3_failed_verification_gets_one_revision_then_escalates(group_verification) -> None:
+    outcomes, calls = group_verification
+    outcomes.extend([("previously passing tests now fail: t1",), ("targeted tests still fail",)])
+    record, _, tools, fake = run_a3({
+        AgentRole.INTENT_ANALYST: [analysis(G1)], AgentRole.REPAIRER: [proposal(G1), proposal(G1)],
+    })
+    assert len(calls) == 2 and len(tools.reverted) == 2
+    assert fake.repair_reasons[1] == ("previously passing tests now fail: t1",)
+    [pred] = record.predictions
+    assert pred.predicted_action is DecisionLabel.ESCALATE
+    assert record.outcome.escalation.trigger == "guard_rejection_after_revision"
+    assert [p.application_status for p in record.patches] == [PatchApplicationStatus.REVERTED] * 2
+    assert record.integrity.guard_ran is False
+
+
+def test_a3_keeps_tool_level_patch_safety(group_verification) -> None:
+    _, calls = group_verification
+    blocked = PatchValidation(valid=True, allowed=False, changed_paths=("setup.py",),
+                              rejection_reasons=("protected path: setup.py",))
+    record, _, tools, _ = run_a3({AgentRole.INTENT_ANALYST: [analysis(G1)],
+                                  AgentRole.REPAIRER: [proposal(G1), proposal(G1)]},
+                                 tools=FakePatchTools(validations=[blocked, blocked]))
+    assert calls == [] and tools.applied == []
+    assert record.predictions[0].predicted_action is DecisionLabel.ESCALATE
+
+
+def test_a3_without_memory_store_fails_explicitly() -> None:
+    record, _, _, _ = run(S1, {}, settings=A3_SETTINGS)
     assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
     assert "needs a MemoryStore" in record.errors[0].message
 

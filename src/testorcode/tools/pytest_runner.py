@@ -230,6 +230,8 @@ def run_pytest(
         python = str(python_executable or "python")
     else:
         python = str(python_executable or sys.executable)
+        if os.sep in python and not os.path.isabs(python):  # relative: unresolvable from the worktree/sandbox
+            python = os.path.abspath(python)  # abspath, not resolve: a venv's python symlink must stay the venv's
         if not Path(python).is_file():
             raise ToolError(f"pytest could not be started: python executable not found: {python}")
 

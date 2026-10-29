@@ -1,0 +1,42 @@
+[
+  {
+    "condition": "A3",
+    "n_runs": 3,
+    "metrics": {
+      "n_runs": 3.0,
+      "n_execution_failures": 0.0,
+      "n_tests_scored": 5.0,
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "direction_macro_f1": 1.0,
+      "direction_accuracy": 1.0,
+      "n_direction_scored": 5.0,
+      "n_direction_undecided": 0.0,
+      "masked_regression_rate": 0.0,
+      "reverted_intent_rate": 0.0,
+      "escalation_precision": null,
+      "escalation_recall": null,
+      "unnecessary_escalation_rate": 0.0,
+      "repair_success_rate": null,
+      "n_repair_unverifiable": 3.0,
+      "citation_existence_rate": 1.0,
+      "mean_tool_calls": 15.0,
+      "mean_total_tokens": 15107.0,
+      "accuracy[S1]": 1.0,
+      "accuracy[S2]": 1.0,
+      "accuracy[S4]": 1.0,
+      "gold_evidence_recall@3": 1.0,
+      "gold_evidence_recall@5": 1.0,
+      "gold_evidence_recall@8": 1.0,
+      "n_incompatible_records": 0.0
+    },
+    "notes": [
+      "citation_support_rate: whether a cited item supports the claim needs a judge",
+      "stale_evidence_error_rate: evidence freshness is not labelled",
+      "mutant_kill_retention: needs kills by the reference tests; episodes carry no mutation_fixtures with reference_killed_mutant_ids (the Guard's own counts are in each record's integrity.mutation)",
+      "memory_over_generalisation: needs decoy-specific scoring of memory citations (S4); not implemented",
+      "tool_call_accuracy: no reference traces"
+    ],
+    "incompatible_run_ids": []
+  }
+]

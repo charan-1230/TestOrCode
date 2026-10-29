@@ -26,6 +26,7 @@ src/testorcode/
 │                        record_from_repair                        implemented (Day 2, Human 2)
 ├── conditions.py        ConditionProfile, episode_for_condition    implemented
 ├── evaluation.py        evaluate_run, summarize                   implemented (Human 3)
+├── integrity_audit.py   audit_run, summarize_audits (harness)     implemented (Day 3, Human 2)
 ├── baselines.py         trivial always-UPDATE_TEST/FIX_CODE      implemented (Human 3)
 ├── experiment.py        ExperimentConfig, run_experiment          implemented (Human 3; FULL memory wiring Day 2)
 ├── agents/              triage, intent_analyst, repairer,
@@ -42,6 +43,8 @@ src/testorcode/
 ```
 
 `memory` imports `tools.probes`/`tools.git_tools`; no tool imports `memory`.
+`integrity_audit` (harness side, reads ground truth like `evaluation`) imports `tools.mutation`/`tools.weakening`;
+no agent, tool or the orchestrator imports it.
 
 Import graph (no cycles): `schemas.*` → `errors` → `config` → `llm_client`, `retrieval`, `memory`, `tools.*` →
 `agents.*` → `orchestrator`. `evaluation` depends only on `schemas`. `logging_config` depends on nothing in the package.
@@ -115,6 +118,8 @@ All agents are plain functions; dependencies are passed in explicitly (no framew
 | `retrieval` | `build_retriever(corpus, worktree_path=None) -> Retriever`; `Retriever.search(query, *, top_k)`; implemented (BM25), see `docs/retrieval.md` | agent-core |
 | `memory` | `MemoryStore.read(context, function_qualname) -> MemoryReadResult`; `MemoryStore.write(record, approval)`. `JsonlMemoryStore(path, *, python_executable=None, timeout_seconds=120, isolation="auto", docker_image=None, stale_after_failures=2, check_history=True, namespace=None)`: scoped to `(repo_id, function_qualname)`; every read re-runs each record's probe outside the store lock (PASSED → usable; FAILED → `probe_failed`, flagged stale after 2 consecutive failures; ERROR → `probe_not_run`); superseded, stale and not-yet-approved-at-this-commit (`out_of_scope`) records are blocked without running; writes need a matching `MemoryApproval` (record id and commit) and are atomic; only an approved UPDATE_TEST record supersedes the function's older records (FIX_CODE and seeded records supersede nothing); `seed(records, *, worktree_path)` is the harness-only path for `visible_memory` (before any agent acts). **Isolation contract:** one store per condition, seed and stream: `memory_path(base, condition, seed, stream)`, `namespace=memory_namespace(condition, seed, stream)` (a mismatching namespace raises `ConfigError`) | sandbox (5-day plan: Human 2) |
 | `evaluation` | `evaluate_run(record, episode) -> RunEvaluation`; `summarize(records, episodes, *, dataset_version=None) -> list[ConditionSummary]`: records from another dataset revision (or naming tests the episode lacks) are set aside (`n_incompatible_records`, `incompatible_run_ids`), never scored; `direction_macro_f1`/`direction_accuracy` score the side blamed per failing test (an escalation by its hypothesis; gold-ESCALATE tests excluded; undecided = miss), `macro_f1`/`accuracy` the final action | evaluation |
+| `integrity_audit` | `audit_run(record, episode, *, repo, materialize, python, timeout_seconds=120, isolation="auto", cached_mutants=None, max_mutants=6, scratch=None) -> RunAudit`: re-measures every **accepted** repair of a saved run after the run, the same way in every condition (A3/B1 have no Guard report): test patches → `analyse_test_changes` and mutant-kill retention (mutants of the labelled function killed by the repaired tests ∩ by the developer's `reference_repairs` tests / killed by the reference; `None` when the reference kills none); source patches → tests touched and oracle sensitivity. The CI state is rebuilt from the clone (`materialize`), run worktrees are never touched. Audit version 2: only killed/survived mutants are measured; per copy `measured_*`/`killed_*`/`unmeasured_*`; retention only over mutants measured in both copies (`retention_basis`, `retention_denominator`); `oracle_sensitive` is `False` only when every mutant was measured and none killed, else `None` if undetermined; `status` `measured`/`partial`/`not_measured`. `summarize_audits`, `markdown_table`; CLI `scripts/audit_integrity.py [--out-dir DIR] [--overwrite]` writes `integrity_audit.{jsonl,md}` (default next to `runs.jsonl`) and refuses with exit 2, writing nothing, on malformed/empty input, conflicting `run_id`s, unknown episodes or existing reports; exact duplicate lines are audited once and reported | sandbox (Human 2) |
+| `scripts/build_mutant_cache.py` | `python scripts/build_mutant_cache.py --python PY [--repo R] [--episodes ...] [--limit N] [--timeout S] [--isolation M] [--out FILE]` builds the mutant catalogue read by `tools.mutation.load_cached_mutants` (default `results/mutants/dev_cached_mutants.json`). Top level: `generator` (`seed`, `limit`, `tool`), `kills_measured_against`, `python` (absolute), `isolation`, `entries`. Each entry: `episode_id`, `function_qualname`, `commit`, `test_selector`, `measurement`, `run_status` (`null` if the function was not found), `run_reason`, `baseline_failing`, `counts`, `seconds`, `mutation_fixture` (`null` if not found), `outcomes` (`mutant_id`, `outcome`, `killed_by`, `detail`). `measurement`: `complete` = every mutant ran to killed/survived (a `counts` of zero kills here is a real measurement); `incomplete` = some mutants timed out, errored, were invalid or not run (`counts` still tally each outcome); `not_measured` = no usable baseline (run status not `passed`), no mutant generated, or function not found: `counts` is `null`, never zeros, and `run_reason` says why. A `null` count means "not measured", not 0. Exit 0 only if every entry is `complete`; then `--out` is replaced atomically (temporary file in the same directory) and `<out>.incomplete` removed. Otherwise exit 1, `--out` is left exactly as it was (or absent), and the rejected build is written to `<out>.incomplete` for inspection. Only the mutant specifications are ever reused; stored outcomes are not | sandbox (Human 2) |
 | `experiment` | `run_experiment(config, *, run_one=None)`; `default_run_one(config, *, settings=None, llm_factory=None, materializer=None)`: episodes in stream order; FULL gets one `JsonlMemoryStore` per condition/seed/split under `<out>/memory/` (`memory_path`/`memory_namespace`), seeded with `visible_memory` before each episode; other conditions `memory=None` | evaluation |
 
 Boundaries:
@@ -125,7 +130,7 @@ Boundaries:
   episode's current commit (`HistoryCutoffError`). Patch scope is decided by `EditPolicy.classify_path`, the single path rule shared by
   `patch_tools` and the Integrity Guard.
 - **Repairer proposes, tools apply.** A `PatchProposal` never touches the worktree.
-- **Evaluation** is the only module that reads `Episode.ground_truth`.
+- **Evaluation** (and the harness-side `integrity_audit`) are the only modules that read `Episode.ground_truth`.
 
 ## 4. Agent communication flow
 
@@ -246,9 +251,16 @@ changes.
 **Orchestrator.**
 - *Conditions:* `settings.experiment_condition` selects the episode view (`conditions.episode_for_condition`) and memory
   (`profile_for(...).memory`; otherwise `memory` is ignored). Each run class executes only its own conditions:
-  `EpisodeRun` → A2 (the `Settings` default) and FULL (needs a `MemoryStore`); `SingleAgentRun` → B1. `run_episode`
-  picks the class. Conditions without a code path (A1, A3, and the non-proposal B0, B2, A4, A5, trivial), or a
-  condition sent to the wrong class, fail explicitly as `ORCHESTRATOR_ERROR` at stage `setup`.
+  `EpisodeRun` → A2 (the `Settings` default), FULL and A3 (both need a `MemoryStore`); `SingleAgentRun` → B1.
+  `run_episode` picks the class. Conditions without a code path (A1, and the non-proposal B0, B2, A4, A5, trivial),
+  or a condition sent to the wrong class, fail explicitly as `ORCHESTRATOR_ERROR` at stage `setup`.
+- *A3 (no Integrity Guard, Day 3):* `profile.integrity_guard=False` maps the `INTEGRITY_GUARD` stage to
+  `EpisodeRun._verify_without_guard`: the same `verify_group` rerun as B1 (group tests pass, no new suite failures)
+  decides, `decided_by=intent_analyst`. No weakening/scope-of-group/evidence/semantic review, no mutation check, no
+  maintainer and no memory write (only the Guard writes memory; A3 still reads probe-gated memory).
+  `integrity.guard_ran=False`; the verification runs are logged with role `orchestrator`. Tool-level patch safety
+  (`patch_tools` + `patch_content`) is unchanged, so test weakening stays blocked in every condition; the post-hoc
+  integrity audit (`integrity_audit`) measures A3/B1 repairs.
 - *B1* (`SingleAgentRun`): shared `stable_failures` baseline, one agent with standard RAG (`naive_query` through
   `search_repo`) and the same three tools, at most `TOOL_STEPS_PER_TEST` (6) model calls per failing test it is asked
   about; its own grouping (`B1Decision` items); the same evidence and decision-policy checks; one placement re-ask for

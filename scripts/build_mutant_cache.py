@@ -10,6 +10,12 @@ Kills are by the tests **at the parent commit**: a test-strength baseline for th
 reference tests (``reference_killed_mutant_ids`` is therefore left unset).  Only dev episodes are read; the frozen test
 split is never touched.
 
+Each entry's ``measurement`` is ``complete`` (every mutant ran to killed/survived), ``incomplete`` (some mutants timed
+out, errored, were invalid or not run; ``counts`` still show each outcome) or ``not_measured`` (no usable baseline, no mutant
+generated, or the function was not found; ``counts`` is ``null``, never zeros).  ``--out`` is published (temporary
+file + atomic replace) only when every entry is complete, exit 0.  Otherwise exit 1, ``--out`` is left exactly as it
+was, and the rejected build is written to ``<out>.incomplete`` for inspection (removed by the next complete build).
+
     python scripts/build_mutant_cache.py --repo ../boltons --python ../boltons-venv/bin/python
 """
 
@@ -18,6 +24,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import subprocess
 import sys
 import tarfile
@@ -46,7 +53,20 @@ def export(repo: Path, sha: str, dest: Path) -> None:
         archive.extractall(dest, filter="data")
 
 
-def main() -> int:
+def write_atomic(target: Path, text: str) -> None:
+    """Write ``text`` to ``target`` through a temporary file in the same directory and an atomic replace."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=target.parent, prefix=f".{target.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.replace(tmp, target)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--repo", default=str(ROOT.parent / "boltons"))
     parser.add_argument("--python", required=True, help="interpreter of the pinned pilot environment")
@@ -55,7 +75,10 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=120)
     parser.add_argument("--isolation", default="auto")
     parser.add_argument("--out", default=str(ROOT / "results" / "mutants" / "dev_cached_mutants.json"))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    # The sandbox runs from a scratch directory, so a relative interpreter path would not be found there and every
+    # mutant would go unmeasured.  abspath (not resolve): a venv's python is a symlink that must stay the venv's.
+    args.python = os.path.abspath(args.python)
 
     episodes = {e.episode_id: e for e in load_episodes(episode_path("dev"))}
     entries = []
@@ -70,7 +93,14 @@ def main() -> int:
             context = EpisodeContext.from_episode_input(episode.agent_input, work)
             located = locate_function(context, function)
             if located is None:
-                print(f"{episode_id}: {function} not found at {parent[:10]}", file=sys.stderr)
+                reason = f"{function} not found at {parent[:10]}"
+                print(f"{episode_id}: NOT MEASURED: {reason}", file=sys.stderr)
+                entries.append({
+                    "episode_id": episode_id, "function_qualname": function, "commit": parent,
+                    "test_selector": test_file, "measurement": "not_measured", "run_status": None,
+                    "run_reason": reason, "baseline_failing": [], "counts": None, "seconds": None,
+                    "mutation_fixture": None, "outcomes": [],
+                })
                 continue
             path, module, inner = located
             source = (work / path).read_text(encoding="utf-8")
@@ -81,23 +111,46 @@ def main() -> int:
             seconds = round(time.monotonic() - started, 1)
         outcomes = [{"mutant_id": o.mutant_id, "outcome": o.outcome, "killed_by": list(o.killed_by),
                      "detail": o.detail} for o in run.outcomes]
-        counts = {k: sum(o["outcome"] == k for o in outcomes) for k in ("killed", "survived", "timeout", "error", "invalid")}
+        reason = run.reason or (None if mutants else "no mutants generated")
+        if run.status.value != "passed" or not mutants:
+            measurement, counts = "not_measured", None  # no usable baseline or no mutant: not "0 kills"
+        else:
+            counts = {k: sum(o["outcome"] == k for o in outcomes)
+                      for k in ("killed", "survived", "timeout", "error", "invalid")}
+            measured = sum(o["outcome"] in ("killed", "survived") for o in outcomes)
+            measurement = "complete" if measured == len(mutants) else "incomplete"
         entries.append({
             "episode_id": episode_id, "function_qualname": function, "commit": parent, "test_selector": test_file,
-            "run_status": run.status.value, "run_reason": run.reason, "baseline_failing": sorted(run.baseline_failing),
+            "measurement": measurement, "run_status": run.status.value, "run_reason": reason,
+            "baseline_failing": sorted(run.baseline_failing),
             "counts": counts, "seconds": seconds,
             "mutation_fixture": MutationFixture(function_qualname=function, mutants=mutants).model_dump(mode="json"),
             "outcomes": outcomes,
         })
-        print(f"{episode_id} {function}: {len(mutants)} mutants -> {counts} ({seconds}s)")
+        if measurement == "not_measured":
+            note = f" NOT MEASURED: {run.status.value} {reason or ''}".rstrip()
+        elif measurement == "incomplete":
+            note = f" INCOMPLETE: {len(mutants) - counts['killed'] - counts['survived']} mutant(s) not measured"
+        else:
+            note = ""
+        print(f"{episode_id} {function}: {len(mutants)} mutants -> {counts} ({seconds}s){note}")
 
     out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({
+    text = json.dumps({
         "generator": {"seed": DEFAULT_SEED, "limit": args.limit, "tool": "testorcode.tools.mutation.generate_mutants"},
         "kills_measured_against": "the function's test file at the episode's parent commit (not the reference repair)",
         "python": args.python, "isolation": args.isolation, "entries": entries,
-    }, indent=2) + "\n")
+    }, indent=2) + "\n"
+    incomplete = [e["episode_id"] for e in entries if e["measurement"] != "complete"]
+    rejected = out.with_name(out.name + ".incomplete")
+    if incomplete:
+        # Validated before publishing: a failed build never replaces --out (a valid catalogue stays as it was).
+        write_atomic(rejected, text)
+        print(f"measurement incomplete or failed for: {', '.join(incomplete)}", file=sys.stderr)
+        print(f"{out} left unchanged; the rejected build is in {rejected}", file=sys.stderr)
+        return 1
+    write_atomic(out, text)
+    rejected.unlink(missing_ok=True)
     print(f"wrote {out}")
     return 0
 
