@@ -19,8 +19,7 @@ value or exception.  ``verify_behaviour`` runs it in a *fresh* sandbox:
 ``ProbeStatus`` (existing contract) is the result vocabulary: ``PASSED`` means
 every case matched; ``FAILED`` means a case did not; ``ERROR``/``NOT_RUN``
 mean "not verified".  ``trusted_outcome`` combines a raw post-repair run with
-a verification and maps it onto ``GuardDecision`` for the (not yet
-implemented) Integrity Guard: only ``PASSED`` + ``PASSED`` may recommend
+a verification and maps it onto ``GuardDecision``: only ``PASSED`` + ``PASSED`` may recommend
 ``APPROVE``, a failed probe recommends ``REJECT``, everything else ``ESCALATE``.
 
 Limits: a probe only covers its own cases (choose discriminating inputs; a
@@ -36,6 +35,7 @@ import json
 import secrets
 import sys
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Final, Literal
 
@@ -44,8 +44,13 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 from testorcode.errors import ToolError
 from testorcode.logging_config import get_logger
 from testorcode.schemas.contracts import PytestExecution
-from testorcode.schemas.episode_schemas import EditPolicy
-from testorcode.schemas.result_schemas import GuardDecision, ProbeStatus, TestRunStatus
+from testorcode.schemas.episode_schemas import EditPolicy, RepairDirection
+from testorcode.schemas.result_schemas import (
+    GuardDecision,
+    MutationResult,
+    ProbeStatus,
+    TestRunStatus,
+)
 from testorcode.tools.pytest_runner import _child_env, _execute
 from testorcode.tools.sandbox import Isolation, layout_for, resolve_isolation, wrap_command
 
@@ -119,6 +124,9 @@ class TrustedVerification(BaseModel):
     probe_id: str | None = None
     reasons: tuple[str, ...] = ()
     isolation: str | None = None
+    # What established the result (``repair_outcome``): a harness probe, the untouched original tests (FIX_CODE), or
+    # measured test strength on cached mutants (UPDATE_TEST).  None for plain probe runs (backward compatible).
+    basis: Literal["probe", "original_tests", "mutation"] | None = None
 
     @model_validator(mode="after")
     def _check(self) -> TrustedVerification:
@@ -184,7 +192,8 @@ def verify_behaviour(
         )
 
     source_roots = [r.strip("/") for r in policy.allowed_source_roots]
-    if not _module_in_source_roots(root, source_roots, probe.module):
+    import_dir = import_base(root, source_roots, probe.module)
+    if import_dir is None:
         return unverified(
             ProbeStatus.ERROR, f"probe module {probe.module!r} is not in the source roots"
         )
@@ -203,7 +212,7 @@ def verify_behaviour(
         spec = {
             "module": probe.module,
             "function": probe.function,
-            "import_roots": [f"{layout.worktree}/{r}" for r in source_roots],
+            "import_roots": [f"{layout.worktree}/{import_dir}"],
             # Arguments only: expected values never enter the sandbox.
             "cases": [{"args": list(c.args), "kwargs": c.kwargs} for c in probe.cases],
         }
@@ -296,6 +305,65 @@ def trusted_outcome(
     return verification
 
 
+def repair_outcome(
+    direction: RepairDirection,
+    post_repair_run: PytestExecution | None,
+    *,
+    probe_verification: TrustedVerification | None = None,
+    mutation: MutationResult | None = None,
+    mutation_problems: Sequence[str] = (),
+    mutation_gaps: Sequence[str] = (),
+) -> TrustedVerification:
+    """The Guard's final verification of a repair whose deterministic checks already passed.
+
+    Approval rule (proposal section 7, step 5; the design handed over in ``docs/day2-human1.readme.md`` section 7):
+
+    * a raw post-repair run that did not pass is ``FAILED`` (REJECT);
+    * a harness probe, when supplied, must pass: ``FAILED`` rejects, an unverifiable probe escalates;
+    * **FIX_CODE**: the tests are the original, untouched oracle (the Guard has checked no test file changed and the
+      whole suite has no new failure, and ``patch_content`` refuses source patches that detect the test run), so
+      passing them verifies the repair (``basis="original_tests"``) - unless the oracle-sensitivity mutation check
+      found that those tests detect none of the repaired function's mutants (``mutation_gaps``: escalate);
+    * **UPDATE_TEST**: the oracle itself was edited, so a green run proves nothing.  The updated tests must have
+      *measured* strength on cached mutants of the function (``tools.mutation``).  Measured weakening
+      (``mutation_problems``) is ``FAILED``; strength that was not or could not be measured, or that is insufficient
+      (``mutation_gaps``), is ``NOT_RUN`` (escalate).  Never approved on a green run alone.
+
+    ``trusted_outcome`` (probe-only) is kept unchanged for callers that need the strict rule.
+    """
+    def unverified(status: ProbeStatus, *reasons: str) -> TrustedVerification:
+        probe_id = probe_verification.probe_id if probe_verification is not None else None
+        return TrustedVerification(status=status, probe_id=probe_id, reasons=tuple(reasons))
+
+    if post_repair_run is None or post_repair_run.status is not TestRunStatus.PASSED:
+        return unverified(ProbeStatus.FAILED, "the post-repair test run did not pass")
+    if probe_verification is not None and not probe_verification.verified:
+        return probe_verification
+    probed = probe_verification is not None
+    if direction is RepairDirection.FIX_CODE:
+        if mutation_problems:
+            return unverified(ProbeStatus.FAILED, *mutation_problems)
+        if mutation_gaps:
+            return unverified(ProbeStatus.NOT_RUN, *mutation_gaps)
+        return TrustedVerification(
+            status=ProbeStatus.PASSED, probe_id=probe_verification.probe_id if probed else None,
+            isolation=probe_verification.isolation if probed else None,
+            basis="probe" if probed else "original_tests",
+        )
+    if mutation_problems:
+        return unverified(ProbeStatus.FAILED, *mutation_problems)
+    if mutation is None or mutation.status is not TestRunStatus.PASSED or not mutation.mutants_total:
+        status = "not run" if mutation is None else mutation.status.value
+        return unverified(
+            ProbeStatus.NOT_RUN,
+            f"strength of the updated tests was not measured on cached mutants (mutation check {status})",
+            *mutation_gaps,
+        )
+    if mutation_gaps:
+        return unverified(ProbeStatus.NOT_RUN, *mutation_gaps)
+    return TrustedVerification(status=ProbeStatus.PASSED, probe_id=None, basis="mutation")
+
+
 def _matches(case: ProbeCase, result: object) -> bool:
     if not isinstance(result, dict) or len(result) != 1:
         return False
@@ -306,10 +374,40 @@ def _matches(case: ProbeCase, result: object) -> bool:
 
 def _module_in_source_roots(root: Path, source_roots: list[str], module: str) -> bool:
     """The module is a file or package of the repository's own source, not tests or stdlib."""
-    rel = Path(*module.split("."))
+    return import_base(root, source_roots, module) is not None
+
+
+def import_base(root: Path, source_roots: list[str], module: str) -> str | None:
+    """Directory (relative to ``root``; ``"."`` is the root) to put on ``sys.path`` so ``module`` imports from a
+    source root, or None when the module is not the repository's own source.
+
+    Two layouts: a root that is itself a package (``boltons/`` with ``__init__.py``) is imported by its package name
+    from its parent (``boltons.cacheutils``); any other root (``src/``) holds top-level modules (``synthlib.core``).
+    """
+    found = locate_module(root, source_roots, module)
+    return found[0] if found else None
+
+
+def locate_module(root: Path, source_roots: list[str], module: str) -> tuple[str, str] | None:
+    """``(import directory, module file)``, both relative to ``root``, for a module of the repository's own source."""
+    parts = module.split(".")
     for source_root in source_roots:
         base = root / source_root
-        for candidate in (base / rel.with_suffix(".py"), base / rel / "__init__.py"):
-            if candidate.is_file() and not candidate.is_symlink():
-                return candidate.resolve().is_relative_to(base.resolve())
-    return False
+        if not source_root or not base.is_dir() or base.is_symlink():
+            continue
+        if (base / "__init__.py").is_file():
+            if parts[0] != base.name:
+                continue
+            import_dir, rel_parts = base.parent, parts[1:]
+        else:
+            import_dir, rel_parts = base, parts
+        if rel_parts:
+            rel = Path(*rel_parts)
+            candidates = (base / rel.with_suffix(".py"), base / rel / "__init__.py")
+        else:
+            candidates = (base / "__init__.py",)
+        for candidate in candidates:
+            safe = candidate.is_file() and not candidate.is_symlink()
+            if safe and candidate.resolve().is_relative_to(base.resolve()):
+                return import_dir.relative_to(root).as_posix(), candidate.relative_to(root).as_posix()
+    return None

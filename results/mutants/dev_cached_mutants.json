@@ -1,0 +1,518 @@
+{
+  "generator": {
+    "seed": 7,
+    "limit": 6,
+    "tool": "testorcode.tools.mutation.generate_mutants"
+  },
+  "kills_measured_against": "the function's test file at the episode's parent commit (not the reference repair)",
+  "python": "/home/manoj/Desktop/sem-4.1/LMA/group_project/boltons-venv/bin/python",
+  "isolation": "auto",
+  "entries": [
+    {
+      "episode_id": "dev-02",
+      "function_qualname": "boltons.tableutils.to_text",
+      "commit": "d70669ac4b1b31d1455a388270cb47b075c44cc0",
+      "test_selector": "tests/test_tableutils.py",
+      "run_status": "passed",
+      "run_reason": null,
+      "baseline_failing": [],
+      "counts": {
+        "killed": 2,
+        "survived": 4,
+        "timeout": 0,
+        "error": 0,
+        "invalid": 0
+      },
+      "seconds": 1.2,
+      "mutation_fixture": {
+        "function_qualname": "boltons.tableutils.to_text",
+        "mutants": [
+          {
+            "mutant_id": "mut-01",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 92: And -> Or",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -89,7 +89,7 @@\n             text = str(repr(obj))\n         except Exception:\n             text = str(object.__repr__(obj))\n-    if maxlen and len(text) > maxlen:\n+    if (maxlen or len(text) > maxlen):\n         text = text[:maxlen - 3] + '...'\n         # TODO: inverse of ljust/rjust/center\n     return text"
+          },
+          {
+            "mutant_id": "mut-02",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 92: Gt -> GtE",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -89,7 +89,7 @@\n             text = str(repr(obj))\n         except Exception:\n             text = str(object.__repr__(obj))\n-    if maxlen and len(text) > maxlen:\n+    if maxlen and (len(text) >= maxlen):\n         text = text[:maxlen - 3] + '...'\n         # TODO: inverse of ljust/rjust/center\n     return text"
+          },
+          {
+            "mutant_id": "mut-03",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 93: Add -> Sub",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -90,7 +90,7 @@\n         except Exception:\n             text = str(object.__repr__(obj))\n     if maxlen and len(text) > maxlen:\n-        text = text[:maxlen - 3] + '...'\n+        text = (text[:maxlen - 3] - '...')\n         # TODO: inverse of ljust/rjust/center\n     return text"
+          },
+          {
+            "mutant_id": "mut-04",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 93: Sub -> Add",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -90,7 +90,7 @@\n         except Exception:\n             text = str(object.__repr__(obj))\n     if maxlen and len(text) > maxlen:\n-        text = text[:maxlen - 3] + '...'\n+        text = text[:(maxlen + 3)] + '...'\n         # TODO: inverse of ljust/rjust/center\n     return text"
+          },
+          {
+            "mutant_id": "mut-05",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 93: constant 3 -> 4",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -90,7 +90,7 @@\n         except Exception:\n             text = str(object.__repr__(obj))\n     if maxlen and len(text) > maxlen:\n-        text = text[:maxlen - 3] + '...'\n+        text = text[:maxlen - (4)] + '...'\n         # TODO: inverse of ljust/rjust/center\n     return text"
+          },
+          {
+            "mutant_id": "mut-07",
+            "function_qualname": "boltons.tableutils.to_text",
+            "file_path": "boltons/tableutils.py",
+            "operator": "to_text line 95: return value -> None",
+            "unified_diff": "--- a/boltons/tableutils.py\n+++ b/boltons/tableutils.py\n@@ -92,7 +92,7 @@\n     if maxlen and len(text) > maxlen:\n         text = text[:maxlen - 3] + '...'\n         # TODO: inverse of ljust/rjust/center\n-    return text\n+    return None\n \n \n def escape_html(obj, maxlen=None):"
+          }
+        ],
+        "reference_killed_mutant_ids": null
+      },
+      "outcomes": [
+        {
+          "mutant_id": "mut-01",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_tableutils.py::test_table_dicts"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-02",
+          "outcome": "survived",
+          "killed_by": [],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-03",
+          "outcome": "survived",
+          "killed_by": [],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-04",
+          "outcome": "survived",
+          "killed_by": [],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-05",
+          "outcome": "survived",
+          "killed_by": [],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-07",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_tableutils.py::test_table_dicts"
+          ],
+          "detail": null
+        }
+      ]
+    },
+    {
+      "episode_id": "dev-03",
+      "function_qualname": "boltons.funcutils.once",
+      "commit": "f7cbf1971022b3910c93aaeef7a3478d0a6eacd6",
+      "test_selector": "tests/test_funcutils.py",
+      "run_status": "passed",
+      "run_reason": null,
+      "baseline_failing": [],
+      "counts": {
+        "killed": 3,
+        "survived": 0,
+        "timeout": 0,
+        "error": 0,
+        "invalid": 0
+      },
+      "seconds": 1.7,
+      "mutation_fixture": {
+        "function_qualname": "boltons.funcutils.once",
+        "mutants": [
+          {
+            "mutant_id": "mut-01",
+            "function_qualname": "boltons.funcutils.once",
+            "file_path": "boltons/funcutils.py",
+            "operator": "once line 1037: return value -> None",
+            "unified_diff": "--- a/boltons/funcutils.py\n+++ b/boltons/funcutils.py\n@@ -1034,7 +1034,7 @@\n     def wrapper():\n         with lock:\n             if wrapper.cache_info().currsize:\n-                return wrapper()\n+                return None\n             return func()\n \n     return wrapper"
+          },
+          {
+            "mutant_id": "mut-02",
+            "function_qualname": "boltons.funcutils.once",
+            "file_path": "boltons/funcutils.py",
+            "operator": "once line 1038: return value -> None",
+            "unified_diff": "--- a/boltons/funcutils.py\n+++ b/boltons/funcutils.py\n@@ -1035,7 +1035,7 @@\n         with lock:\n             if wrapper.cache_info().currsize:\n                 return wrapper()\n-            return func()\n+            return None\n \n     return wrapper"
+          },
+          {
+            "mutant_id": "mut-03",
+            "function_qualname": "boltons.funcutils.once",
+            "file_path": "boltons/funcutils.py",
+            "operator": "once line 1040: return value -> None",
+            "unified_diff": "--- a/boltons/funcutils.py\n+++ b/boltons/funcutils.py\n@@ -1037,6 +1037,6 @@\n                 return wrapper()\n             return func()\n \n-    return wrapper\n+    return None\n \n # end funcutils.py"
+          }
+        ],
+        "reference_killed_mutant_ids": null
+      },
+      "outcomes": [
+        {
+          "mutant_id": "mut-01",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_funcutils.py::test_once_thread_safety"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-02",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_funcutils.py::test_once_executes_only_once",
+            "tests/test_funcutils.py::test_once_thread_safety"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-03",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_funcutils.py::test_once_caches_result",
+            "tests/test_funcutils.py::test_once_executes_only_once",
+            "tests/test_funcutils.py::test_once_thread_safety"
+          ],
+          "detail": null
+        }
+      ]
+    },
+    {
+      "episode_id": "dev-04",
+      "function_qualname": "boltons.strutils.strip_ansi",
+      "commit": "f5cf8b5d32bf25752b44a11c9d87d2144c7b8919",
+      "test_selector": "tests/test_strutils.py",
+      "run_status": "passed",
+      "run_reason": null,
+      "baseline_failing": [],
+      "counts": {
+        "killed": 6,
+        "survived": 0,
+        "timeout": 0,
+        "error": 0,
+        "invalid": 0
+      },
+      "seconds": 1.2,
+      "mutation_fixture": {
+        "function_qualname": "boltons.strutils.strip_ansi",
+        "mutants": [
+          {
+            "mutant_id": "mut-01",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 398: constant 'utf-8' -> ''",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -395,7 +395,7 @@\n     # Unicode type aliased to str is code-smell for Boltons in Python 3 env.\n     if isinstance(text, (bytes, bytearray)):\n         target_type = type(text)\n-        text = text.decode('utf-8')\n+        text = text.decode((''))\n \n     cleaned = ANSI_SEQUENCES.sub('', text)"
+          },
+          {
+            "mutant_id": "mut-02",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 400: constant '' -> 'XX'",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -397,7 +397,7 @@\n         target_type = type(text)\n         text = text.decode('utf-8')\n \n-    cleaned = ANSI_SEQUENCES.sub('', text)\n+    cleaned = ANSI_SEQUENCES.sub(('XX'), text)\n \n     # Transform back the result to the same bytearray type provided by the user.\n     if target_type and target_type != type(cleaned):"
+          },
+          {
+            "mutant_id": "mut-03",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 403: And -> Or",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -400,7 +400,7 @@\n     cleaned = ANSI_SEQUENCES.sub('', text)\n \n     # Transform back the result to the same bytearray type provided by the user.\n-    if target_type and target_type != type(cleaned):\n+    if (target_type or target_type != type(cleaned)):\n         cleaned = target_type(cleaned, 'utf-8')\n \n     return cleaned"
+          },
+          {
+            "mutant_id": "mut-04",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 403: NotEq -> Eq",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -400,7 +400,7 @@\n     cleaned = ANSI_SEQUENCES.sub('', text)\n \n     # Transform back the result to the same bytearray type provided by the user.\n-    if target_type and target_type != type(cleaned):\n+    if target_type and (target_type == type(cleaned)):\n         cleaned = target_type(cleaned, 'utf-8')\n \n     return cleaned"
+          },
+          {
+            "mutant_id": "mut-05",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 404: constant 'utf-8' -> ''",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -401,7 +401,7 @@\n \n     # Transform back the result to the same bytearray type provided by the user.\n     if target_type and target_type != type(cleaned):\n-        cleaned = target_type(cleaned, 'utf-8')\n+        cleaned = target_type(cleaned, (''))\n \n     return cleaned"
+          },
+          {
+            "mutant_id": "mut-06",
+            "function_qualname": "boltons.strutils.strip_ansi",
+            "file_path": "boltons/strutils.py",
+            "operator": "strip_ansi line 406: return value -> None",
+            "unified_diff": "--- a/boltons/strutils.py\n+++ b/boltons/strutils.py\n@@ -403,7 +403,7 @@\n     if target_type and target_type != type(cleaned):\n         cleaned = target_type(cleaned, 'utf-8')\n \n-    return cleaned\n+    return None\n \n \n def asciify(text, ignore=False):"
+          }
+        ],
+        "reference_killed_mutant_ids": null
+      },
+      "outcomes": [
+        {
+          "mutant_id": "mut-01",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-02",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-03",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-04",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-05",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-06",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_strutils.py::test_strip_ansi"
+          ],
+          "detail": null
+        }
+      ]
+    },
+    {
+      "episode_id": "dev-06",
+      "function_qualname": "boltons.cacheutils.CachedFunction.__call__",
+      "commit": "bbadc7ae1dcfbb0e71ec3a852e8bca3a6f75199b",
+      "test_selector": "tests/test_cacheutils.py",
+      "run_status": "passed",
+      "run_reason": null,
+      "baseline_failing": [],
+      "counts": {
+        "killed": 0,
+        "survived": 1,
+        "timeout": 0,
+        "error": 0,
+        "invalid": 0
+      },
+      "seconds": 0.3,
+      "mutation_fixture": {
+        "function_qualname": "boltons.cacheutils.CachedFunction.__call__",
+        "mutants": [
+          {
+            "mutant_id": "mut-01",
+            "function_qualname": "boltons.cacheutils.CachedFunction.__call__",
+            "file_path": "boltons/cacheutils.py",
+            "operator": "CachedFunction.__call__ line 468: return value -> None",
+            "unified_diff": "--- a/boltons/cacheutils.py\n+++ b/boltons/cacheutils.py\n@@ -465,7 +465,7 @@\n             ret = cache[key]\n         except KeyError:\n             ret = cache[key] = self.func(*args, **kwargs)\n-        return ret\n+        return None\n \n     def __repr__(self):\n         cn = self.__class__.__name__"
+          }
+        ],
+        "reference_killed_mutant_ids": null
+      },
+      "outcomes": [
+        {
+          "mutant_id": "mut-01",
+          "outcome": "survived",
+          "killed_by": [],
+          "detail": null
+        }
+      ]
+    },
+    {
+      "episode_id": "dev-09",
+      "function_qualname": "boltons.iterutils.default_enter",
+      "commit": "37ba6b2a3adde5795dee9195b255a4cb1d342a7b",
+      "test_selector": "tests/test_iterutils.py",
+      "run_status": "passed",
+      "run_reason": null,
+      "baseline_failing": [],
+      "counts": {
+        "killed": 6,
+        "survived": 0,
+        "timeout": 0,
+        "error": 0,
+        "invalid": 0
+      },
+      "seconds": 2.6,
+      "mutation_fixture": {
+        "function_qualname": "boltons.iterutils.default_enter",
+        "mutants": [
+          {
+            "mutant_id": "mut-01",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1062: return value -> None",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1059,7 +1059,7 @@\n def default_enter(path, key, value):\n     # print('enter(%r, %r)' % (key, value))\n     if isinstance(value, (str, bytes)):\n-        return value, False\n+        return None\n     elif isinstance(value, Mapping):\n         return value.__class__(), ItemsView(value)\n     elif isinstance(value, Sequence):"
+          },
+          {
+            "mutant_id": "mut-02",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1062: constant False -> True",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1059,7 +1059,7 @@\n def default_enter(path, key, value):\n     # print('enter(%r, %r)' % (key, value))\n     if isinstance(value, (str, bytes)):\n-        return value, False\n+        return value, (True)\n     elif isinstance(value, Mapping):\n         return value.__class__(), ItemsView(value)\n     elif isinstance(value, Sequence):"
+          },
+          {
+            "mutant_id": "mut-03",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1064: return value -> None",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1061,7 +1061,7 @@\n     if isinstance(value, (str, bytes)):\n         return value, False\n     elif isinstance(value, Mapping):\n-        return value.__class__(), ItemsView(value)\n+        return None\n     elif isinstance(value, Sequence):\n         return value.__class__(), enumerate(value)\n     elif isinstance(value, Set):"
+          },
+          {
+            "mutant_id": "mut-04",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1066: return value -> None",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1063,7 +1063,7 @@\n     elif isinstance(value, Mapping):\n         return value.__class__(), ItemsView(value)\n     elif isinstance(value, Sequence):\n-        return value.__class__(), enumerate(value)\n+        return None\n     elif isinstance(value, Set):\n         return value.__class__(), enumerate(value)\n     else:"
+          },
+          {
+            "mutant_id": "mut-05",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1068: return value -> None",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1065,7 +1065,7 @@\n     elif isinstance(value, Sequence):\n         return value.__class__(), enumerate(value)\n     elif isinstance(value, Set):\n-        return value.__class__(), enumerate(value)\n+        return None\n     else:\n         # files, strings, other iterables, and scalars are not\n         # traversed"
+          },
+          {
+            "mutant_id": "mut-07",
+            "function_qualname": "boltons.iterutils.default_enter",
+            "file_path": "boltons/iterutils.py",
+            "operator": "default_enter line 1072: constant False -> True",
+            "unified_diff": "--- a/boltons/iterutils.py\n+++ b/boltons/iterutils.py\n@@ -1069,7 +1069,7 @@\n     else:\n         # files, strings, other iterables, and scalars are not\n         # traversed\n-        return value, False\n+        return value, (True)\n \n \n def default_exit(path, key, old_parent, new_parent, new_items):"
+          }
+        ],
+        "reference_killed_mutant_ids": null
+      },
+      "outcomes": [
+        {
+          "mutant_id": "mut-01",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_add_length",
+            "tests/test_iterutils.py::TestRemap::test_basic_clone",
+            "tests/test_iterutils.py::TestRemap::test_collector_pattern",
+            "tests/test_iterutils.py::TestRemap::test_dict_to_omd",
+            "tests/test_iterutils.py::TestRemap::test_duperef",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_prepop",
+            "tests/test_iterutils.py::TestRemap::test_reraise_visit",
+            "tests/test_iterutils.py::test_research",
+            "tests/test_iterutils.py::test_research_custom_enter"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-02",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_add_length",
+            "tests/test_iterutils.py::TestRemap::test_basic_clone",
+            "tests/test_iterutils.py::TestRemap::test_collector_pattern",
+            "tests/test_iterutils.py::TestRemap::test_dict_to_omd",
+            "tests/test_iterutils.py::TestRemap::test_duperef",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_prepop",
+            "tests/test_iterutils.py::TestRemap::test_reraise_visit",
+            "tests/test_iterutils.py::test_research",
+            "tests/test_iterutils.py::test_research_custom_enter"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-03",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_add_length",
+            "tests/test_iterutils.py::TestRemap::test_basic_clone",
+            "tests/test_iterutils.py::TestRemap::test_basic_upper",
+            "tests/test_iterutils.py::TestRemap::test_collector_pattern",
+            "tests/test_iterutils.py::TestRemap::test_drop_nones",
+            "tests/test_iterutils.py::TestRemap::test_empty",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_prepop",
+            "tests/test_iterutils.py::TestRemap::test_remap_file",
+            "tests/test_iterutils.py::TestRemap::test_reraise_visit",
+            "tests/test_iterutils.py::TestRemap::test_root_selfref",
+            "tests/test_iterutils.py::test_research"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-04",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_basic_clone",
+            "tests/test_iterutils.py::TestRemap::test_collector_pattern",
+            "tests/test_iterutils.py::TestRemap::test_dict_to_omd",
+            "tests/test_iterutils.py::TestRemap::test_drop_nones",
+            "tests/test_iterutils.py::TestRemap::test_duperef",
+            "tests/test_iterutils.py::TestRemap::test_empty",
+            "tests/test_iterutils.py::TestRemap::test_item_drop",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_prepop",
+            "tests/test_iterutils.py::TestRemap::test_remap_file",
+            "tests/test_iterutils.py::TestRemap::test_root_selfref",
+            "tests/test_iterutils.py::TestRemap::test_sort_all_lists",
+            "tests/test_iterutils.py::TestRemap::test_sub_selfref",
+            "tests/test_iterutils.py::test_research"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-05",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_basic_upper",
+            "tests/test_iterutils.py::TestRemap::test_empty",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_remap_set"
+          ],
+          "detail": null
+        },
+        {
+          "mutant_id": "mut-07",
+          "outcome": "killed",
+          "killed_by": [
+            "tests/test_iterutils.py::TestRemap::test_add_length",
+            "tests/test_iterutils.py::TestRemap::test_basic_clone",
+            "tests/test_iterutils.py::TestRemap::test_basic_upper",
+            "tests/test_iterutils.py::TestRemap::test_dict_to_omd",
+            "tests/test_iterutils.py::TestRemap::test_drop_nones",
+            "tests/test_iterutils.py::TestRemap::test_item_drop",
+            "tests/test_iterutils.py::TestRemap::test_path",
+            "tests/test_iterutils.py::TestRemap::test_prepop",
+            "tests/test_iterutils.py::TestRemap::test_remap_file",
+            "tests/test_iterutils.py::TestRemap::test_remap_set",
+            "tests/test_iterutils.py::TestRemap::test_reraise_visit",
+            "tests/test_iterutils.py::TestRemap::test_root_selfref",
+            "tests/test_iterutils.py::TestRemap::test_sort_all_lists",
+            "tests/test_iterutils.py::TestRemap::test_sub_selfref"
+          ],
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

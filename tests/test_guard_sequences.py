@@ -33,6 +33,7 @@ from testorcode.schemas.result_schemas import (
     TestRunStatus,
 )
 from testorcode.schemas.tests.conftest import make_s1
+from testorcode.tools.mutation import mutation_check
 from testorcode.tools.pytest_runner import run_tests
 from testorcode.tools.verification import ProbeCase, TrustedProbe, verify_behaviour
 
@@ -87,6 +88,7 @@ def build(tmp_path: Path, monkeypatch, order: list[str], files: dict[str, str]):
     for module in (triage, integrity_guard, agent_tools, orchestrator):
         monkeypatch.setattr(module, "run_tests", trusted)
     monkeypatch.setattr(integrity_guard, "verify_behaviour", partial(verify_behaviour, isolation="trusted-host"))
+    monkeypatch.setattr(integrity_guard, "mutation_check", partial(mutation_check, isolation="trusted-host"))
 
     base = make_s1().agent_input
     ids = {name: f"{files.get(name, 'tests/test_core.py')}::test_{name}" for name in order}
@@ -212,6 +214,12 @@ def _recording_runs(monkeypatch, seen: list[tuple[str, object, object]]) -> None
             seen.append((_name, kw.get("python_executable"), kw.get("timeout_seconds")))
             return _inner(worktree, selectors, **kw)
         monkeypatch.setattr(module, "run_tests", recorded)
+    inner_check = integrity_guard.mutation_check
+
+    def recorded_check(*args, _inner=inner_check, **kw):  # cached-mutant runs must use the same interpreter/timeout
+        seen.append(("testorcode.tools.mutation", kw.get("python_executable"), kw.get("timeout_seconds")))
+        return _inner(*args, **kw)
+    monkeypatch.setattr(integrity_guard, "mutation_check", recorded_check)
 
 
 @pytest.mark.parametrize("injected", [False, True], ids=["default-guard", "injected-guard"])
@@ -231,14 +239,15 @@ def test_configured_interpreter_and_timeout_reach_every_run(tmp_path, monkeypatc
         AgentRole.REPAIRER: [repair_for(name, "tests/test_core.py") for name in order] * 2,
         AgentRole.INTEGRITY_GUARD: [CONSISTENT] * 4,
     })
-    agents = Agents(integrity_guard=guard) if injected else Agents()  # the default Guard has no probe: escalates
+    agents = Agents(integrity_guard=guard) if injected else Agents()  # the default Guard has no probe
     record = run_episode(episode, worktree_path=root, settings=settings, llm=llm, agents=agents)
 
     modules = {name for name, _, _ in seen}
-    assert {"testorcode.agents.triage", "testorcode.agents.integrity_guard", "testorcode.orchestrator"} <= modules
+    assert {"testorcode.agents.triage", "testorcode.agents.integrity_guard", "testorcode.orchestrator",
+            "testorcode.tools.mutation"} <= modules
     assert all(Path(p) == python and t == 37 for _, p, t in seen), seen
-    expected = GuardDecision.APPROVE if injected else GuardDecision.ESCALATE
-    assert verdicts(record)["g1"] is expected
+    # g1 (twice, UPDATE_TEST) is approved on measured mutant-kill strength with or without a harness probe.
+    assert verdicts(record)["g1"] is GuardDecision.APPROVE
 
 
 # --------------------------------------------------------------------------- #
@@ -261,7 +270,9 @@ def test_two_group_episode_overhead_does_not_exhaust_the_agent_budget(tmp_path, 
 
     assert verdicts(record) == {"g1": GuardDecision.APPROVE, "g2": GuardDecision.APPROVE}, record.errors
     budgets = [e.arguments["budget"] for e in record.tool_events]
-    assert (budgets.count("agent"), budgets.count("operational"), budgets.count("exempt")) == (8, 13, 1)
+    # Operational: the 13 harness calls above plus one run_mutants call per group (twice: test strength; normalise:
+    # FIX_CODE oracle sensitivity).
+    assert (budgets.count("agent"), budgets.count("operational"), budgets.count("exempt")) == (8, 15, 1)
     assert {e.called_by for e in record.tool_events if e.arguments["budget"] == "agent"} <= {
         AgentRole.INTENT_ANALYST, AgentRole.REPAIRER}
     assert record.tool_events[-1].arguments["budget"] == "exempt"  # the final suite run

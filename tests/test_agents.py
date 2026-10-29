@@ -42,6 +42,7 @@ from testorcode.schemas.result_schemas import (
     TestRunStatus,
 )
 from testorcode.schemas.tests.conftest import make_s1, memory_record
+from testorcode.tools.mutation import MutationCheck
 from testorcode.tools.patch_tools import apply_patch, revert_patch, validate_patch
 
 S1 = make_s1().agent_input
@@ -379,9 +380,13 @@ def applied_test_patch(repo: Path, new_tests: str) -> PatchProposal:
     )
 
 
+UNMEASURED = MutationCheck(gaps=("no executable cached mutant (unit test)",))
+
+
 def verify(monkeypatch, repo: Path, proposal: PatchProposal, status: TestRunStatus) -> GuardResult:
     failing = () if status is TestRunStatus.PASSED else (TEST_ID,)
     monkeypatch.setattr(integrity_guard, "run_tests", lambda *a, **k: execution(status, failing))
+    monkeypatch.setattr(integrity_guard, "mutation_check", lambda *a, **k: UNMEASURED)
     return integrity_guard.verify_repair(
         EpisodeContext.from_episode_input(S1, repo), group_detail(),
         analysis(DecisionLabel.UPDATE_TEST, HypothesisKind.OUTDATED_TEST), proposal,
@@ -425,6 +430,7 @@ def review(verdict: str, preserved: bool, reasons=()) -> dict:
 def test_guard_review_can_only_lower_the_verdict(monkeypatch, repo: Path, reply, expected) -> None:
     fake = FakeLLMClient({AgentRole.INTEGRITY_GUARD: [reply]})
     monkeypatch.setattr(integrity_guard, "run_tests", lambda *a, **k: execution(TestRunStatus.PASSED))
+    monkeypatch.setattr(integrity_guard, "mutation_check", lambda *a, **k: UNMEASURED)
     result = integrity_guard.verify_repair(
         EpisodeContext.from_episode_input(S1, repo), group_detail(),
         analysis(DecisionLabel.UPDATE_TEST, HypothesisKind.OUTDATED_TEST),

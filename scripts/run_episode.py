@@ -11,9 +11,12 @@ maintainer (proposal section 9: approve when the direction matches the gold labe
 the orchestrator asks after a Guard APPROVE, and to score the prediction after the run.  They are never
 passed to an agent.
 
-``--condition`` defaults to A2 (no memory). B1 runs the single-agent baseline on the same input. FULL fails
-explicitly until ``MemoryStore`` exists, and conditions without a code path (A1, A3, ...) are recorded as
-not implemented.
+``--condition`` defaults to A2 (no memory). B1 runs the single-agent baseline on the same input. FULL needs
+``--memory PATH``: a ``JsonlMemoryStore`` (persistent across runs, so a stream of episodes shares it) seeded with the
+episode's declared prior memory (``visible_memory``) before any agent acts.  The store is bound to
+``<condition>/seed=<RANDOM_SEED>/<split>`` and refuses any other (use ``memory.memory_path`` for one file each);
+conditions without memory ignore ``--memory``.  Conditions without a code path (A1, A3, ...) are recorded as not
+implemented.
 
     python scripts/run_episode.py --episode dev-05 --repo ../boltons
 """
@@ -26,10 +29,12 @@ import json
 import sys
 from pathlib import Path
 
+from testorcode.conditions import profile_for
 from testorcode.config import Settings
 from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
 from testorcode.llm_client import create_llm_client
 from testorcode.logging_config import configure_logging
+from testorcode.memory import JsonlMemoryStore, memory_namespace
 from testorcode.orchestrator import Maintainer, run_episode
 from testorcode.schemas.episode_schemas import DecisionLabel, HypothesisKind
 from testorcode.schemas.result_schemas import (
@@ -59,6 +64,7 @@ def main() -> int:
     parser.add_argument("--worktree", default=None, help="default: ../episode-worktrees/<episode>")
     parser.add_argument("--condition", default="A2", choices=[c.value for c in ExperimentCondition])
     parser.add_argument("--out", default=str(ROOT / "results" / "day2"))
+    parser.add_argument("--memory", default=None, help="JSONL memory store (needed for FULL; ignored without memory)")
     args = parser.parse_args()
     if args.split == "test" and not args.allow_test_split:
         parser.error("the test split is frozen; pass --allow-test-split only for the frozen evaluation")
@@ -71,12 +77,25 @@ def main() -> int:
     worktree = Path(args.worktree or ROOT.parent / "episode-worktrees" / args.episode).absolute()
     _materializer()(args.repo, worktree, episode.model_dump(mode="json"))
 
+    memory = None
+    if args.memory and profile_for(condition).memory:
+        # One store per condition, seed and stream (split): a store opened under another namespace is refused.
+        memory = JsonlMemoryStore(
+            args.memory, python_executable=settings.test_python, timeout_seconds=settings.test_timeout_seconds,
+            docker_image=episode.environment.docker_image,
+            namespace=memory_namespace(condition.value, settings.random_seed, args.split),
+        )
+        # Harness side, before any agent acts: the CI state is pristine, so seeded probes get their support code here.
+        seeded = memory.seed(episode.visible_memory or [], worktree_path=worktree)
+        if seeded:
+            print(f"memory: seeded {seeded}")
+
     llm = create_llm_client(settings)
     # Harness side: gold labels feed only the simulated maintainer and the scoring below.
     full = next(e for e in load_episodes(episode_path(args.split)) if e.episode_id == args.episode)
     gold = full.gold_actions()
     record = run_episode(
-        episode, worktree_path=worktree, settings=settings, llm=llm, memory=None,
+        episode, worktree_path=worktree, settings=settings, llm=llm, memory=memory,
         maintainer=_simulated_maintainer(gold),
     )
     record = record.model_copy(update={"provenance": record.provenance.model_copy(

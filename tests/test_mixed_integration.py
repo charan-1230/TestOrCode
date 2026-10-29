@@ -40,6 +40,7 @@ from testorcode.schemas.result_schemas import (
     TestRunStatus,
 )
 from testorcode.schemas.tests.conftest import make_s1
+from testorcode.tools.mutation import MutationCheck
 from testorcode.tools.pytest_runner import run_tests
 from testorcode.tools.verification import ProbeCase, TrustedProbe, verify_behaviour
 
@@ -156,8 +157,13 @@ def test_b1_repairs_both_directions_and_records_each_test(mixed) -> None:
     assert {e.tool for e in record.tool_events if e.arguments["budget"] == "agent"} == {ToolName.SEARCH_REPO}
 
 
-def test_a2_approves_the_probed_fix_while_the_other_group_stays_failing(mixed) -> None:
+def test_a2_approves_the_probed_fix_while_the_other_group_stays_failing(mixed, monkeypatch) -> None:
     root, episode, norm_id, twice_id, twice_file = mixed
+    # The test repair's strength cannot be measured here (no executable mutant), so it must not be approved; the
+    # source fix keeps its (unstubbed-in-effect) clean mutation evidence.
+    unmeasured = MutationCheck(gaps=("no executable cached mutant (test harness)",))
+    monkeypatch.setattr(integrity_guard, "mutation_check", lambda context, group, proposal, *a, **k: (
+        unmeasured if proposal.decision.value == "UPDATE_TEST" else MutationCheck()))
 
     def guard(context, group, analysis, proposal, **kw):  # the harness probe covers normalise only
         probe = PROBE if group.group.function_qualname == "synthlib.core.normalise" else None
@@ -183,7 +189,7 @@ def test_a2_approves_the_probed_fix_while_the_other_group_stays_failing(mixed) -
 
     preds = {p.test_id: p for p in record.predictions}
     assert preds[norm_id].predicted_action is DecisionLabel.FIX_CODE  # approved despite twice still failing
-    assert preds[twice_id].predicted_action is DecisionLabel.ESCALATE  # no probe: never approved on a green run
+    assert preds[twice_id].predicted_action is DecisionLabel.ESCALATE  # unmeasured strength: never approved on green
     assert preds[twice_id].hypothesis.value == "outdated_test"  # the direction survives for scoring
     assert [p.application_status for p in record.patches] == [PatchApplicationStatus.REVERTED,
                                                               PatchApplicationStatus.APPLIED]

@@ -43,10 +43,16 @@ inputs (positional arguments, or anything inside an assertion), removed keyword
 arguments, expected values held in variables, ``pytest.approx``,
 ``self.assertEqual``, parametrize tables, fixtures and test data files.
 
-**Source files (FIX_CODE)** keep the earlier basic checks: the file must parse
-and must not newly import pytest/``_pytest`` or add pytest hooks, skips or
-hard process exits.  Source behaviour is judged by trusted verification
-(``tools.verification``), not by these checks.
+**Source files (FIX_CODE)**: the file must parse and must not newly import
+pytest/``_pytest`` or add pytest hooks, skips or hard process exits.  Because a
+FIX_CODE repair is verified by the untouched tests, a source patch must also not
+newly *detect the test run*: references to ``sys.modules``, string literals naming
+pytest (``"pytest"``, ``"_pytest"``, ``PYTEST_CURRENT_TEST`` ...), or runner/stack
+introspection (``sys._getframe``, ``inspect.stack``/``currentframe``,
+``traceback.extract_stack``, ``sys.gettrace``/``settrace``, frame attributes such as
+``f_back``/``f_locals``).  Only constructs the patch *adds* count, so existing code
+using them stays editable.  Overfitting to the tests' exact inputs cannot be seen
+here; that is what harness probes and the mutation checks are for.
 """
 
 from __future__ import annotations
@@ -72,6 +78,8 @@ HOOK = "pytest hook function"
 HARD_EXIT = "hard process exit"
 PYTEST_INTERNALS = "_pytest import"
 PYTEST_IMPORT = "pytest import"
+TEST_DETECTION = "test-run detection (sys.modules or a pytest-named string)"
+INTROSPECTION = "runner/stack introspection"
 
 _SKIP_CALLS: Final[frozenset[str]] = frozenset(
     {
@@ -90,6 +98,14 @@ _SKIP_CALLS: Final[frozenset[str]] = frozenset(
 _HARD_EXITS: Final[frozenset[str]] = frozenset({"pytest.exit", "os._exit", "os.abort", "os.kill"})
 _MARK_SUFFIXES: Final[tuple[str, ...]] = ("mark.skip", "mark.skipif", "mark.xfail")
 _SKIP_EXCEPTIONS: Final[tuple[str, ...]] = ("SkipTest", "Skipped", "skip.Exception", "XFailed")
+# Attributes of these modules that reveal the test runner (``modules``) or the calling stack (the rest).
+_SENSITIVE_MODULES: Final[dict[str, frozenset[str]]] = {
+    "sys": frozenset({"modules", "_getframe", "_current_frames", "gettrace", "settrace", "getprofile", "setprofile"}),
+    "inspect": frozenset({"stack", "currentframe", "getouterframes", "getframeinfo", "trace"}),
+    "traceback": frozenset({"extract_stack", "format_stack", "walk_stack", "print_stack"}),
+}
+_SENSITIVE_ATTRIBUTES: Final[frozenset[str]] = frozenset().union(*_SENSITIVE_MODULES.values())
+_FRAME_ATTRIBUTES: Final[frozenset[str]] = frozenset({"f_back", "f_locals", "f_globals", "f_code", "f_trace"})
 
 
 # --------------------------------------------------------------------------- #
@@ -316,16 +332,46 @@ def _source_constructs(tree: ast.Module | None) -> Counter[str]:
     found: Counter[str] = Counter()
     if tree is None:
         return found
+    docstrings = {
+        id(n.body[0].value) for n in ast.walk(tree)
+        if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+        and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)
+    }
+    # Local names bound to the runner-sensitive modules (``import sys as s``), so aliases cannot hide an access.
+    aliases = {m: {m} for m in _SENSITIVE_MODULES}
     for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in aliases:
+                    aliases[alias.name].add(alias.asname or alias.name)
+    for node in ast.walk(tree):
+        # Detecting the test run: a FIX_CODE repair could otherwise behave differently under pytest.
+        if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings:
+            if "pytest" in node.value.lower():
+                found[TEST_DETECTION] += 1
+        elif isinstance(node, ast.ImportFrom) and node.module in _SENSITIVE_MODULES:
+            for alias in node.names:  # ``from sys import modules``, ``from inspect import stack``
+                if alias.name in _SENSITIVE_MODULES[node.module] or alias.name == "*":
+                    found[TEST_DETECTION if alias.name == "modules" else INTROSPECTION] += 1
+        elif isinstance(node, ast.Attribute):
+            base = node.value.id if isinstance(node.value, ast.Name) else None
+            module = next((m for m, names in aliases.items() if base in names), None)
+            if module and node.attr in _SENSITIVE_MODULES[module]:
+                found[TEST_DETECTION if node.attr == "modules" else INTROSPECTION] += 1
+            elif node.attr in _FRAME_ATTRIBUTES:
+                found[INTROSPECTION] += 1
         if isinstance(node, ast.Call):
             name = _dotted(node.func)
+            dynamic = name in ("getattr", "builtins.getattr") and len(node.args) >= 2  # ``getattr(sys, "modules")``
+            if dynamic and isinstance(node.args[1], ast.Constant) and node.args[1].value in _SENSITIVE_ATTRIBUTES:
+                found[INTROSPECTION] += 1
             if name in _SKIP_CALLS:
                 found[SKIP_CALL] += 1
             elif name in _HARD_EXITS:
                 found[HARD_EXIT] += 1
             if name.endswith("fixture") and any(kw.arg == "autouse" for kw in node.keywords):
                 found[AUTOUSE] += 1
-        elif isinstance(node, ast.Attribute) and _dotted(node).endswith(_MARK_SUFFIXES):
+        if isinstance(node, ast.Attribute) and _dotted(node).endswith(_MARK_SUFFIXES):
             found[SKIP_MARK] += 1
         elif isinstance(node, ast.Raise) and node.exc is not None:
             if _dotted(node.exc).endswith(_SKIP_EXCEPTIONS):

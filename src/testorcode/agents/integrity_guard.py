@@ -7,34 +7,39 @@ The worktree already holds the applied patch.  The Guard
    groups' still-unresolved failures may fail;
 2. re-checks the touched files against the ``EditPolicy`` and protected paths;
 3. judges only this patch's own change (the state just before it, rebuilt by reversing
-   its diff, versus now; earlier groups' approved repairs are never attributed to it):
-   counts ``assert`` statements before/after in touched test files and looks
-   for new skip/xfail markers (weakening), and rejects a test patch that changes
-   any test function other than the group's failing tests (unrelated edits);
+   its diff, versus now; earlier groups' approved repairs are never attributed to it)
+   with the deterministic weakening analysis (``tools.weakening``: removed assertions,
+   skip/xfail, loosened comparisons, swallowed exceptions, deleted tests), and rejects
+   a test patch that changes any test function other than the group's failing tests;
 4. for FIX_CODE, confirms no test file was touched; for UPDATE_TEST, that
    evidence was cited;
 5. if ``llm`` is given and nothing was found, asks the model for a semantic
    review (``prompts.GUARD_SYSTEM``): does a changed test still check what its
    name and setup say, is the repair legitimate?  The review can only lower the
    verdict to ESCALATE, never approve;
-6. asks ``tools.verification.trusted_outcome`` for the verdict.
+6. for UPDATE_TEST, measures the updated tests' strength on cached mutants of the
+   group's function (``tools.mutation.mutation_check``; baseline: the same tests
+   before this repair, never the reference repair);
+7. asks ``tools.verification.repair_outcome`` for the verdict.
 
-A failing re-run or any finding is REJECT.  A passing re-run is *not*
-approval: without a harness-supplied ``TrustedProbe`` the verdict is ESCALATE
-(human verification required).  Mutation testing is not run yet.
+A failing re-run or any finding is REJECT.  A passing re-run is *not* approval
+of a test edit: UPDATE_TEST needs measured mutant-kill strength (measured weakening
+is REJECT, unmeasured strength ESCALATE).  FIX_CODE is verified by the untouched
+original tests plus the whole-suite regression run; a harness ``TrustedProbe``,
+when supplied, must pass as well.
 """
 
 from __future__ import annotations
 
-import ast
-import re
 import tempfile
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from testorcode.agents.prompts import GUARD_SYSTEM, GuardReview, build_guard_user
 from testorcode.errors import MemoryAuthorizationError, ToolError
 from testorcode.llm_client import LLMClient
 from testorcode.logging_config import get_logger
+from testorcode.memory import record_from_repair
 from testorcode.schemas.contracts import (
     EpisodeContext,
     FailureGroupDetail,
@@ -44,24 +49,22 @@ from testorcode.schemas.contracts import (
     PatchProposal,
     PytestExecution,
 )
-from testorcode.schemas.episode_schemas import MemoryRecord, PathClass, RepairDirection
+from testorcode.schemas.episode_schemas import MemoryRecord, MutantSpec, PathClass, RepairDirection
 from testorcode.schemas.result_schemas import (
     AgentRole,
     GuardDecision,
     IntegrityReport,
     ProhibitedEditCheck,
     TestRunStatus,
-    TestWeakeningFindings,
 )
 from testorcode.tools.git_tools import run_git
+from testorcode.tools.mutation import MutationCheck, mutation_check
 from testorcode.tools.patch_tools import is_protected_path
 from testorcode.tools.pytest_runner import run_tests
-from testorcode.tools.verification import TrustedProbe, trusted_outcome, verify_behaviour
+from testorcode.tools.verification import TrustedProbe, repair_outcome, verify_behaviour
+from testorcode.tools.weakening import analyse_test_changes
 
 logger = get_logger(__name__)
-
-_SKIP_MARK = re.compile(r"^\+.*(pytest\.mark\.(skip|skipif|xfail)|pytest\.(skip|xfail)\()")
-
 
 def verify_repair(
     context: EpisodeContext,
@@ -74,15 +77,18 @@ def verify_repair(
     timeout_seconds: int = 120,
     probe: TrustedProbe | None = None,
     known_failures: frozenset[str] = frozenset(),
+    cached_mutants: Mapping[str, Sequence[MutantSpec]] | None = None,
 ) -> GuardResult:
     """Check the applied repair: tests, weakening, scope, evidence, mutants.
 
-    Passing tests alone never yields APPROVE.  The worktree already contains
+    Passing tests alone never approves a test edit.  The worktree already contains
     the applied patch.  ``python_executable``/``timeout_seconds`` select the
     target repository's interpreter; ``probe`` is a harness-supplied trusted
-    behaviour check (None = none available, so at best ESCALATE).
+    behaviour check (optional; when given it must pass).
     ``known_failures`` are other groups' still-unresolved CI failures, which may
-    keep failing (see ``verify_group``).
+    keep failing (see ``verify_group``).  ``cached_mutants`` (function -> mutants,
+    ``tools.mutation.load_cached_mutants``) replaces mutant generation for the
+    functions it lists; the mutants are executed now either way.
 
     Raises:
         ToolError, ToolTimeoutError.
@@ -103,24 +109,10 @@ def verify_repair(
         checks_run=True, files_modified=touched, out_of_scope_files=out_of_scope, test_files_modified=touched_tests
     )
 
-    before = after = 0
-    unrelated: list[str] = []
-    for path in touched_tests:
-        old_text, new_text = pre_patch.get(path), post_patch.get(path)
-        before += _count_asserts(old_text)
-        after += _count_asserts(new_text)
-        allowed = {_test_qualname(t.test_id) for t in group.failing_tests if t.test_file == path}
-        unrelated += [f"{path}::{name}" for name in sorted(_changed_tests(old_text, new_text) - allowed)]
-    removed = max(0, before - after)
-    skips = sum(1 for line in proposal.unified_diff.splitlines() if _SKIP_MARK.match(line))
-    weakening = TestWeakeningFindings(
-        checks_run=True,
-        assertions_before=before,
-        assertions_after=after,
-        removed_assertions=removed,
-        added_skip_markers=skips,
-        weakening_detected=bool(removed or skips),
-    )
+    found = analyse_test_changes({p: pre_patch.get(p) for p in touched_tests}, {p: post_patch.get(p) for p in touched_tests})
+    weakening = found.findings
+    allowed = {f"{t.test_file}::{_test_qualname(t.test_id)}" for t in group.failing_tests}
+    unrelated = sorted(found.changed_tests - allowed)
 
     is_fix = proposal.decision is RepairDirection.FIX_CODE
     tests_untouched = (not touched_tests) if is_fix else None  # this patch's own files, not earlier approvals
@@ -129,8 +121,7 @@ def verify_repair(
     problems: list[str] = list(test_problems)
     if out_of_scope:
         problems.append("patch touches files outside the edit policy: " + ", ".join(out_of_scope))
-    if weakening.weakening_detected:
-        problems.append(f"test weakening: {removed} assertion(s) removed, {skips} skip/xfail marker(s) added")
+    problems += found.problems
     if tests_untouched is False:
         problems.append("FIX_CODE repair modified test files")
     if evidence_met is False:
@@ -138,6 +129,7 @@ def verify_repair(
     if unrelated:
         problems.append("patch changes test functions outside this failure group: " + ", ".join(unrelated))
 
+    mutation = MutationCheck()
     review = None
     if not problems and llm is not None:
         review = llm.complete_structured(
@@ -159,14 +151,27 @@ def verify_repair(
                 worktree, probe, timeout_seconds=timeout_seconds, policy=policy,
                 python_executable=python_executable,
             )
-        outcome = trusted_outcome(run, verification)
+        cached = (cached_mutants or {}).get(group.group.function_qualname or "")
+        mutation = mutation_check(  # UPDATE_TEST: strength of the edited tests; FIX_CODE: oracle sensitivity
+            context, group, proposal, pre_patch, timeout_seconds=timeout_seconds,
+            python_executable=python_executable, mutants=list(cached) if cached else None,
+        )
+        outcome = repair_outcome(
+            proposal.decision, run, probe_verification=verification, mutation=mutation.result,
+            mutation_problems=mutation.problems, mutation_gaps=mutation.gaps,
+        )
         decision = outcome.recommended_decision
         reviewed = " and the semantic review found it consistent" if review is not None else ""
-        reasons = [] if decision is GuardDecision.APPROVE else [
-            f"post-repair tests pass, no integrity finding was raised{reviewed}, but "
-            + "; ".join(outcome.reasons)
-            + " - human verification required"
-        ]
+        if decision is GuardDecision.APPROVE:
+            reasons = []
+        elif decision is GuardDecision.REJECT:
+            reasons = list(outcome.reasons)
+        else:
+            reasons = [
+                f"post-repair tests pass, no integrity finding was raised{reviewed}, but "
+                + "; ".join(outcome.reasons)
+                + " - human verification required"
+            ]
     logger.info("guard: group %s -> %s", group.group.group_id, decision)
     return GuardResult(
         decision=decision,
@@ -178,6 +183,7 @@ def verify_repair(
             guard_decision=decision,
             weakening=weakening,
             prohibited_edits=edits,
+            mutation=mutation.result,
             tests_untouched_for_fix_code=tests_untouched,
             evidence_requirement_met=evidence_met,
             rejection_reasons=list(reasons) if decision is GuardDecision.REJECT else [],
@@ -242,11 +248,14 @@ def build_memory_record(
     """The record the Guard writes after an approved repair (function, behaviour signature,
     direction, executable probe derived from the approved test patch, evidence ids, commit).
 
+    The probe is derived from the group's tests as they stand after the approved repair
+    (``memory.record_from_repair``, Human 2's memory work).
+
     Raises:
-        NotImplementedError: probe derivation belongs to the memory work (Human 2); until it
-            exists the orchestrator logs the attempt as ``write_error``.
+        MemoryAuthorizationError: ``result`` is not APPROVE.
+        ToolError: no function to scope the record to, or no probe can be derived.
     """
-    raise NotImplementedError("deriving a memory record and its probe from an approved repair is not implemented yet")
+    return record_from_repair(context, group, analysis, proposal, result)
 
 
 def authorize_memory_write(
@@ -267,16 +276,6 @@ def authorize_memory_write(
         maintainer_approved=True,
         approved_at_commit=record.approved_at_commit,
     )
-
-
-def _count_asserts(text: str | None) -> int:
-    if not text:
-        return 0
-    try:
-        tree = ast.parse(text)
-    except SyntaxError:
-        return 0
-    return sum(isinstance(node, ast.Assert) for node in ast.walk(tree))
 
 
 def _diff_paths(diff: str) -> list[str]:
@@ -323,25 +322,3 @@ def _read_text(path: Path) -> str | None:
 def _test_qualname(test_id: str) -> str:
     """``tests/x.py::TestC::test_m[p]`` -> ``TestC.test_m``."""
     return ".".join(test_id.split("::")[1:]).split("[", 1)[0]
-
-
-def _changed_tests(old: str | None, new: str | None) -> set[str]:
-    """Test functions (``Class.method`` for methods) whose syntax tree differs between ``old`` and ``new``."""
-    before, after = _test_dumps(old), _test_dumps(new)
-    return {name for name in before.keys() | after.keys() if before.get(name) != after.get(name)}
-
-
-def _test_dumps(text: str | None) -> dict[str, str]:
-    try:
-        tree = ast.parse(text or "")
-    except SyntaxError:
-        return {}
-    found: dict[str, str] = {}
-    for node in tree.body:
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test"):
-            found[node.name] = ast.dump(node)
-        elif isinstance(node, ast.ClassDef) and node.name.startswith("Test"):
-            for member in node.body:
-                if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)) and member.name.startswith("test"):
-                    found[f"{node.name}.{member.name}"] = ast.dump(member)
-    return found

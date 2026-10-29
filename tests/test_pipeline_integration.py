@@ -36,6 +36,7 @@ from testorcode.schemas.result_schemas import (
     ToolCallStatus,
 )
 from testorcode.schemas.tests.conftest import make_s1
+from testorcode.tools.mutation import MutationCheck, mutation_check
 from testorcode.tools.pytest_runner import run_tests
 from testorcode.tools.verification import ProbeCase, TrustedProbe, verify_behaviour
 
@@ -82,6 +83,7 @@ def worktree(tmp_path: Path, monkeypatch) -> Path:
     monkeypatch.setattr(agent_tools, "run_tests", trusted)
     monkeypatch.setattr(orchestrator, "run_tests", trusted)  # B1's post-repair rerun
     monkeypatch.setattr(integrity_guard, "verify_behaviour", partial(verify_behaviour, isolation="trusted-host"))
+    monkeypatch.setattr(integrity_guard, "mutation_check", partial(mutation_check, isolation="trusted-host"))
     return root
 
 
@@ -147,12 +149,17 @@ def test_fix_code_repair_is_verified_by_a_trusted_probe_and_approved(worktree: P
     assert tools[0] == (ToolName.RUN_TESTS, AgentRole.TRIAGE, None)
     assert (ToolName.APPLY_PATCH, AgentRole.REPAIRER, "validate") in tools
     assert (ToolName.APPLY_PATCH, AgentRole.REPAIRER, "apply") in tools
-    assert tools[-3:] == [(ToolName.RUN_TESTS, AgentRole.INTEGRITY_GUARD, None)] * 2 + [
-        (ToolName.RUN_TESTS, AgentRole.ORCHESTRATOR, None)]  # targeted, regression, final suite
+    assert tools[-4:] == [(ToolName.RUN_TESTS, AgentRole.INTEGRITY_GUARD, None)] * 2 + [
+        (ToolName.RUN_MUTANTS, AgentRole.INTEGRITY_GUARD, None),  # FIX_CODE oracle-sensitivity check
+        (ToolName.RUN_TESTS, AgentRole.ORCHESTRATOR, None)]  # targeted, regression, mutants, final suite
+    assert record.integrity.mutation.killed_by_repaired_tests >= 1  # the untouched test detects broken variants
     assert all(e.status is ToolCallStatus.OK for e in record.tool_events)
 
 
-def test_guard_rejection_feeds_the_revision_and_an_unprobed_repair_escalates(worktree: Path) -> None:
+def test_guard_rejection_feeds_the_revision_and_an_unprobed_repair_escalates(worktree: Path, monkeypatch) -> None:
+    # The corrected test repair passes, but its strength cannot be measured (no executable cached mutant): escalate.
+    monkeypatch.setattr(integrity_guard, "mutation_check",
+                        lambda *a, **k: MutationCheck(gaps=("no executable cached mutant (test harness)",)))
     llm = FakeLLMClient({
         AgentRole.INTENT_ANALYST: [analysis(DecisionLabel.UPDATE_TEST)],
         AgentRole.REPAIRER: [
@@ -177,7 +184,7 @@ def test_guard_rejection_feeds_the_revision_and_an_unprobed_repair_escalates(wor
     assert record.final_test_status is TestRunStatus.FAILED
     repair_prompts = [c["user"] for c in llm.calls if c["role"] is AgentRole.REPAIRER]
     assert "YOUR PREVIOUS REPAIR WAS REJECTED" in repair_prompts[1] and "post-repair run" in repair_prompts[1]
-    assert record.integrity.guard_decision is GuardDecision.ESCALATE  # passing tests without a probe
+    assert record.integrity.guard_decision is GuardDecision.ESCALATE  # passing tests, strength not measured
     assert any("independent verification" in m for m in record.outcome.escalation.evidence_missing)
     assert (worktree / "tests/test_synthlib.py").read_text() == TESTS  # both patches undone
     assert record.outcome.maintainer_approved is None and record.memory_writes == []
@@ -238,7 +245,8 @@ def test_tool_outside_allowed_tools_is_refused_and_the_model_continues(worktree:
     refused = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
     assert [e.status for e in refused] == [ToolCallStatus.NOT_PERMITTED]
     assert "REFUSED: read_file" in [c["user"] for c in llm.calls if c["role"] is AgentRole.REPAIRER][1]
-    assert record.integrity.guard_decision is GuardDecision.ESCALATE  # repaired, no probe
+    # FIX_CODE with untouched tests, a passing group run and no new suite failure is verified by the original tests.
+    assert record.integrity.guard_decision is GuardDecision.APPROVE
 
 
 
@@ -328,7 +336,9 @@ def test_a2_and_b1_records_on_the_same_input_are_comparable(worktree: Path) -> N
 
     assert (a2.provenance.condition.value, b1.provenance.condition.value) == ("A2", "B1")
     assert [p.test_id for p in a2.predictions] == [p.test_id for p in b1.predictions] == [TEST_ID]
-    assert a2.predictions[0].predicted_action is DecisionLabel.ESCALATE  # Guard: passing tests, no probe
+    assert a2.predictions[0].predicted_action is DecisionLabel.FIX_CODE  # Guard: verified by the untouched tests
+    assert a2.integrity.guard_ran and a2.integrity.tests_untouched_for_fix_code is True
     assert b1.predictions[0].predicted_action is DecisionLabel.FIX_CODE  # B1 trusts the passing rerun
+    assert not b1.integrity.guard_ran
     assert a2.provenance.prompt_template_version != b1.provenance.prompt_template_version
     assert set(a2.model_dump()) == set(b1.model_dump())  # one result format for every condition
