@@ -150,13 +150,13 @@ def build_blocks():
 
     H1("3. Implemented components versus planned components")
     B.append(("table", ["Component", "Status", "Evidence / note"], [
-        ["Four roles and orchestrator", "Implemented", "Live runs on 9 dev episodes, FULL/A1/A2/A3"],
+        ["Four roles and orchestrator", "Implemented", "Live runs on 9 dev and 4 test episodes, FULL/A1/A2/A3"],
         ["B1 single-agent baseline", "Implemented", "Same tools, standard RAG, no memory; live runs"],
         ["BM25 retrieval, gold-evidence Recall@k", "Implemented", "docs/retrieval.md; hybrid embeddings planned"],
         ["Probe-backed scoped memory", "Implemented", "Probes run on current code before reuse; stale records flagged"],
         ["Restricted patch tool, weakening checks", "Implemented", "Tested on real episode states"],
         ["Mutation-based Guard check", "Implemented, coarse", "Cached mutants; small functions give 1-2 mutants (dev-06: none killed)"],
-        ["A1, A2, A3 switches", "Implemented, run on dev", "Single seed; A1 escalated every decision"],
+        ["A1, A2, A3 switches", "Implemented, run on dev and test", "Single seed; A1 escalated every decision on dev and test"],
         ["Experiment runner, metrics, report tables", "Implemented", "Resume, retry-failed, post-hoc integrity audit"],
         ["Docker sandbox", "Implemented, untested", "All runs used bubblewrap; Docker needs daemon access"],
         ["Tool-fault injection (scenario T)", "Planned", "Not wired; fault plans exist in two dev episodes"],
@@ -173,13 +173,14 @@ def build_blocks():
       "functions and modules. This is a pilot of one library, not the 72-episode, three-library set of the proposal. "
       "Outdated-test episodes (S1, S3) come from real commits that changed source and tests; regression episodes "
       "(S2, S4) inject a mutant into real code; S5 strips the intent evidence. Every episode was verified by running "
-      "the code: the CI state fails the same tests in 5 of 5 runs and the gold repair turns it green. The S5 episode "
+      "the code: the CI state fails the same tests in 5 of 5 runs and, where a gold repair exists, it turns the suite green. The S5 episode "
       "(dev-01) is provisional.")
     for split in ("dev", "test"):
         rows, dirs, acts, n = ds[split]
         B.append(("table", ["Episode", "Scenario", "Difficulty", "Failing tests", "Expected action(s)"], rows,
                   [0.14, 0.2, 0.16, 0.16, 0.34], f"{split} split episodes"))
-        P(f"{split} split, per failing test: gold direction {dirs}; expected action {acts}.")
+        fmt = lambda d: ", ".join(f"{k} {v}" for k, v in sorted(d.items()))  # noqa: E731
+        P(f"{split} split, per failing test: gold direction {fmt(dirs)}; expected action {fmt(acts)}.")
     P("The development split is FIX_CODE-heavy. Gold evidence ids exist for 5 of the 13 episodes (all UPDATE_TEST); "
       "recall@k is undefined elsewhere and is shown as '-'.")
 
@@ -219,7 +220,7 @@ def build_blocks():
     P("**How to read the results.**")
     L(["Direction is scored from the agent's hypothesis, so it is generous. An escalation counts by the side it "
        "blamed. Final-action accuracy is lower because conditions escalate often; read it with direction.",
-       "Correct-repair rates have denominators of 3 to 7 repairs. 'Unverifiable' means a repair was accepted but "
+       "Correct-repair rates have denominators of 1 to 7 repairs. 'Unverifiable' means a repair was accepted but "
        "no trusted probe confirmed it (A3 and B1 have no Guard).",
        "Masked regressions are 0 for every model condition because none edited a test to hide a regression. The "
        "metric only separates conditions from always-UPDATE_TEST. It does not show that the Guard is needed.",
@@ -250,13 +251,14 @@ def build_blocks():
            "not apply. All escalated. For the regression half only A2 produced a Guard-approved source fix; FULL and "
            "A3 escalated for missing evidence.",
            "**Decoy, test-04 (S4, gold FIX_CODE):** FULL and A3 read the decoy memory record (its probe passed) but "
-           "hypothesised a regression without citing it, and escalated. A1 cited the decoy record and hypothesised an "
-           "outdated test: the only run where the decoy swayed a hypothesis, and the escalation prevented a wrong-side "
-           "edit. B1, with no memory, fixed the code correctly.",
+           "hypothesised a regression without citing it, and escalated. A1 cited the decoy record for an outdated-test "
+           "hypothesis (the wrong direction): the only run in which a hypothesis followed the decoy, and its "
+           "escalation meant no wrong-side edit was made. B1, with no memory, fixed the code correctly.",
            "**B1 on test-01:** it hypothesised an outdated test for a real regression. Its two test edits were refused "
            "by the patch rule, so the masked regression was blocked by a tool rule, not by B1's judgment.",
            "**What this means:** on 4 episodes the ordering by direction macro-F1 (FULL, A2, A3 above B1 and A1) is "
-           "driven mostly by test-01 and test-03, and final-action accuracy is low everywhere because the evidence "
+           "driven by a few tests: B1 is wrong on test-01 and on both test-03 rotate_file tests, A1 on both "
+           "rotate_file tests and on test-04, and final-action accuracy is low everywhere because the evidence "
            "and patch-content rules turn most decisions into escalations. This is evidence about the policy's "
            "conservatism, not about which design is better."])
     H1("7. Challenges faced and mitigation plans")
@@ -296,9 +298,13 @@ def build_blocks():
     ], [0.18, 0.82]))
 
     H1("10. Demo and known limitations")
-    P("Demo: `scripts/run_episode.py --episode dev-03 --condition FULL` prints the failure, retrieved evidence, "
-      "decision, patch and verification output. `--condition TRIVIAL_FIX_CODE` needs no model. Comparison tables "
-      "come from the saved results above. Known limitations are listed in Sections 3 and 6.")
+    P("Demo: `bash scripts/demo.sh` runs offline, with no API call, and writes nothing under `results/`. It rebuilds "
+      "the CI state of dev-03 and shows its real failing tests, then replays the saved FULL run (evidence cited, "
+      "decision, accepted patch, Guard approval), the saved B1 and A3 runs on the same episode, a no-model baseline "
+      "through `scripts/run_episode.py`, and the results table rebuilt from the saved records. The commands, "
+      "expected output, an actual transcript and a terminal recording (`scriptreplay`) are in `docs/demo/`. A live "
+      "run with the model is possible (`scripts/run_episode.py --condition A2 --episode dev-03`) but spends API quota "
+      "and was not used for the demo. Known limitations are listed in Sections 3 and 6.")
     return B
 
 

@@ -1,0 +1,67 @@
+Script started on 2026-10-30 10:46:05+05:30 [<not executed on terminal>]
+=== 1. A real failure: rebuild dev-03's CI state from the agent view and run its failing tests ===
+
+tests/test_funcutils.py:143: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_funcutils.py::test_once_executes_only_once - assert <object...
+FAILED tests/test_funcutils.py::test_once_thread_safety - assert 0 == 1
+2 failed in 0.04s
+
+=== 2. What FULL did on it (saved live run, results/day3/pilot-dev-5cond): evidence, decision, patch, Guard ===
+=== dev-03  FULL  seed=0  gemini-3.5-flash-lite  prompts=triage-v1+intent-v4+repair-v5+guard-v1  run=dev-03-191b21c5af93
+status=completed  final_suite=passed  llm_calls=4  tokens=8725  revisions=0
+  group g1: boltons.funcutils.once.wrapper (mapped by model) tests=2 decision=FIX_CODE guard=approve disposition=accepted patches=['g1-r0']
+  decision tests/test_funcutils.py::test_once_executes_only_once: FIX_CODE by intent_analyst hypothesis=regression cited=['msg:42586df3dd67', 'docstring:funcutils.once'] gold=FIX_CODE OK
+  decision tests/test_funcutils.py::test_once_thread_safety: FIX_CODE by intent_analyst hypothesis=regression cited=['msg:42586df3dd67', 'docstring:funcutils.once'] gold=FIX_CODE OK
+  patch g1-r0 src ['boltons/funcutils.py'] -> applied
+  tool calls: apply_patch/repairer/ok=2, memory.read/intent_analyst/ok=1, memory.write/integrity_guard/ok=1, run_mutants/integrity_guard/ok=1, run_tests/integrity_guard/ok=2, run_tests/orchestrator/ok=1, run_tests/triage/ok=5, search_repo/intent_analyst/ok=3
+  memory reads (*=cited): -  writes: ['dev-03-g1:written']
+--- the accepted source patch (saved record) ---
+--- a/boltons/funcutils.py
++++ b/boltons/funcutils.py
+@@ -1037,7 +1037,7 @@
+     @functools.wraps(func)
+     def wrapper():
+         nonlocal result
+-        if result is _UNSET:
++        if result is not _UNSET:
+             return result
+         with lock:
+             if result is not _UNSET:
+
+=== 3. The same episode under B1 and A3 (saved runs) ===
+=== dev-03  A3  seed=0  gemini-3.5-flash-lite  prompts=triage-v1+intent-v4+repair-v5+guard-v1  run=dev-03-f9d5740317cb
+status=completed  final_suite=passed  llm_calls=3  tokens=7183  revisions=0
+  decision tests/test_funcutils.py::test_once_executes_only_once: FIX_CODE by intent_analyst hypothesis=regression cited=['msg:c0d580df13d3', 'docstring:funcutils.once'] gold=FIX_CODE OK
+  decision tests/test_funcutils.py::test_once_thread_safety: FIX_CODE by intent_analyst hypothesis=regression cited=['msg:c0d580df13d3', 'docstring:funcutils.once'] gold=FIX_CODE OK
+  patch g1-r0 src ['boltons/funcutils.py'] -> applied
+=== dev-03  B1  seed=0  gemini-3.5-flash-lite  prompts=b1-v2  run=dev-03-589c9e630c36
+status=completed  final_suite=passed  llm_calls=1  tokens=3962  revisions=0
+  decision tests/test_funcutils.py::test_once_executes_only_once: FIX_CODE by single_agent hypothesis=regression cited=['msg:c0d580df13d3'] gold=FIX_CODE OK
+  decision tests/test_funcutils.py::test_once_thread_safety: FIX_CODE by single_agent hypothesis=regression cited=['msg:c0d580df13d3'] gold=FIX_CODE OK
+  patch g1-r0 src ['boltons/funcutils.py'] -> applied
+=== aggregate
+
+=== 4. A no-model sanity baseline through the real entry point (written to a temp dir) ===
+=== dev-03 (S2)  condition=TRIVIAL_FIX_CODE  model=None
+decision tests/test_funcutils.py::test_once_executes_only_once: FIX_CODE (hypothesis None, cited []) direction=FIX_CODE gold=FIX_CODE action_match=True direction_match=True
+decision tests/test_funcutils.py::test_once_thread_safety: FIX_CODE (hypothesis None, cited []) direction=FIX_CODE gold=FIX_CODE action_match=True direction_match=True
+guard: not_run  reasons: -
+maintainer approved: None   memory writes: -
+tool calls: 0 {}
+run status: completed   tokens: 0   calls: 0
+record: /tmp/tmp.5nmVUDPAS2/out/dev-03-cb0f601a17e9.json
+
+=== 5. The results table, rebuilt from the saved records (copy in a temp dir) ===
+| Condition | Episodes run | Execution failures | Direction macro-F1 | Direction accuracy | Final-action accuracy | Correct-repair rate | Masked regressions |
+|---|---|---|---|---|---|---|---|
+| FULL | 9 | 0 | 1.000 | 14/14 (1.00) | 0.562 | 3/6 (0.50) | 0/10 (0.00) |
+| B1 | 9 | 0 | 0.944 | 12/14 (0.86) | 0.250 | 0/4 (0.00) +2 unverifiable | 0/10 (0.00) |
+| A1 | 9 | 0 | 0.676 | 11/14 (0.79) | 0.125 | - | 0/10 (0.00) |
+| A2 | 9 | 0 | 1.000 | 14/14 (1.00) | 0.688 | 5/7 (0.71) | 0/10 (0.00) |
+| A3 | 9 | 0 | 1.000 | 14/14 (1.00) | 0.438 | 0/3 (0.00) +3 unverifiable | 0/10 (0.00) |
+| TRIVIAL_UPDATE_TEST | 9 | 0 | 0.222 | 4/14 (0.29) | 0.250 | - | 10/10 (1.00) |
+| TRIVIAL_FIX_CODE | 9 | 0 | 0.417 | 10/14 (0.71) | 0.625 | - | 0/10 (0.00) |
+
+
+Script done on 2026-10-30 10:46:07+05:30 [COMMAND_EXIT_CODE="0"]

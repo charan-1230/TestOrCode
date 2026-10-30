@@ -28,13 +28,13 @@ TestOrCode decides, for each failing pytest test after a code change, whether to
 \begin{longtable}{|>{\raggedright\arraybackslash\footnotesize}p{0.292\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.172\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.396\textwidth}|}
 \hline
 \textbf{Component} & \textbf{Status} & \textbf{Evidence / note} \\ \hline\endhead
-Four roles and orchestrator & Implemented & Live runs on 9 dev episodes, FULL/A1/A2/A3 \\ \hline
+Four roles and orchestrator & Implemented & Live runs on 9 dev and 4 test episodes, FULL/A1/A2/A3 \\ \hline
 B1 single-agent baseline & Implemented & Same tools, standard RAG, no memory; live runs \\ \hline
 BM25 retrieval, gold-evidence Recall@k & Implemented & docs/retrieval.md; hybrid embeddings planned \\ \hline
 Probe-backed scoped memory & Implemented & Probes run on current code before reuse; stale records flagged \\ \hline
 Restricted patch tool, weakening checks & Implemented & Tested on real episode states \\ \hline
 Mutation-based Guard check & Implemented, coarse & Cached mutants; small functions give 1-2 mutants (dev-06: none killed) \\ \hline
-A1, A2, A3 switches & Implemented, run on dev & Single seed; A1 escalated every decision \\ \hline
+A1, A2, A3 switches & Implemented, run on dev and test & Single seed; A1 escalated every decision on dev and test \\ \hline
 Experiment runner, metrics, report tables & Implemented & Resume, retry-failed, post-hoc integrity audit \\ \hline
 Docker sandbox & Implemented, untested & All runs used bubblewrap; Docker needs daemon access \\ \hline
 Tool-fault injection (scenario T) & Planned & Not wired; fault plans exist in two dev episodes \\ \hline
@@ -45,7 +45,7 @@ Statistics (bootstrap, McNemar) & Planned & Not meaningful at pilot size \\ \hli
 Fine-tuning, frontend & Dropped & Outside scope by the plan \\ \hline
 \end{longtable}
 \section*{4. Dataset: sources, construction, labels and actual size}
-The pilot uses boltons (BSD-3-Clause), pinned at commit d31d821d. It has 9 development and 4 frozen test episodes, kept in separate chronological streams with disjoint commits, tests, functions and modules. This is a pilot of one library, not the 72-episode, three-library set of the proposal. Outdated-test episodes (S1, S3) come from real commits that changed source and tests; regression episodes (S2, S4) inject a mutant into real code; S5 strips the intent evidence. Every episode was verified by running the code: the CI state fails the same tests in 5 of 5 runs and the gold repair turns it green. The S5 episode (dev-01) is provisional.
+The pilot uses boltons (BSD-3-Clause), pinned at commit d31d821d. It has 9 development and 4 frozen test episodes, kept in separate chronological streams with disjoint commits, tests, functions and modules. This is a pilot of one library, not the 72-episode, three-library set of the proposal. Outdated-test episodes (S1, S3) come from real commits that changed source and tests; regression episodes (S2, S4) inject a mutant into real code; S5 strips the intent evidence. Every episode was verified by running the code: the CI state fails the same tests in 5 of 5 runs and, where a gold repair exists, it turns the suite green. The S5 episode (dev-01) is provisional.
 
 {\small\itshape dev split episodes}\par\nopagebreak
 \begin{longtable}{|>{\raggedright\arraybackslash\footnotesize}p{0.120\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.172\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.138\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.138\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.292\textwidth}|}
@@ -61,7 +61,7 @@ dev-07 & S4 & hard & 3 & FIX\_CODE \\ \hline
 dev-08 & S3 & hard & 4 & FIX\_CODE, UPDATE\_TEST \\ \hline
 dev-09 & S1 & easy & 1 & UPDATE\_TEST \\ \hline
 \end{longtable}
-dev split, per failing test: gold direction \{'UPDATE\_TEST': 6, 'FIX\_CODE': 10\}; expected action \{'ESCALATE': 2, 'FIX\_CODE': 10, 'UPDATE\_TEST': 4\}.
+dev split, per failing test: gold direction FIX\_CODE 10, UPDATE\_TEST 6; expected action ESCALATE 2, FIX\_CODE 10, UPDATE\_TEST 4.
 
 {\small\itshape test split episodes}\par\nopagebreak
 \begin{longtable}{|>{\raggedright\arraybackslash\footnotesize}p{0.120\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.172\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.138\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.138\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.292\textwidth}|}
@@ -72,7 +72,7 @@ test-02 & S2 & easy & 1 & FIX\_CODE \\ \hline
 test-03 & S3 & hard & 3 & FIX\_CODE, UPDATE\_TEST \\ \hline
 test-04 & S4 & hard & 1 & FIX\_CODE \\ \hline
 \end{longtable}
-test split, per failing test: gold direction \{'FIX\_CODE': 4, 'UPDATE\_TEST': 2\}; expected action \{'FIX\_CODE': 4, 'UPDATE\_TEST': 2\}.
+test split, per failing test: gold direction FIX\_CODE 4, UPDATE\_TEST 2; expected action FIX\_CODE 4, UPDATE\_TEST 2.
 
 The development split is FIX\_CODE-heavy. Gold evidence ids exist for 5 of the 13 episodes (all UPDATE\_TEST); recall@k is undefined elsewhere and is shown as '-'.
 
@@ -139,7 +139,7 @@ always FIX\_CODE & 4 & 0.400 & 4/6 (0.67) & 0.667 & - & 0/4 (0.00) \\ \hline
 
 \begin{itemize}
 \item Direction is scored from the agent's hypothesis, so it is generous. An escalation counts by the side it blamed. Final-action accuracy is lower because conditions escalate often; read it with direction.
-\item Correct-repair rates have denominators of 3 to 7 repairs. 'Unverifiable' means a repair was accepted but no trusted probe confirmed it (A3 and B1 have no Guard).
+\item Correct-repair rates have denominators of 1 to 7 repairs. 'Unverifiable' means a repair was accepted but no trusted probe confirmed it (A3 and B1 have no Guard).
 \item Masked regressions are 0 for every model condition because none edited a test to hide a regression. The metric only separates conditions from always-UPDATE\_TEST. It does not show that the Guard is needed.
 \item A1 escalated every decision, so its repair rate is undefined; its direction score comes from the hypothesis alone.
 \item The post-hoc audit found no weakened and no wrong-side accepted repair in any condition. Mutant-kill retention is pooled over only the test patches whose reference tests kill a mutant (raw counts above).
@@ -153,9 +153,9 @@ always FIX\_CODE & 4 & 0.400 & 4/6 (0.67) & 0.667 & - & 0/4 (0.00) \\ \hline
 \item \textbf{Success, test-01 (S2, gold FIX\_CODE), FULL:} the Analyst cited the commit message, the Repairer's source patch applied, the Guard approved after the mutants were run, the suite passed and a memory record was written. A2 and A3 reached the same repair.
 \item \textbf{Failure, test-02 (S2, gold FIX\_CODE), all five conditions:} every condition escalated. Each hypothesised a regression correctly but cited no expected-behaviour evidence, so the decision policy escalated. Final-action accuracy is therefore 0 on this episode for all of them, although direction was right.
 \item \textbf{Failure, test-03 (S3 mixed):} for the outdated half, FULL and A2 had their test patches refused by the literal-only rule (the model changed more than expected values), while A3 and B1 produced diffs that did not apply. All escalated. For the regression half only A2 produced a Guard-approved source fix; FULL and A3 escalated for missing evidence.
-\item \textbf{Decoy, test-04 (S4, gold FIX\_CODE):} FULL and A3 read the decoy memory record (its probe passed) but hypothesised a regression without citing it, and escalated. A1 cited the decoy record and hypothesised an outdated test: the only run where the decoy swayed a hypothesis, and the escalation prevented a wrong-side edit. B1, with no memory, fixed the code correctly.
+\item \textbf{Decoy, test-04 (S4, gold FIX\_CODE):} FULL and A3 read the decoy memory record (its probe passed) but hypothesised a regression without citing it, and escalated. A1 cited the decoy record for an outdated-test hypothesis (the wrong direction): the only run in which a hypothesis followed the decoy, and its escalation meant no wrong-side edit was made. B1, with no memory, fixed the code correctly.
 \item \textbf{B1 on test-01:} it hypothesised an outdated test for a real regression. Its two test edits were refused by the patch rule, so the masked regression was blocked by a tool rule, not by B1's judgment.
-\item \textbf{What this means:} on 4 episodes the ordering by direction macro-F1 (FULL, A2, A3 above B1 and A1) is driven mostly by test-01 and test-03, and final-action accuracy is low everywhere because the evidence and patch-content rules turn most decisions into escalations. This is evidence about the policy's conservatism, not about which design is better.
+\item \textbf{What this means:} on 4 episodes the ordering by direction macro-F1 (FULL, A2, A3 above B1 and A1) is driven by a few tests: B1 is wrong on test-01 and on both test-03 rotate\_file tests, A1 on both rotate\_file tests and on test-04, and final-action accuracy is low everywhere because the evidence and patch-content rules turn most decisions into escalations. This is evidence about the policy's conservatism, not about which design is better.
 \end{itemize}
 \section*{7. Challenges faced and mitigation plans}
 \begin{longtable}{|>{\raggedright\arraybackslash\footnotesize}p{0.387\textwidth}>{\raggedright\arraybackslash\footnotesize}p{0.473\textwidth}|}
@@ -189,6 +189,6 @@ Nov 12 - 13 & Final report, plots, reproducibility package, demo \\ \hline
 Nov 14 & Clean setup test, repository check, backups, final release; Nov 15 is submission only \\ \hline
 \end{longtable}
 \section*{10. Demo and known limitations}
-Demo: \texttt{scripts/run\_episode.py --episode dev-03 --condition FULL} prints the failure, retrieved evidence, decision, patch and verification output. \texttt{--condition TRIVIAL\_FIX\_CODE} needs no model. Comparison tables come from the saved results above. Known limitations are listed in Sections 3 and 6.
+Demo: \texttt{bash scripts/demo.sh} runs offline, with no API call, and writes nothing under \texttt{results/}. It rebuilds the CI state of dev-03 and shows its real failing tests, then replays the saved FULL run (evidence cited, decision, accepted patch, Guard approval), the saved B1 and A3 runs on the same episode, a no-model baseline through \texttt{scripts/run\_episode.py}, and the results table rebuilt from the saved records. The commands, expected output, an actual transcript and a terminal recording (\texttt{scriptreplay}) are in \texttt{docs/demo/}. A live run with the model is possible (\texttt{scripts/run\_episode.py --condition A2 --episode dev-03}) but spends API quota and was not used for the demo. Known limitations are listed in Sections 3 and 6.
 
 \end{document}
