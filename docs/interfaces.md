@@ -347,3 +347,18 @@ the final newline that contract stripping removes, and the orchestrator reverts 
 rules, the frozen test split and limitations: `datasets/README.md`.
 
 `retrieval` and `conditions` are implemented: BM25 retrieval, the A1/A2/B1 switches, the `search_repo` tool wrapper and metric helpers (`docs/retrieval.md`). A1 runs end to end since Day 3 (`docs/day3-human1.md`).
+
+## 11. Final-phase modules (2026-11-09)
+
+| Module | Contract |
+|---|---|
+| `orchestrator.PlainLLMRun` / `SingleAgentRun` / `StrongPromptRun` / `MergedRolesRun` | B0 / B1 / B2 / A5; `run_episode` picks the runner from `_RUNNERS`; every other condition runs `EpisodeRun` |
+| `memory.JsonlMemoryStore(scope="module")` | A4's coarse store; `MemoryRecordCheck.probe_gated=False` and `MemoryReadEvent.probe_gated=False` mark unchecked notes |
+| `conditions.PROPOSAL_NAME`, `DESCRIPTION`, `condition_label` | Condition names as the proposal numbers them (A3/A4 swapped) |
+| `evaluation.ScoringRules`, `scored_direction`, `escalated_after_correct_repair` | Frozen scoring rules; `summarize`, `report_tables` and `stats` take `rules=` |
+| `hypothesis.HypothesisThresholds`, `check_hypothesis` | Proposal §7 thresholds and the rejection rule |
+| `freeze.FrozenConfig`, `load_frozen`, `load_rules`, `settings_snapshot` | The frozen final configuration (`--freeze`) |
+| `contamination.run_probe` | Contamination probe (proposal §11) |
+| `provider_check.run_check` | Structured-output / tool-step reliability of a provider and model |
+| `tools.patch_content.test_patch_rule` | Context default for `TEST_PATCH_RULE` (`literal` / `expected_value`) |
+| `experiment.fault_plan_for`, `ExperimentConfig.tool_fault_rate/env_file/model/frozen` | Runner options of the final runs |

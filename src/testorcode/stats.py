@@ -11,6 +11,8 @@ execution failure is dropped (and counted).  Pure Python and deterministic (fixe
 * ``memory_savings`` - agent tool calls and model calls of a memory condition on episodes covered by an earlier
   approved record, against the same episodes and seeds in A2 (no memory).
 
+Every function takes the frozen ``ScoringRules`` (``evaluation``), so the statistics score exactly as the tables do.
+
 Small samples give wide intervals and large p-values; the numbers are reported with their ``n``, never alone.
 """
 
@@ -24,12 +26,15 @@ from collections.abc import Callable, Sequence
 from typing import Final, Literal
 
 from testorcode.evaluation import (
+    DEFAULT_RULES,
     EXECUTION_FAILURES,
+    ScoringRules,
     _direction_macro_f1,
     agent_tool_events,
     covered_by_memory,
+    escalated_after_correct_repair,
     evaluate_run,
-    predicted_direction,
+    scored_direction,
 )
 from testorcode.schemas.episode_schemas import DecisionLabel, Episode, RepairDirection
 from testorcode.schemas.result_schemas import ExperimentCondition, ExperimentRunRecord
@@ -40,11 +45,21 @@ BOOTSTRAP_SEED: Final[int] = 20261108
 Metric = Literal["direction_macro_f1", "final_action_accuracy"]
 Correctness = Literal["direction", "final_action"]
 
-# One scored unit: (episode id, seed, test id, gold direction, predicted direction, final action correct).
-_Unit = tuple[str, int | None, str, RepairDirection | None, RepairDirection | None, bool]
+# One scored unit: (episode id, seed, test id, gold direction, predicted direction, final action correct or None when
+# the scoring rules leave it out of final-action metrics).
+_Unit = tuple[str, int | None, str, RepairDirection | None, RepairDirection | None, bool | None]
 
 
-def _units(records: Sequence[ExperimentRunRecord], episodes: dict[str, Episode]) -> dict[tuple[str, int | None], list[_Unit]]:
+def _final_correct(record: ExperimentRunRecord, d, rules: ScoringRules) -> bool | None:
+    if rules.escalate_after_correct_repair == "wrong" or d.expected_action is DecisionLabel.ESCALATE:
+        return d.correct
+    if not escalated_after_correct_repair(record, d.test_id, d.gold_direction):
+        return d.correct
+    return True if rules.escalate_after_correct_repair == "correct" else None
+
+
+def _units(records: Sequence[ExperimentRunRecord], episodes: dict[str, Episode],
+           rules: ScoringRules = DEFAULT_RULES) -> dict[tuple[str, int | None], list[_Unit]]:
     """Per (episode, seed): the scored tests of one condition's completed run."""
     out: dict[tuple[str, int | None], list[_Unit]] = {}
     for rec in records:
@@ -58,22 +73,23 @@ def _units(records: Sequence[ExperimentRunRecord], episodes: dict[str, Episode])
                 continue
             gold_side = None if d.expected_action is DecisionLabel.ESCALATE else d.gold_direction
             units.append((rec.episode_id, rec.provenance.seed, d.test_id, gold_side,
-                          predicted_direction(predictions.get(d.test_id)), d.correct))
+                          scored_direction(predictions.get(d.test_id), rules), _final_correct(rec, d, rules)))
         out[(rec.episode_id, rec.provenance.seed)] = units
     return out
 
 
 def _metric(units: Sequence[_Unit], metric: Metric) -> float | None:
     if metric == "final_action_accuracy":
-        return sum(u[5] for u in units) / len(units) if units else None
+        counted = [u[5] for u in units if u[5] is not None]
+        return sum(counted) / len(counted) if counted else None
     return _direction_macro_f1([(u[3], u[4]) for u in units if u[3] is not None])
 
 
 def _paired(records: Sequence[ExperimentRunRecord], a: ExperimentCondition, b: ExperimentCondition,
-            episodes: Sequence[Episode]):
+            episodes: Sequence[Episode], rules: ScoringRules = DEFAULT_RULES):
     by_id = {e.episode_id: e for e in episodes}
-    ua = _units([r for r in records if r.condition is a], by_id)
-    ub = _units([r for r in records if r.condition is b], by_id)
+    ua = _units([r for r in records if r.condition is a], by_id, rules)
+    ub = _units([r for r in records if r.condition is b], by_id, rules)
     keys = sorted(set(ua) & set(ub), key=lambda k: (k[0], -1 if k[1] is None else k[1]))
     dropped = len(set(ua) ^ set(ub))
     return ua, ub, keys, dropped
@@ -82,12 +98,13 @@ def _paired(records: Sequence[ExperimentRunRecord], a: ExperimentCondition, b: E
 def paired_bootstrap(
     records: Sequence[ExperimentRunRecord], a: ExperimentCondition, b: ExperimentCondition, episodes: Sequence[Episode],
     *, metric: Metric = "direction_macro_f1", samples: int = BOOTSTRAP_SAMPLES, seed: int = BOOTSTRAP_SEED,
+    rules: ScoringRules = DEFAULT_RULES,
 ) -> dict:
     """``metric(a) - metric(b)`` on paired runs, with a 95% percentile bootstrap CI over episodes.
 
     Every seed of a resampled episode is kept together (the episode is the resampling unit).
     """
-    ua, ub, keys, dropped = _paired(records, a, b, episodes)
+    ua, ub, keys, dropped = _paired(records, a, b, episodes, rules)
     episode_ids = sorted({k[0] for k in keys})
     by_episode: dict[str, list[tuple[str, int | None]]] = defaultdict(list)
     for k in keys:
@@ -121,14 +138,14 @@ def _percentile(sorted_values: Sequence[float], q: float) -> float:
 
 def mcnemar(
     records: Sequence[ExperimentRunRecord], a: ExperimentCondition, b: ExperimentCondition, episodes: Sequence[Episode],
-    *, correctness: Correctness = "direction",
+    *, correctness: Correctness = "direction", rules: ScoringRules = DEFAULT_RULES,
 ) -> dict:
     """Exact two-sided McNemar test on paired per-test correctness.
 
     ``b_only``: tests ``a`` got wrong and ``b`` right; ``a_only``: the reverse.  p = P(X <= min) * 2 under
     Binomial(a_only + b_only, 1/2), capped at 1.  Gold-ESCALATE tests count only for ``final_action``.
     """
-    ua, ub, keys, dropped = _paired(records, a, b, episodes)
+    ua, ub, keys, dropped = _paired(records, a, b, episodes, rules)
 
     def right(u: _Unit) -> bool | None:
         if correctness == "final_action":
@@ -154,14 +171,14 @@ def mcnemar(
 
 
 def seed_summary(records: Sequence[ExperimentRunRecord], episodes: Sequence[Episode], *,
-                 metric: Metric = "direction_macro_f1") -> dict[str, dict]:
+                 metric: Metric = "direction_macro_f1", rules: ScoringRules = DEFAULT_RULES) -> dict[str, dict]:
     """Per condition: ``metric`` for each seed (over that seed's completed runs), mean and sample std."""
     by_id = {e.episode_id: e for e in episodes}
     out: dict[str, dict] = {}
     for condition in sorted({r.condition for r in records}, key=lambda c: c.value):
         per_seed = {}
         for seed in sorted({r.provenance.seed for r in records if r.condition is condition}, key=lambda s: -1 if s is None else s):
-            units = _units([r for r in records if r.condition is condition and r.provenance.seed == seed], by_id)
+            units = _units([r for r in records if r.condition is condition and r.provenance.seed == seed], by_id, rules)
             per_seed[seed] = _metric([u for us in units.values() for u in us], metric)
         values = [v for v in per_seed.values() if v is not None]
         out[condition.value] = {

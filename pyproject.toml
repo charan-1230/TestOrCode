@@ -29,6 +29,7 @@ mutation = [
 ]
 report = [
     "matplotlib>=3.8,<4",
+    "reportlab>=4,<6",
 ]
 
 [tool.hatch.build.targets.wheel]

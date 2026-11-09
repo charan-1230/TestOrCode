@@ -9,20 +9,57 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from testorcode.schemas.tests.conftest import T_NORM, T_SLUG, make_s3
 from testorcode.schemas.episode_schemas import (
-    DecisionLabel, EvidenceSourceType, HypothesisKind, PatchScope,
-    RepairDirection, ToolFaultKind, ToolName,
+    DecisionLabel,
+    EvidenceSourceType,
+    HypothesisKind,
+    PatchScope,
+    RepairDirection,
+    ToolFaultKind,
+    ToolName,
 )
 from testorcode.schemas.result_schemas import (
-    CORE_CONDITIONS, METRIC_SUPPORT, AgentRole, ErrorCategory, ErrorRecord, EscalationSummary,
-    EvidenceEvaluation, ExperimentCondition, ExperimentRunRecord, GuardDecision, IntegrityEvaluation,
-    IntegrityReport, MemoryReadEvent, MemoryWriteAttempt, MutationResult, PatchApplicationStatus,
-    PatchRecord, PredictedDecision, ProbeStatus, ProhibitedEditCheck, RepairEvaluation,
-    RepairVerificationDimension as Dim, RetrievalMethod, RetrievedEvidence, RunEvaluation,
-    RunOutcome, RunProvenance, RunStatus, SupportStatus, TestRunPhase, TestRunResult, TestRunStatus,
-    TestWeakeningFindings, TokenUsage, ToolCallStatus, ToolEvent, UnitDecisionScore,
+    CORE_CONDITIONS,
+    METRIC_SUPPORT,
+    AgentRole,
+    ErrorCategory,
+    ErrorRecord,
+    EscalationSummary,
+    EvidenceEvaluation,
+    ExperimentCondition,
+    ExperimentRunRecord,
+    GuardDecision,
+    IntegrityEvaluation,
+    IntegrityReport,
+    MemoryReadEvent,
+    MemoryWriteAttempt,
+    MutationResult,
+    PatchApplicationStatus,
+    PatchRecord,
+    PredictedDecision,
+    ProbeStatus,
+    ProhibitedEditCheck,
+    RepairEvaluation,
+    RetrievalMethod,
+    RetrievedEvidence,
+    RunEvaluation,
+    RunOutcome,
+    RunProvenance,
+    RunStatus,
+    SupportStatus,
+    TestRunPhase,
+    TestRunResult,
+    TestRunStatus,
+    TestWeakeningFindings,
+    TokenUsage,
+    ToolCallStatus,
+    ToolEvent,
+    UnitDecisionScore,
 )
+from testorcode.schemas.result_schemas import (
+    RepairVerificationDimension as Dim,
+)
+from testorcode.schemas.tests.conftest import T_NORM, T_SLUG, make_s3
 
 MODEL = "qwen/qwen3-coder-480b-a35b-instruct"
 C = ExperimentCondition
@@ -310,7 +347,7 @@ def test_correct_decision_is_separate_from_repair_success() -> None:
 
 
 def test_unit_score_consistency() -> None:
-    kw: dict[str, Any] = dict(test_id="t", gold_direction=RepairDirection.FIX_CODE, expected_action=DecisionLabel.FIX_CODE)
+    kw: dict[str, Any] = {"test_id": "t", "gold_direction": RepairDirection.FIX_CODE, "expected_action": DecisionLabel.FIX_CODE}
     with pytest.raises(ValidationError, match="correct must equal"):
         UnitDecisionScore(predicted_action=DecisionLabel.UPDATE_TEST, correct=True, **kw)
     with pytest.raises(ValidationError, match="cannot also be a wrong-side"):

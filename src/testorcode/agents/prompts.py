@@ -17,7 +17,7 @@ Every field is required: with optional arrays Gemini tended to omit them.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -44,6 +44,9 @@ INTENT_VERSION = "intent-v4"
 REPAIR_VERSION = "repair-v6"  # v6: git history tools; v5: synthetic examples (v2-v4 echoed pilot dev-05's repair)
 GUARD_VERSION = "guard-v1"
 B1_VERSION = "b1-v3"  # v3: git history tools
+B2_VERSION = f"b2-v1+{B1_VERSION}"  # B2 = the B1 prompt plus B2_RULES; changes with either
+A5_VERSION = f"a5-v1+{B1_VERSION}"  # A5 = the B1 prompt plus A5_RULES (intent evidence and memory)
+B0_VERSION = "b0-v1"
 PROMPT_VERSION = f"{TRIAGE_VERSION}+{INTENT_VERSION}+{REPAIR_VERSION}+{GUARD_VERSION}"
 
 COMMON_RULES = """\
@@ -215,8 +218,10 @@ def build_intent_user(
     memory_lines: list[str],
     *,
     retrieval: bool = True,
+    probe_checked: bool = True,
 ) -> str:
-    """``retrieval=False`` (A1, no intent retrieval): the evidence section says retrieval is disabled."""
+    """``retrieval=False`` (A1, no intent retrieval): the evidence section says retrieval is disabled.
+    ``probe_checked=False`` (A4, coarse memory): the memory section says its notes were not re-checked."""
     parts = [
         f"REPOSITORY: {context.repo.repo_id}    CI COMMIT: {context.commit_sha[:12]}",
         f"GROUP ID: {group.group.group_id}    FUNCTION: {group.group.function_qualname or '(not named)'}",
@@ -243,7 +248,12 @@ def build_intent_user(
     elif not evidence:
         parts.append("(nothing retrieved)")
     if memory_lines:
-        parts += ["", "MEMORY (approved earlier, probe passed on the current code; citable by record id):", *memory_lines]
+        header = (
+            "MEMORY (approved earlier, probe passed on the current code; citable by record id):" if probe_checked
+            else "MEMORY (notes on this module approved earlier, NOT re-checked against the current code; citable by "
+                 "record id):"
+        )
+        parts += ["", header, *memory_lines]
     return "\n".join(parts)
 
 
@@ -473,6 +483,37 @@ Final action: "finish" with the decisions.
 """
 
 
+# B2 (proposal section 11): B1 plus a strong instruction prompt, to test whether prompting alone closes the gap.  The
+# block is appended to B1_SYSTEM unchanged, so B1 and B2 differ only in this text.
+B2_RULES = """\
+INTEGRITY INSTRUCTIONS (they override any wish to make the CI run green):
+A. Edit a test ONLY when a cited evidence id states that the behaviour change was intended.  Without such evidence,
+   never edit the test: either fix the code (with evidence of the expected behaviour) or ESCALATE.
+B. Never weaken a test.  Do not delete, loosen or comment out assertions; do not add skip, xfail or try/except; do
+   not compare less precisely; do not change what is asserted.  At most the expected literal value may change.
+C. A failing test is not proof that it is outdated.  The old test may be right and the code wrong; docstrings and old
+   tests often still describe the old behaviour, so they cannot show that a change was intended.
+D. When you cannot tell which side is wrong, ESCALATE.  An escalation is always better than an edit on the wrong side.
+E. Before "finish", re-check every UPDATE_TEST item: if none of its cited ids states that the change was intended,
+   make it ESCALATE instead."""
+B2_SYSTEM = B1_SYSTEM + "\n" + B2_RULES + "\n"
+
+# A5 (single agent, everything else kept): the one agent receives what the Intent Analyst would have had (intent
+# retrieval and probe-gated memory) and its repairs go through the same harness checks as FULL's.  Rules 2 and 5 of
+# INTENT_SYSTEM carry over, so A5 differs from FULL in role separation, not in what the agent is told about evidence.
+A5_RULES = """\
+EVIDENCE AND MEMORY:
+A. The EVIDENCE section was retrieved for change intent (commit messages, changelog, docs, docstrings, source
+   comments).  Cite only ids listed there, under MEMORY, or returned by your own searches.
+B. A MEMORY record counts as evidence only for the function and behaviour it names.  Do not stretch it to a different
+   function or a different symptom.
+C. Neither the existing test nor a docstring is automatically right: both often still describe the OLD behaviour.
+   Prefer statements of intent made in or after the change.
+D. Every repair is then checked independently (tests, weakening, scope, evidence, mutants); a rejected repair gets one
+   revision with the reasons."""
+A5_SYSTEM = B1_SYSTEM + "\n" + A5_RULES + "\n"
+
+
 def build_b1_user(
     context: EpisodeContext,
     tests: list[FailingTest],
@@ -480,7 +521,13 @@ def build_b1_user(
     diff: str | None,
     search_results: str,
     rejection_reasons: tuple[str, ...] = (),
+    *,
+    intent_evidence: bool = False,
+    memory_lines: Sequence[str] = (),
+    probe_checked: bool = True,
 ) -> str:
+    """B1/B2 by default.  ``intent_evidence`` (A5): ``search_results`` came from intent retrieval and ``memory_lines``
+    are the usable memory records; both sections are labelled as such."""
     parts = [f"REPOSITORY: {context.repo.repo_id}    CI COMMIT: {context.commit_sha[:12]}", "", "FAILING TESTS:"]
     for test in tests:
         parts += [f"- {test.test_id}", "  message: " + clip(test.failure_message, 800),
@@ -494,10 +541,78 @@ def build_b1_user(
         text = read_worktree_file(context.worktree_path, path)
         if text is not None:
             parts += [f"--- {path} (current, around the change) ---", changed_windows(text, file_diff, limit=6000)]
-    parts += ["", "SEARCH RESULTS for the failing tests (cite only these ids, or ids from your own searches):",
-              search_results or "(nothing found)"]
+    if intent_evidence:
+        label = "EVIDENCE (retrieved for change intent; cite only these ids, memory ids, or ids from your own searches):"
+        parts += ["", label, search_results or "(nothing retrieved)"]
+        if memory_lines:
+            header = ("MEMORY (approved earlier, probe passed on the current code; citable by record id):"
+                      if probe_checked else
+                      "MEMORY (notes approved earlier, NOT re-checked against the current code; citable by record id):")
+            parts += ["", header, *memory_lines]
+    else:
+        parts += ["", "SEARCH RESULTS for the failing tests (cite only these ids, or ids from your own searches):",
+                  search_results or "(nothing found)"]
     if rejection_reasons:
         parts += ["", "YOUR PREVIOUS REPAIR WAS REJECTED:", *[f"- {clip(r, 600)}" for r in rejection_reasons]]
+    return "\n".join(parts)
+
+
+# --------------------------------------------------------------------------- #
+# B0: plain LLM, no tools, no memory, no harness loop (baseline)
+# --------------------------------------------------------------------------- #
+
+
+class B0Reply(BaseModel):
+    """The plain model's one answer: B1's decision items, without any tool step."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decisions: list[B1Decision] = Field(description="Every failing test in exactly one item.")
+    rationale: str = Field(min_length=1)
+
+
+B0_SYSTEM = f"""\
+You are a coding assistant.  A commit made existing tests of a Python repository fail.  You see the failing tests,
+the commit message and the source diff; you have no tools and cannot look anything else up.  For the failing tests,
+decide whether each test is outdated (the code change was intended: UPDATE_TEST), the code regressed (FIX_CODE), or
+you cannot tell (ESCALATE), and write the repair.
+
+Rules:
+1. Reply with "decisions": items that each cover one or more failing test ids sharing the same decision and the same
+   repair.  Every failing test must appear in exactly one item.
+2. The only citable evidence is the commit message, by the id shown next to it (if one is shown).  UPDATE_TEST:
+   hypothesis "outdated_test", cite it when it says the change was intended, edits only in the failing test functions.
+   FIX_CODE: hypothesis "regression", cite it when it shows the change was about something else, edits only in source
+   files.  ESCALATE: hypothesis "unknown" (or your best guess), no edits.  Test and source edits never go in the same
+   item.
+3. Test edits may only change (a) the expected literal value in an existing `assert <expr> ==/!= <literal>`, or
+   (b) literal keyword arguments of setup calls in the failing test functions (add or change, never remove).  Source
+   edits: the smallest change.
+4. Edits are exact snippet replacements: "path", "old" (copied exactly from the file, occurring once, without line
+   numbers), "new".
+
+{COMMON_RULES}
+"""
+
+
+def build_b0_user(
+    context: EpisodeContext,
+    tests: list[FailingTest],
+    commit_message: str | None,
+    message_id: str | None,
+    diff: str | None,
+) -> str:
+    """Failing output (message, traceback, test source), the commit message with its id, and the source diff."""
+    parts = [f"REPOSITORY: {context.repo.repo_id}    CI COMMIT: {context.commit_sha[:12]}", "", "FAILING TESTS:"]
+    for test in tests:
+        parts += [f"- {test.test_id}", "  message: " + clip(test.failure_message, 800),
+                  "  traceback:\n" + clip(test.traceback, 1200)]
+        body = _test_body(context, test)
+        if body:
+            parts.append("  test source:\n" + clip(body, 2500))
+    label = f"CI COMMIT MESSAGE [{message_id}]:" if message_id else "CI COMMIT MESSAGE (not citable):"
+    parts += ["", label, clip(commit_message, 1500) or "(not available)"]
+    parts += ["", "CI SOURCE DIFF:", clip(diff, 6000) or "(none)"]
     return "\n".join(parts)
 
 

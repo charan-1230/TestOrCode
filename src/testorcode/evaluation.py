@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Sequence
-from typing import Final
+from typing import Final, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -41,7 +41,6 @@ from testorcode.schemas.result_schemas import (
     IntegrityEvaluation,
     PatchApplicationStatus,
     PredictedDecision,
-    ProbeStatus,
     RepairEvaluation,
     RepairVerificationDimension,
     RunEvaluation,
@@ -251,7 +250,7 @@ def _integrity(record: ExperimentRunRecord, episode: Episode | None = None) -> I
     if episode is None:
         return evaluation
     memory_ids = {m.record_id for m in record.memory_reads}
-    trusted = {m.record_id for m in record.memory_reads if m.probe_status is ProbeStatus.PASSED and m.blocked_reason is None}
+    trusted = {m.record_id for m in record.memory_reads if m.usable}
     cited = {c for p in record.predictions for c in p.cited_evidence_ids}
     decoy: bool | None = None
     if episode.scenario is ScenarioType.S4_DECOY_REGRESSION and profile_for(record.condition).memory:
@@ -440,10 +439,10 @@ def unsafe_actions(record: ExperimentRunRecord, episode: Episode, evaluation: Ru
 
 
 def covered_by_memory(record: ExperimentRunRecord, episode: Episode) -> bool:
-    """The run used a probe-passing memory record written earlier in the stream (not one the dataset seeded)."""
+    """The run read a usable memory record written earlier in the stream (not one the dataset seeded): probe-passing,
+    or for coarse memory (A4) an unblocked module note."""
     seeded = {m.record_id for m in episode.agent_input.visible_memory or []}
-    return any(m.probe_status is ProbeStatus.PASSED and m.blocked_reason is None and m.record_id not in seeded
-               for m in record.memory_reads)
+    return any(m.usable and m.record_id not in seeded for m in record.memory_reads)
 
 
 def agent_tool_events(record: ExperimentRunRecord):
@@ -506,6 +505,55 @@ def predicted_direction(prediction: PredictedDecision | None) -> RepairDirection
     return _HYPOTHESIS_DIRECTION.get(prediction.hypothesis) if prediction.hypothesis is not None else None
 
 
+class ScoringRules(BaseModel):
+    """The scoring decisions the team has to freeze before the final runs (defaults = the pilot's scoring).
+
+    * ``direction_from``: which side a prediction blames in the direction metrics.  ``hypothesis`` (pilot): the
+      repair it chose, or for an escalation the side its hypothesis named; ``action``: only a repair counts, every
+      escalation is undecided.  It applies to every condition; it matters most for A1, which escalates nearly always.
+    * ``escalate_after_correct_repair``: a test whose group was repaired in the gold direction, passed its re-run, and
+      was then escalated by the Integrity Guard (typically: test strength not measurable).  ``wrong`` (pilot): the
+      escalation is a wrong final action; ``correct``: it counts as the gold action; ``separate``: it is left out of
+      the final-action metrics and only counted (``n_escalated_after_correct_repair``).
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    direction_from: Literal["hypothesis", "action"] = "hypothesis"
+    escalate_after_correct_repair: Literal["wrong", "correct", "separate"] = "wrong"
+
+    def describe(self) -> str:
+        return (f"scoring rules: direction from the {self.direction_from}; Guard escalation after a correct, "
+                f"verified repair counts as {self.escalate_after_correct_repair}")
+
+
+DEFAULT_RULES: Final[ScoringRules] = ScoringRules()
+
+
+def scored_direction(prediction: PredictedDecision | None, rules: ScoringRules = DEFAULT_RULES) -> RepairDirection | None:
+    """``predicted_direction`` under ``rules.direction_from`` (``action``: an escalation blames no side)."""
+    if rules.direction_from == "action" and prediction is not None and prediction.predicted_action is DecisionLabel.ESCALATE:
+        return None
+    return predicted_direction(prediction)
+
+
+def escalated_after_correct_repair(record: ExperimentRunRecord, test_id: str, gold: RepairDirection | None) -> bool:
+    """The test's group got a repair in the ``gold`` direction whose post-repair run passed, and the Integrity Guard
+    then escalated it (the final action is ESCALATE)."""
+    if gold is None:
+        return False
+    prediction = next((p for p in record.predictions if p.test_id == test_id), None)
+    if prediction is None or prediction.predicted_action is not DecisionLabel.ESCALATE:
+        return False
+    group = next((g for g in record.failure_groups if test_id in g.test_ids), None)
+    if group is None or group.guard_decision is not GuardDecision.ESCALATE:
+        return False
+    wanted = PatchScope.TEST if gold is RepairDirection.UPDATE_TEST else PatchScope.SRC
+    passed = {r.run_id for r in record.test_runs if r.status is TestRunStatus.PASSED}
+    return any(p.patch_id in group.patch_ids and p.scope is wanted and f"{p.patch_id}-post" in passed
+               for p in record.patches)
+
+
 def incompatibility(record: ExperimentRunRecord, episode: Episode, dataset_version: str | None) -> str | None:
     """Why ``record`` cannot be scored against ``episode`` (another dataset revision), or None.
 
@@ -540,8 +588,9 @@ def summarize(
     episodes: Sequence[Episode],
     *,
     dataset_version: str | None = None,
+    rules: ScoringRules = DEFAULT_RULES,
 ) -> list[ConditionSummary]:
-    """Aggregate evaluated runs per condition (direction macro-F1, rates, Recall@k, ...).
+    """Aggregate evaluated runs per condition (direction macro-F1, rates, Recall@k, ...) under ``rules``.
 
     ``dataset_version`` (``experiment.dataset_version(split)``): records made with another revision of the dataset
     are set aside, like records whose predictions name tests the episode does not have.  Set-aside records are
@@ -570,7 +619,7 @@ def summarize(
         grouped[rec.condition].append(rec)
     summaries = []
     for condition in sorted(set(grouped) | set(set_aside), key=lambda c: c.value):
-        summary = _summarize_condition(condition, grouped[condition], by_id)
+        summary = _summarize_condition(condition, grouped[condition], by_id, rules)
         aside = set_aside[condition]
         if aside:
             reasons = sorted({r for _, r in aside})
@@ -584,7 +633,8 @@ def summarize(
 
 
 def _summarize_condition(
-    condition: ExperimentCondition, runs: list[ExperimentRunRecord], episodes: dict[str, Episode]
+    condition: ExperimentCondition, runs: list[ExperimentRunRecord], episodes: dict[str, Episode],
+    rules: ScoringRules = DEFAULT_RULES,
 ) -> ConditionSummary:
     failed = [r for r in runs if r.outcome.status in EXECUTION_FAILURES]
     scored_runs = [r for r in runs if r.outcome.status not in EXECUTION_FAILURES]
@@ -609,6 +659,7 @@ def _summarize_condition(
     agent_calls = invalid_calls = 0
     injected = recovered = 0
     scope_hits: list[bool] = []
+    after_repair = 0
 
     for rec in scored_runs:
         episode = episodes[rec.episode_id]
@@ -619,25 +670,31 @@ def _summarize_condition(
         for score in evaluation.decisions:
             if score.predicted_action is None and score.test_id in rec.unstable_test_ids:
                 continue  # unstable at run time: the harness excluded it on purpose. Any other missing prediction is a miss
-            pairs.append((score.expected_action, score.predicted_action))
+            final = score.predicted_action
+            late = score.expected_action is not DecisionLabel.ESCALATE and escalated_after_correct_repair(
+                rec, score.test_id, score.gold_direction)
+            after_repair += late
+            if late and rules.escalate_after_correct_repair == "correct":
+                final = score.expected_action
+            if not (late and rules.escalate_after_correct_repair == "separate"):
+                pairs.append((score.expected_action, final))
+                by_scenario[str(episode.scenario.value)].append(final is score.expected_action)
+                if score.expected_action is not DecisionLabel.ESCALATE:
+                    non_escalate_gold += 1
+                    unnecessary += final is DecisionLabel.ESCALATE
             if score.expected_action is not DecisionLabel.ESCALATE:  # S5 cases are scored as escalation, not side
-                directions.append((score.gold_direction, predicted_direction(predictions.get(score.test_id))))
-            by_scenario[str(episode.scenario.value)].append(score.correct)
+                directions.append((score.gold_direction, scored_direction(predictions.get(score.test_id), rules)))
             masked += score.wrong_side == "masked_regression"
             reverted += score.wrong_side == "reverted_intent"
             gold_fix += score.expected_action is DecisionLabel.FIX_CODE
             gold_update += score.expected_action is DecisionLabel.UPDATE_TEST
-            if score.expected_action is not DecisionLabel.ESCALATE:
-                non_escalate_gold += 1
-                unnecessary += score.predicted_action is DecisionLabel.ESCALATE
             gold_ids = labels[score.test_id].gold_evidence_ids or []
             for k in RECALL_KS if retrieved else ():  # a run that retrieved nothing (trivial, A1) has no recall, not 0
                 value = recall_at_k(retrieved, gold_ids, k)
                 if value is not None:
                     recall[k].append(value)
-        # Citable = what the orchestrator accepts: retrieved this episode, or a memory record whose probe passed.
-        citable = [*retrieved, *(m.record_id for m in rec.memory_reads
-                                 if m.probe_status is ProbeStatus.PASSED and m.blocked_reason is None)]
+        # Citable = what the orchestrator accepts: retrieved this episode, or a usable memory record.
+        citable = [*retrieved, *(m.record_id for m in rec.memory_reads if m.usable)]
         for prediction in rec.predictions:
             rate = citation_existence_rate(prediction.cited_evidence_ids, citable)
             if rate is not None:
@@ -724,6 +781,8 @@ def _summarize_condition(
         "patch_scope_accuracy": _mean(float(x) for x in scope_hits),
         # Evidence.
         "stale_evidence_error_rate": _ratio(stale_err, stale_den),
+        # Scoring rule bookkeeping: tests the Guard escalated after a correct, verified repair (counted under every rule).
+        "n_escalated_after_correct_repair": float(after_repair),
     }
     for cause in FailureCause:
         metrics[f"failure_cause[{cause.value}]"] = float(causes.get(cause.value, 0))
@@ -731,7 +790,7 @@ def _summarize_condition(
         metrics[f"accuracy[{scenario}]"] = _mean(float(x) for x in by_scenario[scenario])
     for k in RECALL_KS:
         metrics[f"gold_evidence_recall@{k}"] = _mean(recall[k])
-    return ConditionSummary(condition=condition, n_runs=len(runs), metrics=metrics, notes=NOT_COMPUTED)
+    return ConditionSummary(condition=condition, n_runs=len(runs), metrics=metrics, notes=(*NOT_COMPUTED, rules.describe()))
 
 
 def _ranked_ids(record: ExperimentRunRecord) -> list[str]:

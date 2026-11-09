@@ -432,6 +432,31 @@ def test_memory_reads_are_logged_and_cited_records_marked() -> None:
     assert record.outcome.status is RunStatus.COMPLETED
 
 
+class CoarseFakeMemory(FakeMemory):
+    """A4's store: a module note, usable without a probe run."""
+
+    scope = "module"
+
+    def read(self, context, function_qualname):
+        rec = memory_record("mem-1")
+        return MemoryReadResult(checks=(MemoryRecordCheck(record=rec, probe_gated=False),))
+
+
+def test_a4_cites_an_unchecked_module_note_and_runs_the_full_pipeline() -> None:
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "A4"})
+    record, er, _, _ = run(S1, {
+        AgentRole.INTENT_ANALYST: [analysis(G1, cited_evidence_ids=("mem-1",))],
+        AgentRole.REPAIRER: [proposal(G1)],
+        AgentRole.INTEGRITY_GUARD: [guard(GuardDecision.APPROVE)],
+    }, settings=settings, memory=CoarseFakeMemory())
+    [event] = record.memory_reads
+    assert event.used_as_evidence and not event.probe_gated and event.probe_status is ProbeStatus.NOT_RUN
+    assert record.outcome.status is RunStatus.COMPLETED and Stage.INTEGRITY_GUARD in stages(er)
+    # The same condition on a scoped store is refused, never run as FULL.
+    refused, _, _, _ = run(S1, {}, settings=settings, memory=FakeMemory())
+    assert refused.outcome.status is RunStatus.ORCHESTRATOR_ERROR and "module-scope" in refused.errors[0].message
+
+
 def test_agents_cannot_write_memory() -> None:
     store = FakeMemory()
     fake = FakeAgents()
@@ -643,15 +668,33 @@ APPROVED = {
 }
 
 
-@pytest.mark.parametrize("condition", ["A4", "A5", "B0", "B2", "TRIVIAL_UPDATE_TEST"])
-def test_condition_without_a_code_path_fails_explicitly(condition: str) -> None:
-    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
+def test_a_trivial_condition_has_no_pipeline_code_path() -> None:
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": "TRIVIAL_UPDATE_TEST"})
     record, er, _, _ = run(S1, {}, settings=settings)
     assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
     [err] = record.errors
     assert "not implemented" in err.message and err.operation == "setup"
     assert record.predictions == [] and er.trace == [(None, Stage.FAILED)]
-    assert record.provenance.condition.value == condition
+    assert record.provenance.condition.value == "TRIVIAL_UPDATE_TEST"
+
+
+@pytest.mark.parametrize("condition", ["B0", "B1", "B2", "A5"])
+def test_a_single_agent_condition_is_refused_by_the_multi_agent_pipeline(condition: str) -> None:
+    settings = Settings.from_env({"LLM_MODEL": "fake-model-1", "EXPERIMENT_CONDITION": condition})
+    record, er, _, _ = run(S1, {}, settings=settings, memory=FakeMemory() if condition == "A5" else None)
+    assert record.outcome.status is RunStatus.ORCHESTRATOR_ERROR
+    assert "not executed by this pipeline" in record.errors[0].message and er.trace == [(None, Stage.FAILED)]
+
+
+def test_every_condition_has_exactly_one_runner() -> None:
+    from testorcode.orchestrator import _RUNNERS
+    from testorcode.schemas.result_schemas import ExperimentCondition
+
+    for condition in ExperimentCondition:
+        if condition.value.startswith("TRIVIAL"):
+            continue
+        runner = _RUNNERS.get(condition, EpisodeRun)
+        assert runner.CONDITIONS == frozenset({condition}) or (runner is EpisodeRun and condition in runner.CONDITIONS)
 
 
 def test_full_without_memory_store_fails_explicitly() -> None:

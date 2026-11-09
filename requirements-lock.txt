@@ -24,6 +24,8 @@ click==8.5.0
     #   huggingface-hub
     #   mutmut
     #   pip-tools
+charset-normalizer==3.5.2
+    # via reportlab
 cloudpickle==3.1.2
     # via joblib
 contourpy==1.4.0
@@ -173,7 +175,9 @@ packaging==26.3
 pandas==3.1.0
     # via testorcode (pyproject.toml)
 pillow==13.0.0
-    # via matplotlib
+    # via
+    #   matplotlib
+    #   reportlab
 pip-tools==7.6.2
     # via testorcode (pyproject.toml)
 platformdirs==4.13.5
@@ -216,6 +220,8 @@ rank-bm25==0.2.2
     # via testorcode (pyproject.toml)
 regex==2026.9.29
     # via transformers
+reportlab==5.1.0
+    # via testorcode (pyproject.toml)
 rich==15.0.0
     # via
     #   textual

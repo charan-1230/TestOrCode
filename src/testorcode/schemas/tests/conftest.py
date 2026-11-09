@@ -6,11 +6,33 @@ from __future__ import annotations
 import pytest
 
 from testorcode.schemas.episode_schemas import (
-    Availability, CIEvent, CommitRef, DecisionLabel, Difficulty, Episode, EpisodeBudget,
-    EpisodeGroundTruth, EpisodeInput, EnvironmentSpec, EvidenceItem, EvidenceSourceType,
-    ExecutableProbe, FailingTest, FailureGroup, FileChange, LabelProvenance, MemoryRecord,
-    MutantSpec, MutationFixture, PerTestGoldLabel, ReferenceRepair, RepairDirection, RepoRef,
-    RetrievalCorpusSpec, ScenarioType, StrippedEvidence,
+    Availability,
+    CIEvent,
+    CommitRef,
+    DecisionLabel,
+    Difficulty,
+    EnvironmentSpec,
+    Episode,
+    EpisodeBudget,
+    EpisodeGroundTruth,
+    EpisodeInput,
+    EvidenceItem,
+    EvidenceSourceType,
+    ExecutableProbe,
+    FailingTest,
+    FailureGroup,
+    FileChange,
+    LabelProvenance,
+    MemoryRecord,
+    MutantSpec,
+    MutationFixture,
+    PerTestGoldLabel,
+    ReferenceRepair,
+    RepairDirection,
+    RepoRef,
+    RetrievalCorpusSpec,
+    ScenarioType,
+    StrippedEvidence,
 )
 
 HEAD = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"

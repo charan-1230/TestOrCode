@@ -43,6 +43,13 @@ inputs (positional arguments, or anything inside an assertion), removed keyword
 arguments, expected values held in variables, ``pytest.approx``,
 ``self.assertEqual``, parametrize tables, fixtures and test data files.
 
+**Relaxed mode** (``TEST_PATCH_RULE=expected_value``, ``test_patch_rule(...)``; off by default).  An equality or
+inequality assertion whose sides are not literals is also eligible when exactly one side makes a call (the *tested*
+side) and the other is a side-effect-free data expression (constants, names, attributes, subscripts, containers,
+operators, f-strings: no call, lambda, comprehension, ``await``, ``yield`` or ``:=``).  That expected side may then be
+replaced by another such expression, e.g. ``== EXPECTED`` -> ``== {"a": 1}``.  The tested side and everything else
+must still be identical, so weakening stays impossible at this level; the Guard's checks are unchanged.
+
 **Source files (FIX_CODE)**: the file must parse and must not newly import
 pytest/``_pytest`` or add pytest hooks, skips or hard process exits.  Because a
 FIX_CODE repair is verified by the untouched tests, a source patch must also not
@@ -60,14 +67,31 @@ from __future__ import annotations
 import ast
 import tempfile
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 from testorcode.errors import ToolError
 from testorcode.schemas.episode_schemas import EditPolicy, PathClass
 from testorcode.tools.git_tools import run_git
 
 _PLACEHOLDER: Final[str] = "__testorcode_expected_literal__"
+TestPatchRule = Literal["literal", "expected_value"]
+_RULE: ContextVar[TestPatchRule] = ContextVar("testorcode_test_patch_rule", default="literal")
+
+
+@contextmanager
+def test_patch_rule(rule: TestPatchRule) -> Iterator[None]:
+    """Within the block, test-side content checks use ``rule`` (the orchestrator sets it per episode)."""
+    if rule not in ("literal", "expected_value"):
+        raise ValueError(f"unknown test patch rule {rule!r}")
+    token = _RULE.set(rule)
+    try:
+        yield
+    finally:
+        _RULE.reset(token)
 
 # Source-file constructs (kind -> description used in rejection reasons).
 SKIP_CALL = "skip/xfail call"
@@ -216,6 +240,11 @@ def _normalise(tree: ast.Module) -> tuple[str, list[str], list[dict[str, str]]]:
         if len(test.ops) != 1 or not isinstance(test.ops[0], (ast.Eq, ast.NotEq)):
             continue
         left_literal, right_literal = _is_literal(test.left), _is_literal(test.comparators[0])
+        if left_literal == right_literal and _RULE.get() == "expected_value":
+            # Relaxed: the side that calls nothing is the expected one when the other side calls (the tested side).
+            left_pure, right_pure = _is_pure(test.left), _is_pure(test.comparators[0])
+            if left_pure != right_pure:
+                left_literal, right_literal = left_pure, right_pure
         if left_literal == right_literal:  # both literal (ambiguous) or neither
             continue
         placeholder = ast.Name(id=_PLACEHOLDER, ctx=ast.Load())
@@ -295,6 +324,17 @@ def _is_literal(node: ast.expr) -> bool:
             _is_literal(v) for v in node.values
         )
     return False
+
+
+_IMPURE: Final[tuple[type[ast.AST], ...]] = (
+    ast.Call, ast.Lambda, ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp, ast.Await, ast.Yield,
+    ast.YieldFrom, ast.NamedExpr,
+)
+
+
+def _is_pure(node: ast.expr) -> bool:
+    """A data expression that calls and binds nothing (relaxed mode's expected side)."""
+    return not any(isinstance(n, _IMPURE) for n in ast.walk(node))
 
 
 def _source_problems(path: str, old: bytes | None, new: bytes | None) -> list[str]:

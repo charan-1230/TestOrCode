@@ -11,6 +11,11 @@ conditions with memory, ``memory/<condition>/seed-<seed>/<split>.jsonl`` (one st
 
 Several libraries in one experiment: ``repos`` maps an episode's ``repo.repo_id`` to its clone, test interpreter and
 (optionally) sandbox image; an episode whose repository is not listed uses ``repo`` and ``TEST_PYTHON``.
+
+Final runs: ``frozen`` (``freeze.FrozenConfig``) overrides ``.env`` settings for every run; ``env_file`` and ``model``
+select another provider or model (the proposal's second-model check on a subset); ``tool_fault_rate`` makes about that
+share of the agents' tool calls fail (scenario T) on top of each episode's own fault plan.  ``config.json`` records all of
+them plus the effective non-secret settings.
 """
 
 from __future__ import annotations
@@ -20,6 +25,7 @@ import json
 import logging
 import os
 import tempfile
+import zlib
 from collections.abc import Callable
 from pathlib import Path
 from typing import Final
@@ -38,9 +44,10 @@ from testorcode.dataset import (
 )
 from testorcode.errors import TestOrCodeError
 from testorcode.evaluation import evaluate_run
+from testorcode.freeze import FrozenConfig, settings_snapshot
 from testorcode.llm_client import LLMClient
 from testorcode.memory import JsonlMemoryStore, memory_namespace, memory_path
-from testorcode.schemas.episode_schemas import DecisionLabel, Episode, EpisodeInput
+from testorcode.schemas.episode_schemas import DecisionLabel, Episode, EpisodeInput, ToolFaultPlan
 from testorcode.schemas.result_schemas import (
     ExperimentCondition,
     ExperimentRunRecord,
@@ -85,6 +92,15 @@ class ExperimentConfig(BaseModel):
     tool_faults: bool = Field(
         default=True, description="Apply each episode's tool-fault plan (scenario T); False = no injected faults."
     )
+    tool_fault_rate: float | None = Field(
+        default=None, ge=0.0, le=1.0,
+        description="Scenario T for every episode: this share of the agents' tool calls fail (deterministic per episode "
+                    "and call, the same in every condition), on top of the episode's own injections.  None = only those.",
+    )
+    env_file: Path | None = Field(default=None, description="Settings file instead of ROOT/.env (e.g. a second model).")
+    model: str | None = Field(default=None, description="LLM_MODEL override for every run (the model check).")
+    frozen: FrozenConfig | None = Field(default=None, description="The frozen final configuration (``freeze``).")
+    frozen_sha256: str | None = None
     worktrees: Path = ROOT.parent / "episode-worktrees"
     final: bool = Field(default=False, description="Required to touch the frozen test split.")
     retry_failed: bool = Field(
@@ -104,7 +120,32 @@ class ExperimentConfig(BaseModel):
             raise ValueError("at least one seed is required")
         if len(set(self.conditions)) != len(self.conditions) or len(set(self.seeds)) != len(self.seeds):
             raise ValueError("conditions and seeds must not repeat")
+        if self.tool_fault_rate is not None and not self.tool_faults:
+            raise ValueError("tool_fault_rate needs tool_faults (they contradict each other)")
         return self
+
+    def base_settings(self) -> Settings:
+        """``.env`` (or ``env_file``), then the frozen settings, then the ``model`` override."""
+        settings = Settings.from_env(env_file=self.env_file or ROOT / ".env")
+        return self.apply_overrides(settings)
+
+    def apply_overrides(self, settings: Settings) -> Settings:
+        if self.frozen is not None:
+            settings = self.frozen.apply(settings)
+        if self.model is not None:
+            settings = settings.model_copy(update={"llm_model": self.model})
+        return settings
+
+
+def fault_plan_for(gold: Episode, rate: float | None) -> ToolFaultPlan | None:
+    """The episode's own plan, with ``rate`` added when given.  The seed is derived from the episode id (stable across
+    runs and conditions), so the same agent call fails under every condition that makes it."""
+    plan = gold.fault_plan
+    if rate is None:
+        return plan
+    seed = plan.seed if plan is not None and plan.seed is not None else zlib.crc32(gold.episode_id.encode())
+    injections = list(plan.injections) if plan is not None and plan.enabled else []
+    return ToolFaultPlan(enabled=True, seed=seed, failure_rate=rate, injections=injections)
 
 
 # --------------------------------------------------------------------------- #
@@ -205,6 +246,7 @@ def default_run_one(
                 python_executable=run_settings.test_python, timeout_seconds=run_settings.test_timeout_seconds,
                 docker_image=episode.environment.docker_image or run_settings.sandbox_docker_image,
                 namespace=memory_namespace(condition.value, seed, stream),
+                scope=profile_for(condition).memory_scope,  # A4: coarse, module-level notes
             )
         return stores[key]
 
@@ -214,7 +256,7 @@ def default_run_one(
         from testorcode.llm_client import create_llm_client
         from testorcode.orchestrator import run_episode
 
-        base = settings if settings is not None else Settings.from_env(env_file=ROOT / ".env")
+        base = config.apply_overrides(settings) if settings is not None else config.base_settings()
         env = config.repos.get(episode.repo.repo_id)
         update: dict = {"experiment_condition": condition, "random_seed": seed}
         if env is not None and env.python is not None:
@@ -233,7 +275,7 @@ def default_run_one(
         return run_episode(
             episode, worktree_path=worktree, settings=run_settings, llm=llm, memory=memory,
             maintainer=simulated_maintainer(gold.gold_actions()),
-            fault_plan=gold.fault_plan if config.tool_faults else None,
+            fault_plan=fault_plan_for(gold, config.tool_fault_rate) if config.tool_faults else None,
         )  # fmt: skip
 
     return run_one
@@ -359,6 +401,13 @@ def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -
     return result
 
 
+def _settings_or_error(config: ExperimentConfig) -> dict | str:
+    try:
+        return settings_snapshot(config.base_settings())
+    except TestOrCodeError as exc:  # e.g. an invalid .env: recorded, the runs themselves report it
+        return f"unavailable: {exc}"
+
+
 def _write_config(config: ExperimentConfig, episode_ids: list[str]) -> None:
     manifest = json.loads((ROOT / "datasets" / f"{config.dataset}_manifest.json").read_text())
     payload = {
@@ -371,8 +420,16 @@ def _write_config(config: ExperimentConfig, episode_ids: list[str]) -> None:
         "code_revision": _code_revision(),
         "final": config.final,
         "tool_faults": config.tool_faults,
+        "tool_fault_rate": config.tool_fault_rate,
         # Paths only (no secrets): which clone and interpreter each repository used.
         "repos": {k: v.model_dump(mode="json") for k, v in sorted(config.repos.items())},
+        "env_file": str(config.env_file) if config.env_file else None,
+        "model_override": config.model,
+        "frozen": None if config.frozen is None else {
+            "sha256": config.frozen_sha256, **config.frozen.model_dump(mode="json"),
+        },
+        # The effective non-secret settings every run starts from (model, retrieval, Guard policy, sandbox ...).
+        "settings": _settings_or_error(config),
     }
     (config.out / CONFIG_FILE).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 

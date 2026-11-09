@@ -181,3 +181,48 @@ python scripts/citation_support.py export results/final/dev/runs.jsonl --out cit
 - **Saved Day-1 to Day-4 runs** used the old prompts and tools; they are not comparable with runs made on this branch.
 - Citation support needs human labels (45 citation rows on the dev pilot runs); the judge is optional and must be validated.
 - `scripts/run_episode.py`'s summary still lists `boltons` in a git status call (cosmetic, single-library CLI).
+
+---
+
+# Phase 2: conditions, freeze, scoring, report tooling (branch `feat/final-conditions`, 2026-11-09)
+
+Everything that could be done before the final dataset exists.  Defaults reproduce the pilot exactly (checked: the
+Day-3 dev table is unchanged, FULL final-action accuracy 0.5625).
+
+| Item | Status | Where | Verified by |
+|---|---|---|---|
+| Env: matplotlib/reportlab pinned, `run_episode.py` uses the episode's own roots, `--dataset`; ruff clean | Done | `requirements-lock.txt`, `pyproject.toml`, `scripts/run_episode.py`, `schemas/` | suite, ruff |
+| A4 coarse memory | Done: `JsonlMemoryStore(scope="module")` reads every note of the module, runs no probe (`probe_gated=False`); supersession and history check kept; A4 refuses a scoped store and FULL a coarse one | `memory.py`, `conditions.py`, `orchestrator.py`, `intent_analyst.py`, `prompts.py` | `tests/test_coarse_memory.py`, orchestrator test |
+| B2 strong prompt | Done: B1 + `B2_RULES`, `b2-v1+b1-v3`; same input as B1 | `prompts.py`, `single_agent.py`, `StrongPromptRun` | pipeline test (system prompt = B1 + rules, user prompt identical) |
+| A5 single agent | Done: one tool loop with intent retrieval, probe-gated memory, Triage's rule mapping, the Guard's deterministic checks, maintainer and memory write; no Guard model review (a second role) | `MergedRolesRun`, `A5_SYSTEM` | pipeline test on a real worktree |
+| B0 plain LLM | Done: one call, no tools/memory/revision/re-ask; the CI commit message is citable under its corpus id | `PlainLLMRun`, `B0_SYSTEM` | pipeline tests |
+| Naming (proposal swaps A3/A4) | `conditions.PROPOSAL_NAME`, `DESCRIPTION`, `condition_label`; printed in every report | `conditions.py` | `tests/test_conditions.py` |
+| Contamination probe | Done: real change from the clone (never the episode diff, which holds the mutant), no-context prompt, added-line recall | `contamination.py`, `scripts/contamination_probe.py` | `tests/test_contamination.py` (incl. real dev-02) |
+| Tool-fault rate | `--tool-fault-rate` / frozen `experiment.tool_fault_rate`, deterministic per episode, keeps the episode's injections | `experiment.fault_plan_for` | `tests/test_freeze.py` |
+| Provider check | Real system prompts, synthetic probes, parse/correct rates per structured mode, returned model id | `provider_check.py`, `scripts/provider_check.py` | `tests/test_provider_check.py` (fakes; **no live call made: no NIM/Mistral key**) |
+| Model override | `--model`, `--env-file` (second model), recorded in `config.json` | `experiment.py`, scripts | `tests/test_freeze.py` |
+| Scoring rules | `ScoringRules(direction_from, escalate_after_correct_repair)` in summaries, tables and statistics | `evaluation.py`, `stats.py`, `report_tables.py` | `tests/test_scoring_rules.py` |
+| Relaxed test-patch rule | `TEST_PATCH_RULE=expected_value` (default `literal`) | `tools/patch_content.py`, `config.py` | `tests/test_patch_tools.py` |
+| Hypothesis check | Thresholds = proposal §7; verdict from the rejection rule only | `hypothesis.py`, `scripts/compare_conditions.py` | `tests/test_scoring_rules.py` |
+| Freeze config | `--freeze FILE`: settings (no secrets), experiment options, scoring, thresholds; copied with its SHA-256 and the effective settings into `config.json`; `--final` refuses a `DRAFT` | `freeze.py`, `configs/final.draft.json` | `tests/test_freeze.py` |
+| Final report builder | New `docs/report/build_final_report.py`; the mid-submission `build_report.py` is unchanged on purpose | `docs/report/` | `tests/test_final_report.py` |
+
+## Findings while doing it (for the team)
+
+- **The relaxed patch rule does not rescue dev-05.** Checked on the saved Day-3 patches in a materialised dev-05
+  worktree: the model's patch also deletes three setup statements, which neither rule allows (allowing statement
+  deletion would open a weakening path).  B1's dev-05 patches pass under both rules.
+- **Escalation after a correct repair** occurs once in the saved dev runs: FULL, dev-08 `test_bytes2human` (not dev-06,
+  which the Guard approved in that run).  Under `correct` FULL's final-action accuracy is 10/16, under `separate` 9/15.
+- **`direction_from="action"`** changes the picture on the pilot: dev direction macro-F1 FULL 0.575, B1 0.500, A1 0.000
+  (hypothesis-based: 1.000 / 0.944 / 0.676).  Decide the rule before the final runs.
+- **Hypothesis check on the pilot dev runs:** rejected (the FULL - B1 CI includes 0 on 9 episodes); expected at pilot size.
+- `.gitignore` now ignores `.env.*` (except `.env.example`), so a second-model key file cannot be committed.
+
+## Still open (needs the dataset, keys or a decision)
+
+- Decisions to freeze in `configs/final.json`: model and structured mode (run the provider check), `RETRIEVAL_MODE`,
+  `GUARD_UNMEASURABLE_STRENGTH`, `MUTANT_CACHE_PATH`, `TEST_PATCH_RULE`, the tool-fault rate, the two scoring rules,
+  the thresholds.
+- No live run of B0, B2, A4, A5, the provider check or the contamination probe has been made (no API call in this phase).
+- Docker live test, Voyage embeddings, LaTeX compile: environment-blocked as before.

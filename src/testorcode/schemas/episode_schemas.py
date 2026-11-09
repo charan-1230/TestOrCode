@@ -867,15 +867,18 @@ class Episode(_Frozen):
                     )
                 # A replacement 'uninformative' commit message may legitimately share its
                 # source_ref, so only non-commit-message sources are matched by reference.
-                if s.source_ref and s.source_type is not EvidenceSourceType.COMMIT_MESSAGE:
-                    if any(
+                if (
+                    s.source_ref
+                    and s.source_type is not EvidenceSourceType.COMMIT_MESSAGE
+                    and any(
                         i.source_type is s.source_type and i.source_ref == s.source_ref
                         for i in corpus_items
-                    ):
-                        raise ValueError(
-                            f"S5 corpus still exposes stripped {s.source_type.value} "
-                            f"{s.source_ref!r}"
-                        )
+                    )
+                ):
+                    raise ValueError(
+                        f"S5 corpus still exposes stripped {s.source_type.value} "
+                        f"{s.source_ref!r}"
+                    )
             missing = [lbl.test_id for lbl in gt.per_test_labels if not lbl.function_qualname]
             if missing:
                 raise ValueError(

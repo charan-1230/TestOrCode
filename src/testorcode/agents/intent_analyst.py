@@ -50,18 +50,36 @@ def analyse_intent(
     retrieval = retriever is not None
     evidence = search_many(retriever, group_queries(group), top_k=TOP_K) if retrieval else []
     memory_lines: list[str] = []
+    probe_checked = True
     if memory is not None and group.group.function_qualname:
-        for record in memory.read(context, group.group.function_qualname).usable:
-            memory_lines.append(
-                f"[{record.record_id}] (approved memory, probe passed) {record.function_qualname}: "
-                f"{clip(record.behaviour_signature, 400)} -> {record.direction.value}"
-            )
-    user = build_intent_user(context, group, evidence, memory_lines, retrieval=retrieval)
+        memory_lines, probe_checked = read_memory_lines(memory, context, group.group.function_qualname)
+    user = build_intent_user(context, group, evidence, memory_lines, retrieval=retrieval, probe_checked=probe_checked)
     logger.info("intent: group %s, %d evidence items, %d memory items", group.group.group_id, len(evidence), len(memory_lines))
     response = llm.complete_structured(
         role=AgentRole.INTENT_ANALYST, system=INTENT_SYSTEM, user=user, response_model=IntentAnalysis
     )
     return response.parsed
+
+
+def read_memory_lines(memory: MemoryStore, context: EpisodeContext, function_qualname: str) -> tuple[list[str], bool]:
+    """Prompt lines for the usable memory records of ``function_qualname`` (citable by record id), and whether every
+    one of them was probe-checked (False when a coarse, module-level note is among them: ablation A4)."""
+    lines: list[str] = []
+    probe_checked = True
+    for check in memory.read(context, function_qualname).checks:
+        if not check.valid_as_evidence:
+            continue
+        record = check.record
+        if check.probe_gated:
+            label = "approved memory, probe passed"
+        else:  # coarse memory (A4): a module-level note nothing re-checked on the current code
+            probe_checked = False
+            label = "approved note for this module, not re-checked"
+        lines.append(
+            f"[{record.record_id}] ({label}) {record.function_qualname}: "
+            f"{clip(record.behaviour_signature, 400)} -> {record.direction.value}"
+        )
+    return lines, probe_checked
 
 
 def group_queries(group: FailureGroupDetail) -> list[str]:

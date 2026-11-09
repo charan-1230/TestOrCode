@@ -6,7 +6,8 @@
     # 2. humans fill "human_label" with supports / does_not_support / unclear (blind to the condition column if possible)
     # 3. (optional) an LLM judge labels every row into "judge_label" (spends API calls; uses the .env model)
     python scripts/citation_support.py judge citations.csv
-    # 4. rates per condition from the human labels, and the judge's agreement with them (accuracy, Cohen's kappa)
+    # 4. rates per condition from the human labels, and the judge's agreement with them (accuracy, Cohen's kappa);
+    #    also written to citations.score.md next to the CSV (the final report includes it)
     python scripts/citation_support.py score citations.csv
 
 The judge is never the primary measurement: ``score`` reports judge-based rates only next to its measured agreement
@@ -139,6 +140,7 @@ def score(path: Path) -> int:
                 f"Judge agreement with humans on {len(both)} rows: "
                 + ("-" if agreement is None else f"accuracy {agreement:.2f}, Cohen's kappa "
                    + ("-" if kappa is None else f"{kappa:.2f}")) + ". Rates exclude 'unclear'."]
+    path.with_suffix(".score.md").write_text("\n".join(out) + "\n", encoding="utf-8")
     sys.stdout.write("\n".join(out) + "\n")
     return 0
 

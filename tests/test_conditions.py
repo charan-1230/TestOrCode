@@ -68,3 +68,13 @@ def test_trivial_baselines_see_the_unchanged_episode(episodes, condition) -> Non
     s1 = next(e for e in episodes if e.visible_memory == [])
     view = episode_for_condition(s1, condition)
     assert view.corpus == s1.corpus and view.allowed_tools == s1.allowed_tools
+
+
+def test_every_condition_is_described_and_the_proposal_swap_is_named() -> None:
+    from testorcode.conditions import DESCRIPTION, condition_label
+    from testorcode.schemas.result_schemas import ExperimentCondition as C
+
+    assert set(DESCRIPTION) == set(C)
+    assert condition_label(C.A4_COARSE_MEMORY) == "A4 - Coarse memory: module-level notes without probes [A3 (proposal)]"
+    assert condition_label(C.A3_NO_INTEGRITY_GUARD).endswith("[A4 (proposal)]")
+    assert condition_label(C.FULL) == "FULL - Full system"

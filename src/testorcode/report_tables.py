@@ -15,7 +15,9 @@ from pathlib import Path
 from typing import Any
 
 from testorcode.evaluation import (
+    DEFAULT_RULES,
     EXECUTION_FAILURES,
+    ScoringRules,
     agent_tool_events,
     evaluate_run,
     patch_scope_hits,
@@ -33,8 +35,9 @@ from testorcode.schemas.result_schemas import ExperimentCondition as C
 from testorcode.schemas.result_schemas import ExperimentRunRecord, ToolCallStatus
 
 ORDER: tuple[C, ...] = (
-    C.FULL, C.B1, C.A1_NO_INTENT_RETRIEVAL, C.A2_NO_MEMORY, C.A3_NO_INTEGRITY_GUARD, C.TRIVIAL_ALWAYS_UPDATE_TEST, C.TRIVIAL_ALWAYS_FIX_CODE,
-)  # the plan's table order, then the sanity baselines
+    C.FULL, C.B0, C.B1, C.B2, C.A1_NO_INTENT_RETRIEVAL, C.A2_NO_MEMORY, C.A3_NO_INTEGRITY_GUARD, C.A4_COARSE_MEMORY,
+    C.A5_SINGLE_AGENT, C.TRIVIAL_ALWAYS_UPDATE_TEST, C.TRIVIAL_ALWAYS_FIX_CODE,
+)  # the full system, the baselines, the ablations, then the sanity baselines
 NOT_EVALUATED = "not yet evaluated"
 
 
@@ -48,13 +51,14 @@ def _f(value: float | None) -> str:
 
 def condition_rows(
     records: Sequence[ExperimentRunRecord], episodes: Sequence[Episode], *, dataset_version: str,
-    conditions: Iterable[C] = ORDER,
+    conditions: Iterable[C] = ORDER, rules: ScoringRules = DEFAULT_RULES,
 ) -> list[dict[str, Any]]:
-    """One row per requested condition, in order; a condition without a scored run is marked ``evaluated=False``."""
+    """One row per requested condition, in order; a condition without a scored run is marked ``evaluated=False``.
+    Rates follow ``rules`` (the frozen scoring rules), exactly as ``summarize`` and the statistics do."""
     by_id = {e.episode_id: e for e in episodes}
-    summaries = {s.condition: s for s in summarize(list(records), list(episodes), dataset_version=dataset_version)}
+    summaries = {s.condition: s for s in summarize(list(records), list(episodes), dataset_version=dataset_version,
+                                                     rules=rules)}
     counts: dict[C, dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    scenario: dict[C, dict[str, list[bool]]] = defaultdict(lambda: defaultdict(list))
     for rec in records:
         if rec.provenance.dataset_version != dataset_version or rec.episode_id not in by_id:
             continue
@@ -67,7 +71,6 @@ def condition_rows(
         for d in ev.decisions:
             if d.predicted_action is None and d.test_id in rec.unstable_test_ids:
                 continue
-            scenario[rec.condition][by_id[rec.episode_id].scenario.value].append(d.correct)
             c["gold_fix"] += d.expected_action is DecisionLabel.FIX_CODE
             c["masked"] += d.wrong_side == "masked_regression"
         if ev.repair is not None and ev.repair.repair_attempted:
@@ -94,7 +97,8 @@ def condition_rows(
             "repair_unverifiable": c.get("repair_unverifiable", 0) if evaluated else None,
             "masked": c.get("masked", 0) if evaluated else None,
             "gold_fix": c.get("gold_fix", 0) if evaluated else None,
-            "scenario_accuracy": {k: sum(v) / len(v) for k, v in sorted(scenario[condition].items())} if evaluated else {},
+            "scenario_accuracy": {k.removeprefix("accuracy[").removesuffix("]"): v for k, v in sorted(m.items())
+                                  if k.startswith("accuracy[") and v is not None} if evaluated else {},
         })
     return rows
 

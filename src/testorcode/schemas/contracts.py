@@ -426,12 +426,15 @@ class MemoryRecordCheck(_Contract):
     record: MemoryRecord
     probe_status: ProbeStatus = ProbeStatus.NOT_RUN
     blocked_reason: Literal["probe_failed", "probe_not_run", "superseded", "out_of_scope"] | None = None
+    # False only for coarse memory (ablation A4): module-level notes are usable without running a probe.
+    probe_gated: bool = True
 
     @property
     def valid_as_evidence(self) -> bool:
-        """True only if the probe passed on the current code and the record is not stale."""
+        """True only if the probe passed on the current code (or the store does not gate on probes) and the record
+        is neither stale nor blocked."""
         return (
-            self.probe_status is ProbeStatus.PASSED
+            (self.probe_status is ProbeStatus.PASSED or not self.probe_gated)
             and not self.record.flagged_stale
             and self.blocked_reason is None
         )

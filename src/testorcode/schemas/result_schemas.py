@@ -24,7 +24,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from testorcode.schemas.episode_schemas import (
     SCHEMA_VERSION,
-    CommitSha,
     DecisionLabel,
     EvidenceSourceType,
     HypothesisKind,
@@ -340,12 +339,13 @@ class TestRunResult(_Result):
     @model_validator(mode="after")
     def _check(self) -> TestRunResult:
         counts = (self.passed, self.failed, self.errors, self.skipped)
-        if self.status is TestRunStatus.NOT_RUN:
-            if any(c is not None for c in counts) or self.failing_test_ids:
-                raise ValueError(
-                    "status NOT_RUN must not carry counts or failing ids: a run that "
-                    "did not happen is not a run with zero failures"
-                )
+        if self.status is TestRunStatus.NOT_RUN and (
+            any(c is not None for c in counts) or self.failing_test_ids
+        ):
+            raise ValueError(
+                "status NOT_RUN must not carry counts or failing ids: a run that "
+                "did not happen is not a run with zero failures"
+            )
         if self.status is TestRunStatus.PASSED and (
             self.failing_test_ids or (self.failed or 0) > 0 or (self.errors or 0) > 0
         ):
@@ -407,18 +407,21 @@ class TestWeakeningFindings(_Result):
             raise ValueError(
                 "weakening_detected=False contradicts a positive weakening count"
             )
-        if self.assertions_before is not None and self.assertions_after is not None:
-            if self.assertions_after < self.assertions_before:
-                if self.weakening_detected is False:
-                    raise ValueError(
-                        f"weakening_detected=False contradicts an apparent decrease in assertions "
-                        f"({self.assertions_before} -> {self.assertions_after})"
-                    )
-                if self.removed_assertions == 0:
-                    raise ValueError(
-                        f"removed_assertions=0 contradicts an apparent decrease in assertions "
-                        f"({self.assertions_before} -> {self.assertions_after})"
-                    )
+        if (
+            self.assertions_before is not None
+            and self.assertions_after is not None
+            and self.assertions_after < self.assertions_before
+        ):
+            if self.weakening_detected is False:
+                raise ValueError(
+                    f"weakening_detected=False contradicts an apparent decrease in assertions "
+                    f"({self.assertions_before} -> {self.assertions_after})"
+                )
+            if self.removed_assertions == 0:
+                raise ValueError(
+                    f"removed_assertions=0 contradicts an apparent decrease in assertions "
+                    f"({self.assertions_before} -> {self.assertions_after})"
+                )
         return self
 
 
@@ -487,15 +490,14 @@ class IntegrityReport(_Result):
     def _check(self) -> IntegrityReport:
         if self.guard_ran == (self.guard_decision is GuardDecision.NOT_RUN):
             raise ValueError("guard_ran must be True exactly when guard_decision is not NOT_RUN")
-        if not self.guard_ran:
-            if (
-                self.weakening.checks_run
-                or self.prohibited_edits.checks_run
-                or self.mutation.status is not TestRunStatus.NOT_RUN
-                or self.tests_untouched_for_fix_code is not None
-                or self.evidence_requirement_met is not None
-            ):
-                raise ValueError("Guard did not run, so no integrity check may be recorded")
+        if not self.guard_ran and (
+            self.weakening.checks_run
+            or self.prohibited_edits.checks_run
+            or self.mutation.status is not TestRunStatus.NOT_RUN
+            or self.tests_untouched_for_fix_code is not None
+            or self.evidence_requirement_met is not None
+        ):
+            raise ValueError("Guard did not run, so no integrity check may be recorded")
         if self.guard_decision is GuardDecision.REJECT and not self.rejection_reasons:
             raise ValueError("a rejection must record at least one reason")
         if self.guard_decision is GuardDecision.APPROVE and (
@@ -520,11 +522,19 @@ class MemoryReadEvent(_Result):
     probe_status: ProbeStatus = ProbeStatus.NOT_RUN
     used_as_evidence: bool = False
     blocked_reason: Literal["probe_failed", "probe_not_run", "superseded", "out_of_scope"] | None = None
+    probe_gated: bool = Field(
+        default=True, description="False only for coarse memory (A4): the record was usable without a probe run."
+    )
+
+    @property
+    def usable(self) -> bool:
+        """The record counted as citable evidence when it was read."""
+        return (self.probe_status is ProbeStatus.PASSED or not self.probe_gated) and self.blocked_reason is None
 
     @model_validator(mode="after")
     def _check(self) -> MemoryReadEvent:
         if self.used_as_evidence:
-            if self.probe_status is not ProbeStatus.PASSED:
+            if self.probe_gated and self.probe_status is not ProbeStatus.PASSED:
                 raise ValueError(
                     "a memory record may be used as evidence only when its probe passed "
                     "on the current code"
@@ -939,11 +949,11 @@ class ExperimentRunRecord(_Result):
                 f"recorded test runs (expected {expected.value!r})"
             )
 
-        if self.outcome.status is RunStatus.ESCALATED:
-            if not self.predictions or any(
-                p.predicted_action is not DecisionLabel.ESCALATE for p in self.predictions
-            ):
-                raise ValueError("status ESCALATED requires every prediction to be ESCALATE")
+        if self.outcome.status is RunStatus.ESCALATED and (
+            not self.predictions
+            or any(p.predicted_action is not DecisionLabel.ESCALATE for p in self.predictions)
+        ):
+            raise ValueError("status ESCALATED requires every prediction to be ESCALATE")
         if self.outcome.escalation is not None and not any(
             p.predicted_action is DecisionLabel.ESCALATE for p in self.predictions
         ):

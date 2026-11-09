@@ -57,6 +57,7 @@ ENV_VARS: Final[dict[str, str]] = {
     "embedding_cache_dir": "EMBEDDING_CACHE_DIR",
     "mutant_cache_path": "MUTANT_CACHE_PATH",
     "guard_unmeasurable_strength": "GUARD_UNMEASURABLE_STRENGTH",
+    "test_patch_rule": "TEST_PATCH_RULE",
     "sandbox_isolation": "SANDBOX_ISOLATION",
     "sandbox_docker_image": "SANDBOX_DOCKER_IMAGE",
     "log_level": "LOG_LEVEL",
@@ -135,6 +136,10 @@ class Settings(BaseModel):
             "any executable mutant): escalate (the pilot behaviour) or allow on the Guard's other checks."
         ),
     )
+
+    # Test-side patch content rule (``tools.patch_content``): literal = only expected literal values may change (the
+    # pilot); expected_value = the expected side of an equality assertion may become any side-effect-free expression.
+    test_patch_rule: Literal["literal", "expected_value"] = "literal"
 
     # Sandbox for every test run of an episode (``tools.sandbox``).  The episode's own docker_image wins when set.
     sandbox_isolation: Literal["auto", "docker", "bwrap"] = "auto"

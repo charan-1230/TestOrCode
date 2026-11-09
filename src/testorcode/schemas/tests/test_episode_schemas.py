@@ -9,15 +9,46 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from testorcode.schemas.tests.conftest import (
-    FUTURE, HEAD, NORM, S5 as S5_ID, SLUG, T_NORM, T_SLUG, TEST_DIFF, intent_evidence,
-    memory_record, make_s1, make_s2, make_s3, make_s4, make_s5,
-)
 from testorcode.schemas.episode_schemas import (
-    AGENT_FORBIDDEN_KEYS, Availability, CIEvent, CommitRef, DecisionLabel, EditPolicy, Episode,
-    EpisodeGroundTruth, EpisodeInput, EvidenceItem, EvidenceSourceType, FailureGroup, PatchScope,
-    PathClass, PerTestGoldLabel, RepairDirection, RetrievalCorpusSpec, ScenarioType,
-    ToolFaultInjection, ToolFaultKind, ToolFaultPlan, ToolName, find_leaked_ground_truth, same_commit,
+    AGENT_FORBIDDEN_KEYS,
+    Availability,
+    CIEvent,
+    CommitRef,
+    DecisionLabel,
+    EditPolicy,
+    Episode,
+    EpisodeGroundTruth,
+    EpisodeInput,
+    EvidenceItem,
+    EvidenceSourceType,
+    FailureGroup,
+    PatchScope,
+    PathClass,
+    PerTestGoldLabel,
+    RepairDirection,
+    RetrievalCorpusSpec,
+    ScenarioType,
+    ToolFaultInjection,
+    ToolFaultKind,
+    ToolFaultPlan,
+    ToolName,
+    find_leaked_ground_truth,
+    same_commit,
+)
+from testorcode.schemas.tests.conftest import (
+    FUTURE,
+    HEAD,
+    NORM,
+    T_NORM,
+    T_SLUG,
+    TEST_DIFF,
+    intent_evidence,
+    make_s1,
+    make_s2,
+    make_s3,
+    make_s4,
+    make_s5,
+    memory_record,
 )
 
 MAKERS: dict[str, Callable[[], Episode]] = {
@@ -400,7 +431,7 @@ def test_leak_detector_finds_planted_key_and_fault_plan_stays_outside() -> None:
 
 
 def test_ground_truth_isolation_guarantee() -> None:
-    for sc, maker in MAKERS.items():
+    for maker in MAKERS.values():
         ep = maker()
         plan = ToolFaultPlan(enabled=True, seed=42, injections=[ToolFaultInjection(
             tool=ToolName.APPLY_PATCH, fault_kind=ToolFaultKind.PATCH_DOES_NOT_APPLY, call_index=0)])
@@ -429,8 +460,8 @@ def test_none_and_empty_are_kept_distinct() -> None:
 
 
 def test_commit_message_availability_must_match_message() -> None:
-    kw: dict[str, Any] = dict(event_id="c", commit=CommitRef(sha=HEAD),
-                              failing_tests=make_s1().agent_input.ci_event.failing_tests)
+    kw: dict[str, Any] = {"event_id": "c", "commit": CommitRef(sha=HEAD),
+                          "failing_tests": make_s1().agent_input.ci_event.failing_tests}
     with pytest.raises(ValidationError, match="AVAILABLE but commit_message is None"):
         CIEvent(commit_message=None, **kw)
     with pytest.raises(ValidationError, match="must be None unless"):
