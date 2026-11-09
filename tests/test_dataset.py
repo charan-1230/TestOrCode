@@ -284,22 +284,17 @@ def test_verification_file_stores_only_a_hash_of_the_withheld_message() -> None:
     assert notes["withheld_message_chars"] == len(S5_WITHHELD_MESSAGE)
 
 
-def test_history_access_tripwire_for_the_provisional_s5() -> None:
-    """The agent-facing history tools are stubs, so the S5 leak path (git_show of the CI commit) cannot be tested yet.
+def test_history_tools_cut_off_at_the_parent_of_every_ci_commit(episodes) -> None:
+    """The S5 leak path (git_show/git_log of the CI commit) is closed: the history cutoff the agents get is the CI
+    commit's parent, never the CI commit.  The leak itself is tested against the real clone in
+    ``tests/test_git_tools.py::test_withheld_s5_message_is_invisible_through_history_tools`` (replaces the Day-1
+    tripwire that failed once the tools were implemented)."""
+    from testorcode.schemas.contracts import EpisodeContext
 
-    When they are implemented this test fails ON PURPOSE: replace it with a regression test that, with the cutoff at the
-    parent commit, git_log/git_show/git_blame cannot return the CI commit's message or test diff, then clear the
-    PROVISIONAL note on the S5 episode.
-    """
-    from testorcode.tools import git_tools
-
-    for call in (
-        lambda: git_tools.git_log(Path("."), cutoff_commit="a1b2c3d4"),
-        lambda: git_tools.git_show(Path("."), "a1b2c3d4", cutoff_commit="a1b2c3d4"),
-        lambda: git_tools.git_blame(Path("."), "x.py", 1, 1, cutoff_commit="a1b2c3d4"),
-    ):
-        with pytest.raises(NotImplementedError):
-            call()
+    for ep in [ep for split in episodes.values() for ep in split]:
+        context = EpisodeContext.from_episode_input(ep.agent_input, Path("/tmp"))
+        assert context.history_cutoff_sha == ep.agent_input.ci_event.parent_commit.sha
+        assert context.history_cutoff_sha != ep.agent_input.ci_event.commit.sha
 
 
 def test_gold_evidence_coverage_is_the_documented_one(episodes) -> None:

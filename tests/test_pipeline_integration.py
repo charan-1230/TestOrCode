@@ -234,7 +234,7 @@ def test_repairer_uses_real_tools_before_patching(worktree: Path) -> None:
     third_prompt = [c["user"] for c in llm.calls if c["role"] is AgentRole.REPAIRER][2]
     assert "return s.capitalize()" in third_prompt  # the real file content came back
     assert "status=failed" in third_prompt and "test_normalise" in third_prompt  # the real pytest result came back
-    assert record.provenance.prompt_template_version.endswith("+repair-v5+guard-v1")
+    assert record.provenance.prompt_template_version.endswith("+repair-v6+guard-v1")
 
 
 def test_tool_outside_allowed_tools_is_refused_and_the_model_continues(worktree: Path) -> None:

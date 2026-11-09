@@ -6,7 +6,11 @@ to an agent.  Trivial baselines need no repository and no API key; every other c
 
 Output directory: ``runs.jsonl`` (one scored ``ExperimentRunRecord`` per line, appended as runs finish, so an
 interrupted experiment resumes where it stopped), ``config.json`` (what was run; never a secret) and, for
-conditions with memory, ``memory/<condition>/seed-<seed>/<split>.jsonl`` (one store per condition, seed and stream).
+conditions with memory, ``memory/<condition>/seed-<seed>/<split>.jsonl`` (one store per condition, seed and stream;
+``<split>-<repo_id>.jsonl`` when ``repos`` maps several repositories, because memory is kept per repository).
+
+Several libraries in one experiment: ``repos`` maps an episode's ``repo.repo_id`` to its clone, test interpreter and
+(optionally) sandbox image; an episode whose repository is not listed uses ``repo`` and ``TEST_PYTHON``.
 """
 
 from __future__ import annotations
@@ -25,7 +29,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from testorcode.baselines import is_trivial, trivial_record
 from testorcode.conditions import profile_for
 from testorcode.config import Settings
-from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
+from testorcode.dataset import (
+    DEFAULT_DATASET,
+    agent_view_path,
+    episode_path,
+    load_agent_inputs,
+    load_episodes,
+)
 from testorcode.errors import TestOrCodeError
 from testorcode.evaluation import evaluate_run
 from testorcode.llm_client import LLMClient
@@ -47,6 +57,16 @@ CONFIG_FILE: Final[str] = "config.json"
 RunOne = Callable[[EpisodeInput, Episode, ExperimentCondition, int], ExperimentRunRecord]
 
 
+class RepoEnvironment(BaseModel):
+    """Where one repository of a multi-library experiment lives and how its tests run."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    path: Path = Field(description="Clone of the pinned repository (episodes are materialised from it).")
+    python: Path | None = Field(default=None, description="Interpreter for its tests; None = TEST_PYTHON.")
+    docker_image: str | None = Field(default=None, description="Sandbox image for its tests; None = the default.")
+
+
 class ExperimentConfig(BaseModel):
     """What to run.  Frozen; contains no credentials (those come from ``.env`` when a model is called)."""
 
@@ -58,6 +78,13 @@ class ExperimentConfig(BaseModel):
     seeds: tuple[int, ...] = (0,)
     out: Path
     repo: Path = ROOT.parent / "boltons"
+    repos: dict[str, RepoEnvironment] = Field(
+        default_factory=dict, description="repo_id -> clone/interpreter; empty = every episode uses ``repo``."
+    )
+    dataset: str = Field(default=DEFAULT_DATASET, description="Dataset file prefix (``<dataset>_<split>.jsonl``).")
+    tool_faults: bool = Field(
+        default=True, description="Apply each episode's tool-fault plan (scenario T); False = no injected faults."
+    )
     worktrees: Path = ROOT.parent / "episode-worktrees"
     final: bool = Field(default=False, description="Required to touch the frozen test split.")
     retry_failed: bool = Field(
@@ -95,9 +122,9 @@ def simulated_maintainer(gold: dict[str, DecisionLabel]):
     return approve
 
 
-def dataset_version(split: str) -> str:
-    manifest = json.loads((ROOT / "datasets" / "pilot_manifest.json").read_text())
-    return "pilot@" + manifest["files_sha256"][f"pilot_{split}_agent_view.jsonl"][:12]
+def dataset_version(split: str, dataset: str = DEFAULT_DATASET) -> str:
+    manifest = json.loads((ROOT / "datasets" / f"{dataset}_manifest.json").read_text())
+    return f"{dataset}@" + manifest["files_sha256"][agent_view_path(split, dataset=dataset).name][:12]
 
 
 def _materializer():
@@ -122,8 +149,8 @@ def _code_revision() -> str | None:
 
 def load_split(config: ExperimentConfig) -> list[tuple[EpisodeInput, Episode]]:
     """The agent view and the gold episode for each selected episode (ids checked to agree)."""
-    inputs = {e.episode_id: e for e in load_agent_inputs(agent_view_path(config.split))}
-    gold = {e.episode_id: e for e in load_episodes(episode_path(config.split))}
+    inputs = {e.episode_id: e for e in load_agent_inputs(agent_view_path(config.split, dataset=config.dataset))}
+    gold = {e.episode_id: e for e in load_episodes(episode_path(config.split, dataset=config.dataset))}
     if inputs.keys() != gold.keys():
         raise ValueError("agent-view and gold files do not list the same episodes")
     wanted = list(config.episode_ids) or list(inputs)
@@ -166,16 +193,18 @@ def default_run_one(
     condition runs with ``memory=None``.  ``settings``/``llm_factory``/``materializer`` default to ``.env``, the hosted
     client and the pilot materialiser (tests inject fixtures).
     """
-    stores: dict[tuple[str, int], JsonlMemoryStore] = {}
+    stores: dict[tuple[str, int, str], JsonlMemoryStore] = {}
 
     def store_for(condition: ExperimentCondition, seed: int, run_settings: Settings, episode: EpisodeInput):
-        key = (condition.value, seed)
+        # Memory is per repository: with several repositories each gets its own stream file.
+        stream = f"{config.split}-{episode.repo.repo_id}" if config.repos else config.split
+        key = (condition.value, seed, stream)
         if key not in stores:
             stores[key] = JsonlMemoryStore(
-                memory_path(memory_dir(config), condition.value, seed, config.split),
+                memory_path(memory_dir(config), condition.value, seed, stream),
                 python_executable=run_settings.test_python, timeout_seconds=run_settings.test_timeout_seconds,
-                docker_image=episode.environment.docker_image,
-                namespace=memory_namespace(condition.value, seed, config.split),
+                docker_image=episode.environment.docker_image or run_settings.sandbox_docker_image,
+                namespace=memory_namespace(condition.value, seed, stream),
             )
         return stores[key]
 
@@ -186,10 +215,17 @@ def default_run_one(
         from testorcode.orchestrator import run_episode
 
         base = settings if settings is not None else Settings.from_env(env_file=ROOT / ".env")
-        run_settings = base.model_copy(update={"experiment_condition": condition, "random_seed": seed})
+        env = config.repos.get(episode.repo.repo_id)
+        update: dict = {"experiment_condition": condition, "random_seed": seed}
+        if env is not None and env.python is not None:
+            update["test_python"] = env.python
+        if env is not None and env.docker_image is not None:
+            update["sandbox_docker_image"] = env.docker_image
+        run_settings = base.model_copy(update=update)
         llm = (llm_factory or create_llm_client)(run_settings)
         worktree = (config.worktrees / f"{episode.episode_id}-{condition.value}-{seed}").absolute()
-        (materializer or _materializer())(config.repo, worktree, episode.model_dump(mode="json"))
+        repo = env.path if env is not None else config.repo
+        (materializer or _materializer())(repo, worktree, episode.model_dump(mode="json"))
         memory = None
         if profile_for(condition).memory:
             memory = store_for(condition, seed, run_settings, episode)
@@ -197,14 +233,15 @@ def default_run_one(
         return run_episode(
             episode, worktree_path=worktree, settings=run_settings, llm=llm, memory=memory,
             maintainer=simulated_maintainer(gold.gold_actions()),
+            fault_plan=gold.fault_plan if config.tool_faults else None,
         )  # fmt: skip
 
     return run_one
 
 
-def scored(record: ExperimentRunRecord, gold: Episode, split: str) -> ExperimentRunRecord:
+def scored(record: ExperimentRunRecord, gold: Episode, split: str, dataset: str = DEFAULT_DATASET) -> ExperimentRunRecord:
     """The record with provenance split/dataset version and the harness evaluation filled in (re-validated)."""
-    provenance = record.provenance.model_copy(update={"split": split, "dataset_version": dataset_version(split)})
+    provenance = record.provenance.model_copy(update={"split": split, "dataset_version": dataset_version(split, dataset)})
     draft = record.model_copy(update={"provenance": provenance})
     evaluation = evaluate_run(draft, gold)
     return ExperimentRunRecord.model_validate(draft.model_copy(update={"evaluation": evaluation}).model_dump())
@@ -311,7 +348,7 @@ def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -
                     result.skipped_unavailable.append(f"{episode.episode_id}/{condition.value}/seed {seed}: {exc}")
                     log.warning("skipped %s %s: %s", episode.episode_id, condition.value, exc)
                     continue
-                final = scored(record, gold, config.split)
+                final = scored(record, gold, config.split, config.dataset)
                 if retrying:
                     _replace_run_lines(runs_path, failed_by_key[key], final)
                     result.retried += 1
@@ -323,15 +360,19 @@ def run_experiment(config: ExperimentConfig, *, run_one: RunOne | None = None) -
 
 
 def _write_config(config: ExperimentConfig, episode_ids: list[str]) -> None:
-    manifest = json.loads((ROOT / "datasets" / "pilot_manifest.json").read_text())
+    manifest = json.loads((ROOT / "datasets" / f"{config.dataset}_manifest.json").read_text())
     payload = {
         "split": config.split,
+        "dataset": config.dataset,
         "episodes": episode_ids,
         "conditions": [c.value for c in config.conditions],
         "seeds": list(config.seeds),
         "dataset_files_sha256": manifest["files_sha256"],
         "code_revision": _code_revision(),
         "final": config.final,
+        "tool_faults": config.tool_faults,
+        # Paths only (no secrets): which clone and interpreter each repository used.
+        "repos": {k: v.model_dump(mode="json") for k, v in sorted(config.repos.items())},
     }
     (config.out / CONFIG_FILE).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 

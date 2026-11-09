@@ -49,7 +49,8 @@ def test_a1_view_withholds_every_retrieval_route(episodes) -> None:
     a1 = episode_for_condition(s4, C.A1_NO_INTENT_RETRIEVAL)
     assert a1.corpus.items == [] and a1.corpus.history_cutoff_index == s4.corpus.history_cutoff_index
     assert ToolName.SEARCH_REPO not in a1.allowed_tools
-    assert set(a1.allowed_tools) == set(s4.allowed_tools) - {ToolName.SEARCH_REPO}
+    history = {ToolName.GIT_LOG, ToolName.GIT_SHOW, ToolName.GIT_BLAME}  # earlier commit messages are intent text too
+    assert set(a1.allowed_tools) == set(s4.allowed_tools) - {ToolName.SEARCH_REPO} - history
     assert a1.visible_memory == s4.visible_memory
     assert s4.corpus.items and ToolName.SEARCH_REPO in s4.allowed_tools  # the original is untouched
 

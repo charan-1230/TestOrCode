@@ -53,7 +53,13 @@ from testorcode.schemas.result_schemas import (
     TestRunStatus,
 )
 from testorcode.tools.pytest_runner import _child_env, _execute
-from testorcode.tools.sandbox import Isolation, layout_for, resolve_isolation, wrap_command
+from testorcode.tools.sandbox import (
+    Isolation,
+    apply_defaults,
+    layout_for,
+    resolve_isolation,
+    wrap_command,
+)
 
 logger = get_logger(__name__)
 
@@ -185,6 +191,7 @@ def verify_behaviour(
     if not root.is_dir():
         raise ToolError(f"worktree does not exist or is not a directory: {root}")
     policy = policy or EditPolicy()
+    isolation, docker_image = apply_defaults(isolation, docker_image)
     mode = resolve_isolation(isolation, docker_image)
 
     def unverified(status: ProbeStatus, reason: str) -> TrustedVerification:

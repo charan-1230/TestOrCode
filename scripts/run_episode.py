@@ -108,7 +108,7 @@ def main() -> int:
     gold = full.gold_actions()
     record = run_episode(
         episode, worktree_path=worktree, settings=settings, llm=llm, memory=memory,
-        maintainer=simulated_maintainer(gold),
+        maintainer=simulated_maintainer(gold), fault_plan=full.fault_plan,  # scenario T, harness side
     )
     record = record.model_copy(update={"provenance": record.provenance.model_copy(
         update={"split": args.split, "dataset_version": dataset_version(args.split)}

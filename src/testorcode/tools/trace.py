@@ -32,7 +32,7 @@ from contextvars import ContextVar
 from typing import Any
 
 from testorcode.errors import BudgetExceededError, ScopeViolationError, ToolTimeoutError
-from testorcode.schemas.episode_schemas import ToolName
+from testorcode.schemas.episode_schemas import ToolFaultKind, ToolName
 from testorcode.schemas.result_schemas import AgentRole, ToolCallStatus, ToolEvent
 
 _MAX_MESSAGE = 300
@@ -80,6 +80,48 @@ def active_recorder() -> ToolRecorder | None:
     return _current.get()
 
 
+def _check_budget(recorder: ToolRecorder) -> str:
+    """The current budget category, after refusing a call that would exceed it.
+
+    Raises:
+        BudgetExceededError: the current budget is used up.
+    """
+    budget = recorder.budget
+    if budget == "agent" and recorder.max_calls is not None and recorder.used[budget] >= recorder.max_calls:
+        raise BudgetExceededError(f"tool-call budget of {recorder.max_calls} exhausted")
+    if budget == "operational" and recorder.max_operational is not None and recorder.used[budget] >= recorder.max_operational:
+        raise BudgetExceededError(f"operational tool-call safety cap of {recorder.max_operational} exhausted")
+    return budget
+
+
+def record_injected_fault(tool: ToolName, fault_kind: ToolFaultKind, message: str, **arguments: Any) -> None:
+    """Record a call that an injected fault (scenario T, ``tools.faults``) failed instead of running it.
+
+    Counted against the current budget exactly like a real call, so a fault costs the agent what a real failure would.
+
+    Raises:
+        BudgetExceededError: the current budget is used up.
+    """
+    recorder = _current.get()
+    if recorder is None:
+        return
+    budget = _check_budget(recorder)
+    recorder.used[budget] += 1
+    recorder.events.append(
+        ToolEvent(
+            event_id=f"tool-{len(recorder.events) + 1}",
+            step_index=len(recorder.events),
+            tool=tool,
+            called_by=recorder.role,
+            arguments={**arguments, "budget": budget},
+            status=ToolCallStatus.INJECTED_FAULT,
+            fault_kind=fault_kind,
+            error_message=f"injected {fault_kind.value}: {message}"[:_MAX_MESSAGE],
+            duration_ms=0.0,
+        )
+    )
+
+
 @contextmanager
 def tool_call(tool: ToolName, **arguments: Any) -> Iterator[ToolCall]:
     """Record one call of ``tool``.  Exceptions are recorded and re-raised.
@@ -92,11 +134,7 @@ def tool_call(tool: ToolName, **arguments: Any) -> Iterator[ToolCall]:
     if recorder is None:
         yield call
         return
-    budget = recorder.budget
-    if budget == "agent" and recorder.max_calls is not None and recorder.used[budget] >= recorder.max_calls:
-        raise BudgetExceededError(f"tool-call budget of {recorder.max_calls} exhausted")
-    if budget == "operational" and recorder.max_operational is not None and recorder.used[budget] >= recorder.max_operational:
-        raise BudgetExceededError(f"operational tool-call safety cap of {recorder.max_operational} exhausted")
+    budget = _check_budget(recorder)
     started = time.monotonic()
     try:
         yield call

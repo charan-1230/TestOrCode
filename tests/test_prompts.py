@@ -135,7 +135,8 @@ def test_response_models_require_every_field() -> None:
     for model in (prompts.RepairReply, prompts.RepairStep, prompts.TriageGrouping, prompts.GuardReview,
                   prompts.B1Step, prompts.B1Decision):
         schema = model.model_json_schema()
-        assert set(schema["required"]) == set(schema["properties"]), model.__name__
+        optional = {"sha"} if "sha" in schema["properties"] else set()  # git_show's argument: the one optional field
+        assert set(schema["required"]) == set(schema["properties"]) - optional, model.__name__
 
 
 
@@ -153,7 +154,7 @@ def test_b1_and_tool_prompts_name_the_tools_and_final_action() -> None:
     for tool in ("search_repo(query)", "read_file(path", "run_tests(selectors)"):
         assert tool in b1 and tool in prompts.TOOL_INSTRUCTIONS
     assert 'Final action: "finish"' in b1 and "exactly one item" in b1
-    assert prompts.B1_VERSION == "b1-v2"
+    assert prompts.B1_VERSION == "b1-v3"
     assert "not merely the absence of intent evidence" in b1
 
 

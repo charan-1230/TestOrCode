@@ -14,7 +14,14 @@ from pathlib import Path
 
 from testorcode.dataset import episode_path, load_episodes
 from testorcode.experiment import dataset_version, read_records
-from testorcode.report_tables import condition_rows, integrity_lines, markdown_table, write_plots
+from testorcode.report_tables import (
+    condition_rows,
+    integrity_lines,
+    markdown_table,
+    safety_rows,
+    safety_table,
+    write_plots,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -49,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     out = args.runs.parent
     plots = [] if args.no_plots else write_plots(rows, out, split)
     text = markdown_table(rows, title=f"Results table, {args.runs.parent.name}", notes=notes)
+    text += "\n" + safety_table(safety_rows(records, episodes, dataset_version=dataset_version(split),
+                                             audit_jsonl=audit if audit.is_file() else None))
     if plots:
         text += "\n" + "\n".join(f"![{p.stem}]({p.name})" for p in plots) + "\n"
     (out / "report.md").write_text(text, encoding="utf-8")

@@ -41,9 +41,9 @@ from testorcode.schemas.result_schemas import RetrievedEvidence
 
 TRIAGE_VERSION = "triage-v1"
 INTENT_VERSION = "intent-v4"
-REPAIR_VERSION = "repair-v5"  # v5: synthetic examples (v2-v4 echoed pilot dev-05's repair)
+REPAIR_VERSION = "repair-v6"  # v6: git history tools; v5: synthetic examples (v2-v4 echoed pilot dev-05's repair)
 GUARD_VERSION = "guard-v1"
-B1_VERSION = "b1-v2"
+B1_VERSION = "b1-v3"  # v3: git history tools
 PROMPT_VERSION = f"{TRIAGE_VERSION}+{INTENT_VERSION}+{REPAIR_VERSION}+{GUARD_VERSION}"
 
 COMMON_RULES = """\
@@ -72,6 +72,8 @@ class ToolArgs(BaseModel):
     start_line: int = Field(description="read_file: first line (1-based); otherwise 1.")
     end_line: int = Field(description="read_file: last line, 0 = to the end (max 200 lines); otherwise 0.")
     selectors: list[str] = Field(description="run_tests: test ids or test files; otherwise [].")
+    # The one optional argument: only git_show uses it, so a reply that omits it is still a valid step.
+    sha: str = Field(default="", description="git_show: a commit sha from git_log or git_blame; otherwise \"\".")
 
 
 TOOL_INSTRUCTIONS = """You may use tools before your final answer.  Each reply is ONE step: either a tool call or your final action.
@@ -81,12 +83,21 @@ Tools (set "action" to the tool name and fill its arguments; leave the other arg
 - read_file(path, start_line, end_line): read lines of a repository file (max 200 lines per call).
 - run_tests(selectors): run tests (ids or files under the test roots) on the CURRENT code; your edits are NOT
   applied yet.
+- git_log(path): recent commits before the CI change (optionally only those touching path), newest first.
+- git_show(sha): message and diff of one of those commits.
+- git_blame(path, start_line, end_line): which earlier commits last changed those lines (lines changed by the CI diff
+  belong to no commit yet).
 Every call costs budget; you have a small number of steps.  Do not repeat a call whose result you already have."""
 _SEARCH_TOOL_LINES = """- search_repo(query): search commit messages, changelog, docs and docstrings up to the CI commit; results carry
   evidence ids you may cite.
 """
 
 
+_GIT_TOOL_LINES = """- git_log(path): recent commits before the CI change (optionally only those touching path), newest first.
+- git_show(sha): message and diff of one of those commits.
+- git_blame(path, start_line, end_line): which earlier commits last changed those lines (lines changed by the CI diff
+  belong to no commit yet).
+"""
 _READ_FILE_LINE = "- read_file(path, start_line, end_line): read lines of a repository file (max 200 lines per call)."
 _READ_CODE_LINE = ("- read_file(path, start_line, end_line): read lines of a source or test file (max 200 lines per call);\n"
                    "  documentation, README and changelog files are not readable in this run.")
@@ -95,11 +106,15 @@ _READ_CODE_LINE = ("- read_file(path, start_line, end_line): read lines of a sou
 def tool_instructions(allowed_tools: Iterable[ToolName], *, code_only: bool = False) -> str:
     """``TOOL_INSTRUCTIONS`` adjusted to what the episode's tools really do (A1: no retrieval), so the model is not
     sent to calls that would only be refused: without ``search_repo`` its line is dropped; with ``code_only`` the
-    ``read_file`` line names the narrower scope (the restriction itself is enforced by ``AgentTools.read_file``).
-    Unchanged for FULL/A2/B1 (``search_repo`` allowed, ``code_only`` False)."""
+    ``read_file`` line names the narrower scope (the restriction itself is enforced by ``AgentTools.read_file``); without
+    all three history tools their lines are dropped.  Unchanged for FULL/A2/A3/B1 (every tool allowed, ``code_only``
+    False)."""
     text = TOOL_INSTRUCTIONS
-    if ToolName.SEARCH_REPO not in set(allowed_tools):
+    allowed = set(allowed_tools)
+    if ToolName.SEARCH_REPO not in allowed:
         text = text.replace(_SEARCH_TOOL_LINES, "")
+    if not {ToolName.GIT_LOG, ToolName.GIT_SHOW, ToolName.GIT_BLAME} <= allowed:
+        text = text.replace(_GIT_TOOL_LINES, "")
     if code_only:
         text = text.replace(_READ_FILE_LINE, _READ_CODE_LINE)
     return text
@@ -261,7 +276,7 @@ class RepairReply(BaseModel):
 class RepairStep(ToolArgs):
     """One step of the tool-using Repairer: a tool call or a final patch/escalate (``RepairReply`` fields)."""
 
-    action: Literal["search_repo", "read_file", "run_tests", "patch", "escalate"]
+    action: Literal["search_repo", "read_file", "run_tests", "git_log", "git_show", "git_blame", "patch", "escalate"]
     edits: list[SnippetEdit] = Field(description="Final 'patch': at least one edit; otherwise [].")
     rationale: str = Field(min_length=1, description="Why this step (or the final repair) is right.")
     evidence_ids: list[str] = Field(description="Ids the analysis cited; [] if none.")
@@ -427,7 +442,7 @@ class B1Decision(BaseModel):
 class B1Step(ToolArgs):
     """One step of the single agent: a tool call or ``finish`` with the decisions."""
 
-    action: Literal["search_repo", "read_file", "run_tests", "finish"]
+    action: Literal["search_repo", "read_file", "run_tests", "git_log", "git_show", "git_blame", "finish"]
     decisions: list[B1Decision] = Field(description="With 'finish': every failing test in exactly one item; else [].")
     rationale: str = Field(min_length=1)
 

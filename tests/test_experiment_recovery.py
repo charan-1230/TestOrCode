@@ -96,11 +96,11 @@ def test_an_interrupted_run_resumes_without_duplicate_memory_or_lines(tmp_path, 
     real = experiment.scored
     calls = {"n": 0}
 
-    def crash_on_second(record, gold, split):
+    def crash_on_second(record, gold, split, *rest):
         calls["n"] += 1
         if calls["n"] == 2:
             raise RuntimeError("simulated crash after the Guard wrote memory, before the line was appended")
-        return real(record, gold, split)
+        return real(record, gold, split, *rest)
 
     monkeypatch.setattr(experiment, "scored", crash_on_second)
     with pytest.raises(RuntimeError, match="simulated crash"):
@@ -125,11 +125,11 @@ def test_a_changed_replay_never_overwrites_a_stored_record(tmp_path, stream, mon
     real = experiment.scored
     calls = {"n": 0}
 
-    def crash_on_second(record, gold, split):
+    def crash_on_second(record, gold, split, *rest):
         calls["n"] += 1
         if calls["n"] == 2:
             raise RuntimeError("simulated crash")
-        return real(record, gold, split)
+        return real(record, gold, split, *rest)
 
     monkeypatch.setattr(experiment, "scored", crash_on_second)
     with pytest.raises(RuntimeError):

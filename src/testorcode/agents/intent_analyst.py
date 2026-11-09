@@ -17,7 +17,7 @@ from testorcode.agents.prompts import INTENT_SYSTEM, build_intent_user
 from testorcode.llm_client import LLMClient
 from testorcode.logging_config import get_logger
 from testorcode.memory import MemoryStore
-from testorcode.retrieval import Retriever, search_many
+from testorcode.retrieval import Retriever, qualname_terms, search_many
 from testorcode.schemas.contracts import EpisodeContext, FailureGroupDetail, IntentAnalysis
 from testorcode.schemas.result_schemas import AgentRole
 
@@ -69,7 +69,7 @@ def group_queries(group: FailureGroupDetail) -> list[str]:
     diff = group.diff_context or ""
     names: list[str] = []
     if group.group.function_qualname:
-        names += [p for p in group.group.function_qualname.split(".") if p != "boltons"]
+        names += qualname_terms(group.group.function_qualname)
     names += re.findall(r"^@@[^@]*@@\s*(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)
     names += re.findall(r"^[+-]\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)
     names += [p.rsplit("/", 1)[-1].removesuffix(".py") for p in group.affected_files if not p.startswith("tests")]

@@ -247,8 +247,10 @@ testorcode/
 └── scripts/
 ```
 
-All Day-2 modules are implemented (only `tools.git_tools.git_log/git_show/git_blame` remain stubs);
-`docs/interfaces.md` lists the modules, their contracts and owners.  Experiments: `scripts/run_experiment.py` then
+All Day-2 modules are implemented, including the git history tools (cutoff at the CI commit's parent);
+`docs/interfaces.md` lists the modules, their contracts and owners.  Final-phase additions (tool faults, hybrid retrieval,
+Docker sandbox defaults, several libraries per experiment, the new metrics and paired statistics) and how to use them:
+`docs/final-code-plan.md`.  Experiments: `scripts/run_experiment.py` then
 `scripts/summarize_results.py <out>/runs.jsonl`, and for test integrity across conditions (A3 and B1 have no Guard
 report) `scripts/audit_integrity.py --runs <out>/runs.jsonl --python ../boltons-venv/bin/python`.  Conditions that run:
 FULL, A1 (no intent retrieval), A2 (no memory), A3 (no Integrity Guard), B1 and the trivial baselines (A4, A5, B0, B2 are refused).

@@ -32,7 +32,7 @@ from testorcode.logging_config import get_logger
 from testorcode.schemas.episode_schemas import EditPolicy, ExecutableProbe
 from testorcode.schemas.result_schemas import ProbeStatus, TestRunStatus
 from testorcode.tools.pytest_runner import run_pytest
-from testorcode.tools.sandbox import Isolation, resolve_isolation
+from testorcode.tools.sandbox import Isolation, apply_defaults, resolve_isolation
 from testorcode.tools.verification import TrustedVerification
 
 logger = get_logger(__name__)
@@ -167,6 +167,7 @@ def run_executable_probe(
     present = [r for r in roots if (root / r).is_dir() and not (root / r).is_symlink()]
     if not present:
         return unverified(ProbeStatus.ERROR, "no source root of the edit policy exists in the worktree")
+    isolation, docker_image = apply_defaults(isolation, docker_image)
     mode_used = resolve_isolation(isolation, docker_image)  # no usable sandbox: ToolError here (fail closed)
 
     with tempfile.TemporaryDirectory(prefix="testorcode-probe-") as tmp:

@@ -210,6 +210,10 @@ class FailureCause(StrEnum):
     MEMORY_ERROR = "memory_error"
     TOOL_ERROR = "tool_error"
     API_ERROR = "api_error"
+    # Not in the detailed document's list: the hypothesis was right, but the decision policy (no citable evidence) or
+    # the Guard (strength not demonstrated) escalated instead of acting.  The dominant pilot failure; without it these
+    # runs would have to be forced into a cause that did not happen.
+    POLICY_ESCALATION = "policy_escalation"
 
 
 class RepairVerificationDimension(StrEnum):

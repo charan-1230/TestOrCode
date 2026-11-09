@@ -112,8 +112,10 @@ from testorcode.schemas.episode_schemas import (
     FailureGroup,
     HypothesisKind,
     MemoryRecord,
+    MutantSpec,
     PathClass,
     RepairDirection,
+    ToolFaultPlan,
     ToolName,
 )
 from testorcode.schemas.result_schemas import (
@@ -140,11 +142,17 @@ from testorcode.schemas.result_schemas import (
     TestRunResult,
     TestRunStatus,
     TokenUsage,
+    ToolCallStatus,
+    ToolEvent,
 )
 from testorcode.tools import patch_tools as _patch_tools
+from testorcode.tools.faults import FaultInjector
+from testorcode.tools.faults import agent_message as fault_message
+from testorcode.tools.mutation import load_cached_mutants
 from testorcode.tools.patch_tools import scope_for_decision
 from testorcode.tools.pytest_runner import run_tests
-from testorcode.tools.trace import ToolRecorder, recording, tool_call
+from testorcode.tools.sandbox import sandbox_defaults
+from testorcode.tools.trace import ToolRecorder, record_injected_fault, recording, tool_call
 
 logger = get_logger(__name__)
 
@@ -372,6 +380,7 @@ class EpisodeRun:
         agents: Agents | None = None,
         patch_tools: PatchTools | None = None,
         maintainer: Maintainer | None = None,
+        fault_plan: ToolFaultPlan | None = None,
     ) -> None:
         if llm is None:
             raise ConfigError("run_episode requires an LLMClient")
@@ -386,6 +395,8 @@ class EpisodeRun:
         self.episode = episode
         self.settings = settings
         self.maintainer = maintainer
+        # Scenario T: harness-only (the plan comes from the full Episode, never from the agent view).
+        self.faults = FaultInjector.for_plan(fault_plan)
         self.store = memory
         self.context = EpisodeContext.from_episode_input(episode, worktree_path)
         self.agents = agents or Agents()
@@ -417,14 +428,23 @@ class EpisodeRun:
         self._tools: AgentTools | None = None
         self._current: tuple[str | None, Stage] = (None, Stage.SETUP)
         self._applied_diff: str | None = None
+        self._cached_mutants: dict[str, list[MutantSpec]] | None = None
         self._started = 0.0
 
     # -- driver ----------------------------------------------------------- #
 
+    def _sandbox(self):
+        """Every test run of this episode uses the configured sandbox (``Settings.sandbox_*``); the episode's own
+        ``docker_image`` wins over the configured image."""
+        return sandbox_defaults(
+            self.settings.sandbox_isolation,
+            self.episode.environment.docker_image or self.settings.sandbox_docker_image,
+        )
+
     def execute(self) -> ExperimentRunRecord:
         started_at = datetime.now(UTC)
         self._started = time.monotonic()
-        with episode_logging(self.episode.episode_id), recording(self.recorder):
+        with episode_logging(self.episode.episode_id), recording(self.recorder), self._sandbox():
             try:
                 if self.condition_problem:
                     raise _ConditionNotImplemented(self.condition_problem)
@@ -593,6 +613,13 @@ class EpisodeRun:
     def _patch_application(self, g: GroupState) -> Stage:
         proposal, patch = g.proposal, g.patch
         assert proposal is not None and patch is not None
+        kind = self.faults.fault_for(ToolName.APPLY_PATCH) if self.faults is not None else None
+        if kind is not None:  # scenario T: this application fails like a real one; the agent gets its one revision
+            patch.apply_error = fault_message(kind, ToolName.APPLY_PATCH).removeprefix("ERROR: ")
+            record_injected_fault(ToolName.APPLY_PATCH, kind, patch.apply_error, operation="apply",
+                                  scope=proposal.scope.value)
+            patch.application_status = PatchApplicationStatus.FAILED_TO_APPLY
+            return self._rejected(g, (patch.apply_error,))
         try:
             self.tools.apply(
                 self.context.worktree_path, proposal.unified_diff,
@@ -618,6 +645,7 @@ class EpisodeRun:
             # The configured target interpreter and timeout reach the Guard on every path (direct run_episode and the
             # CLI alike); an injected Guard receives the same keywords.
             python_executable=self.settings.test_python, timeout_seconds=self.settings.test_timeout_seconds,
+            **self._guard_options(),
         )
         _require(isinstance(result, GuardResult), "integrity guard must return GuardResult")
         g.guard = result
@@ -646,6 +674,18 @@ class EpisodeRun:
             g, "insufficient_evidence",
             "integrity guard escalated: " + "; ".join(result.reasons), AgentRole.INTEGRITY_GUARD,
         )
+
+    def _guard_options(self) -> dict[str, Any]:
+        """Optional Guard settings, passed only when configured (so an injected Guard need not know them):
+        the cached-mutant catalogue (``MUTANT_CACHE_PATH``) and the unmeasurable-strength policy."""
+        options: dict[str, Any] = {}
+        if self.settings.mutant_cache_path is not None:
+            if self._cached_mutants is None:
+                self._cached_mutants = load_cached_mutants(self.settings.mutant_cache_path)
+            options["cached_mutants"] = self._cached_mutants
+        if self.settings.guard_unmeasurable_strength == "allow":
+            options["allow_unmeasurable_strength"] = True
+        return options
 
     def _verify_without_guard(self, g: GroupState) -> Stage:
         """A3 (no Integrity Guard, proposal Table 5): the repair is accepted on test-level verification alone.
@@ -819,7 +859,7 @@ class EpisodeRun:
     def _ensure_retriever(self) -> _RecordingRetriever:
         if self.retriever is None:
             self.retriever = _RecordingRetriever(
-                build_retriever(self.episode.corpus, self.context.worktree_path)
+                build_retriever(self.episode.corpus, self.context.worktree_path, settings=self.settings)
             )
         return self.retriever
 
@@ -832,6 +872,7 @@ class EpisodeRun:
                 # A condition without any retrieval (A1) may not read documentation or change notes either: they
                 # carry the change-intent evidence it withholds.  Enforced in AgentTools.read_file, not by the prompt.
                 code_only=not (self.profile.intent_retrieval or self.profile.standard_rag),
+                faults=self.faults,
             )
         return self._tools
 
@@ -1029,7 +1070,7 @@ class EpisodeRun:
             integrity=self.integrity or IntegrityReport(),
             memory_reads=list(self.memory.events) if self.memory else [],
             memory_writes=self.memory_writes,
-            tool_events=list(self.recorder.events),
+            tool_events=_mark_recovery(self.recorder.events, failed=self.failure_status in _EXECUTION_FAILURES),
             usage=self.llm.usage,
             errors=self.errors,
             outcome=RunOutcome(
@@ -1039,6 +1080,28 @@ class EpisodeRun:
                 revisions_used=self.revisions_used,
             ),
         )
+
+
+_EXECUTION_FAILURES = frozenset(
+    {RunStatus.TOOL_FAILURE, RunStatus.API_FAILURE, RunStatus.ORCHESTRATOR_ERROR, RunStatus.BUDGET_EXHAUSTED}
+)
+
+
+def _mark_recovery(events: list[ToolEvent], *, failed: bool) -> list[ToolEvent]:
+    """Set ``recovered`` on every injected-fault event (scenario T): True when a later call of the same tool by the
+    same role succeeded (for ``apply_patch``: a later successful application) and the run did not end in an execution
+    failure.  Other events are returned unchanged."""
+    out = list(events)
+    for i, event in enumerate(out):
+        if event.status is not ToolCallStatus.INJECTED_FAULT:
+            continue
+        later_ok = any(
+            e.tool is event.tool and e.called_by is event.called_by and e.status is ToolCallStatus.OK
+            and (e.tool is not ToolName.APPLY_PATCH or e.arguments.get("operation") == "apply")
+            for e in out[i + 1:]
+        )
+        out[i] = event.model_copy(update={"recovered": later_ok and not failed})
+    return out
 
 
 def _disposition(g: GroupState | None, patches: list[PatchRecord]) -> str | None:
@@ -1122,7 +1185,7 @@ class SingleAgentRun(EpisodeRun):
         self._started = time.monotonic()
         self._pending: dict[str, B1Decision | str] = {}
         self._placement_retried: set[tuple[str, int]] = set()
-        with episode_logging(self.episode.episode_id), recording(self.recorder):
+        with episode_logging(self.episode.episode_id), recording(self.recorder), self._sandbox():
             try:
                 if self.condition_problem:
                     raise _ConditionNotImplemented(self.condition_problem)
@@ -1291,6 +1354,7 @@ def run_episode(
     agents: Agents | None = None,
     patch_tools: PatchTools | None = None,
     maintainer: Maintainer | None = None,
+    fault_plan: ToolFaultPlan | None = None,
 ) -> ExperimentRunRecord:
     """Run one episode and return its run record.
 
@@ -1302,7 +1366,8 @@ def run_episode(
     agents.  The condition comes from ``settings.experiment_condition``; memory is
     used only when its profile has memory (``memory`` is ignored otherwise).
     ``maintainer`` is the harness's simulated maintainer, asked after a Guard
-    APPROVE; it may see gold labels, so it must never be handed to an agent.
+    APPROVE; it may see gold labels, so it must never be handed to an agent.  ``fault_plan`` (scenario T,
+    ``Episode.fault_plan``) is harness-only too: agents only ever see the failures it injects.
     Execution failures are recorded in the returned record, not raised,
     wherever possible.
 
@@ -1328,4 +1393,5 @@ def run_episode(
         agents=agents,
         patch_tools=patch_tools,
         maintainer=maintainer,
+        fault_plan=fault_plan,
     ).execute()

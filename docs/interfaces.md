@@ -206,8 +206,9 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** `tools.git_tools.git_log/git_show/git_blame`, and building a
-retrieval corpus from a worktree; `ConditionSummary` is provisional.  (`memory.JsonlMemoryStore` and
+**Deferred (raise `NotImplementedError`):** building a retrieval corpus from a worktree; `ConditionSummary` is
+provisional.  (`tools.git_tools.git_log/git_show/git_blame` are implemented, with the history cutoff at the CI commit's
+parent, `EpisodeContext.history_cutoff_sha`: see `docs/final-code-plan.md`.)  (`memory.JsonlMemoryStore` and
 `integrity_guard.build_memory_record` are implemented since Day 2, Human 2: see `docs/day2-human2.md`.)
 
 **Agents.** Signatures are as in section 3.

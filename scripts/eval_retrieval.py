@@ -10,9 +10,12 @@ Reports, per episode that has gold evidence ids, the rank of the best gold item 
                    to document why message-free numbers are the honest ones).
 
 Gold ids are read from the episode file, so corrections made during human review are picked up automatically.
-The frozen test split is refused unless ``--final`` is given.  Results go to ``results/retrieval_<split>.json``.
+The frozen test split is refused unless ``--final`` is given.  Results go to ``results/retrieval_<split>.json``
+(``retrieval_<split>_<mode>.json`` for a non-BM25 mode).
 
-    python scripts/eval_retrieval.py            # dev split
+    python scripts/eval_retrieval.py                                           # dev split, BM25
+    python scripts/eval_retrieval.py --mode hybrid --embedding-backend local   # BM25 + local embeddings (offline)
+    python scripts/eval_retrieval.py --mode hybrid --rerank local              # ... plus a local cross-encoder
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from testorcode.config import Settings
 from testorcode.dataset import episode_path, load_episodes
 from testorcode.retrieval import (
     build_retriever,
@@ -69,11 +73,11 @@ def score(ranked: list[str], gold: set[str]) -> dict:
     return {"rank": hit_rank(ranked, gold), **{f"recall@{k}": recall_at_k(ranked, gold, k) for k in KS}}
 
 
-def evaluate(split: str) -> list[dict]:
+def evaluate(split: str, settings: Settings | None = None) -> list[dict]:
     rows = []
     for episode in load_episodes(episode_path(split)):
         ai = episode.agent_input
-        retriever = build_retriever(ai.corpus)
+        retriever = build_retriever(ai.corpus, settings=settings)
         whole_gold = {g for lbl in episode.ground_truth.per_test_labels for g in (lbl.gold_evidence_ids or [])}
         if not whole_gold:
             continue
@@ -100,14 +104,21 @@ def main() -> int:
     parser.add_argument("--split", default="dev", choices=["dev", "test"])
     parser.add_argument("--final", action="store_true", help="allow the frozen test split (do this once, after freezing)")
     parser.add_argument("--out", default=str(ROOT / "results"))
+    parser.add_argument("--mode", choices=["bm25", "hybrid"], default="bm25")
+    parser.add_argument("--embedding-backend", choices=["voyage", "local"], default="local")
+    parser.add_argument("--rerank", choices=["none", "voyage", "local"], default="none")
     args = parser.parse_args()
+    base = Settings.from_env(env_file=ROOT / ".env") if (ROOT / ".env").is_file() else Settings.from_env({})
+    settings = base.model_copy(update={"retrieval_mode": args.mode, "embedding_backend": args.embedding_backend,
+                                       "rerank_backend": args.rerank})
     if args.split == "test" and not args.final:
         sys.stderr.write("refusing to read the frozen test split without --final (see datasets/README.md)\n")
         return 2
-    rows = evaluate(args.split)
+    rows = evaluate(args.split, settings)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
-    (out / f"retrieval_{args.split}.json").write_text(json.dumps(rows, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    suffix = "" if args.mode == "bm25" else f"_hybrid-{args.embedding_backend}" + (f"-rerank-{args.rerank}" if args.rerank != "none" else "")
+    (out / f"retrieval_{args.split}{suffix}.json").write_text(json.dumps(rows, indent=1, sort_keys=True) + "\n", encoding="utf-8")
 
     def fmt(rank: int | None) -> str:
         return f">{DEPTH}" if rank is None else str(rank)

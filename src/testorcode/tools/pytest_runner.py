@@ -53,6 +53,7 @@ from testorcode.schemas.result_schemas import TestRunStatus, ToolCallStatus
 from testorcode.tools.sandbox import (
     Isolation,
     Layout,
+    apply_defaults,
     layout_for,
     resolve_isolation,
     stop_container,
@@ -210,6 +211,7 @@ def run_pytest(
     if not root.is_dir():
         raise ToolError(f"worktree does not exist or is not a directory: {root}")
     selectors = tuple(selectors)
+    isolation, docker_image = apply_defaults(isolation, docker_image)
     mode = resolve_isolation(isolation, docker_image)
 
     bad = [problem for s in selectors if (problem := _selector_problem(root, s))]
@@ -227,7 +229,10 @@ def run_pytest(
         return PytestRun(execution, "", "", mode)
 
     if mode is Isolation.DOCKER:
-        python = str(python_executable or "python")
+        # The image's interpreter: a host path (TEST_PYTHON) does not exist inside the container.  A bare command name
+        # (e.g. "python3") is still honoured.
+        requested = str(python_executable) if python_executable else ""
+        python = requested if requested and os.sep not in requested else "python"
     else:
         python = str(python_executable or sys.executable)
         if os.sep in python and not os.path.isabs(python):  # relative: unresolvable from the worktree/sandbox

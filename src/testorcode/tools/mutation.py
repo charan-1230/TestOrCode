@@ -122,18 +122,28 @@ def _generate(source: str, file_path: str, function: str, module: str | None, li
     lines = source.splitlines(keepends=True)
     candidates: list[tuple[str, str]] = []  # (description, mutated source)
     seen: set[str] = set()
-    for node, mutated, desc, statement in _mutation_points(target):
-        if node.lineno != node.end_lineno:
-            continue  # one-line edits only: the splice must not cross lines
-        new_source = _splice(lines, node, mutated, statement)
-        if new_source is None or new_source == source or new_source in seen:
-            continue
-        try:
-            ast.parse(new_source)
-        except (SyntaxError, ValueError):
-            continue
-        seen.add(new_source)
-        candidates.append((f"{function} line {node.lineno}: {desc}", new_source))
+
+    def collect(points, room: int | None = None) -> None:
+        for node, mutated, desc, statement in points:
+            if room is not None and len(candidates) >= room:
+                return
+            if node.lineno != node.end_lineno:
+                continue  # one-line edits only: the splice must not cross lines
+            new_source = _splice(lines, node, mutated, statement)
+            if new_source is None or new_source == source or new_source in seen:
+                continue
+            try:
+                ast.parse(new_source)
+            except (SyntaxError, ValueError):
+                continue
+            seen.add(new_source)
+            candidates.append((f"{function} line {node.lineno}: {desc}", new_source))
+
+    collect(_mutation_points(target))
+    if len(candidates) < limit:
+        # Small functions: top up with the extended operators, after the base ones, so a function that already had
+        # ``limit`` base candidates keeps exactly the same mutants and ids.
+        collect(_extended_points(target), room=limit)
     indices = list(range(len(candidates)))
     if len(indices) > limit:
         indices = sorted(random.Random(seed).sample(indices, limit))
@@ -207,6 +217,45 @@ def _mutation_points(function: ast.FunctionDef | ast.AsyncFunctionDef):
             ):
                 points.append((node, ast.Return(value=ast.Constant(None)), "return value -> None", True))
     return sorted(points, key=lambda p: (p[0].lineno, p[0].col_offset))
+
+
+def _extended_points(function: ast.FunctionDef | ast.AsyncFunctionDef):
+    """Extra operators, used only to top up small functions (see ``_generate``), in source order: negate the test of an
+    ``if``/``while``/conditional expression, swap an augmented-assignment operator, drop a unary minus, and swap
+    ``break``/``continue``.  (A decisive branch is often a conditional expression, e.g. ``a if flag else b``, which the
+    base operators never change.)"""
+    body = _without_docstring(function.body)
+    skip = _fstring_nodes(body)
+    points = []
+    for stmt in body:
+        for node in ast.walk(stmt):
+            if id(node) in skip or not hasattr(node, "lineno"):
+                continue
+            if isinstance(node, (ast.If, ast.While, ast.IfExp)) and id(node.test) not in skip:
+                negated = ast.UnaryOp(op=ast.Not(), operand=copy.deepcopy(node.test))
+                points.append((node.test, negated, f"negate {type(node).__name__} condition", False))
+            elif isinstance(node, ast.AugAssign) and type(node.op) in _BIN:
+                new = copy.deepcopy(node)
+                new.op = _BIN[type(node.op)]()
+                points.append((node, new, f"{type(node.op).__name__}= -> {type(new.op).__name__}=", True))
+            elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.USub):
+                points.append((node, copy.deepcopy(node.operand), "remove unary minus", False))
+            elif isinstance(node, ast.Break):
+                points.append((node, ast.Continue(), "break -> continue", True))
+            elif isinstance(node, ast.Continue):
+                points.append((node, ast.Break(), "continue -> break", True))
+    return sorted(points, key=lambda p: (p[0].lineno, p[0].col_offset))
+
+
+def _without_docstring(body: list[ast.stmt]) -> list[ast.stmt]:
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+        return body[1:]
+    return body
+
+
+def _fstring_nodes(body: list[ast.stmt]) -> set[int]:
+    """Ids of every node inside an f-string (they cannot be spliced safely)."""
+    return {id(n) for stmt in body for node in ast.walk(stmt) if isinstance(node, ast.JoinedStr) for n in ast.walk(node)}
 
 
 def _splice(lines: list[str], node: ast.AST, mutated: ast.AST, statement: bool) -> str | None:
@@ -412,6 +461,9 @@ class MutationCheck:
     killed_by_file_before: int | None = None
     outcomes_after: tuple[MutantOutcome, ...] = ()
     outcomes_before: tuple[MutantOutcome, ...] = ()
+    # UPDATE_TEST only: no test in the touched files kills any executable mutant, before or after the repair, so these
+    # mutants cannot measure the repair's strength either way.  A gap too unless ``allow_unmeasurable`` was given.
+    unmeasurable: tuple[str, ...] = ()
 
 
 def locate_function(context: EpisodeContext, function_qualname: str) -> tuple[str, str, str] | None:
@@ -439,6 +491,7 @@ def mutation_check(
     mutants: Sequence[MutantSpec] | None = None,
     max_mutants: int = DEFAULT_MAX_MUTANTS,
     deadline_seconds: int = DEFAULT_DEADLINE_SECONDS,
+    allow_unmeasurable: bool = False,
 ) -> MutationCheck:
     """Measured mutation evidence for an applied repair, on mutants of the group's function.
 
@@ -453,6 +506,10 @@ def mutation_check(
 
     ``mutants`` replaces generation (selected or cached mutants, executed now).  The whole check is bounded by
     ``deadline_seconds``.
+
+    *Strength unmeasurable* (UPDATE_TEST): executable mutants exist but no test in the touched files kills any of them,
+    before or after the repair, so nothing was lost and nothing can be shown.  It is reported in ``unmeasurable``; it is
+    also a gap (ESCALATE) unless ``allow_unmeasurable`` is given (``Settings.guard_unmeasurable_strength``).
 
     Raises:
         ToolError: no sandbox is available.
@@ -499,7 +556,7 @@ def mutation_check(
     killed_after = {m for m in valid if a[m].outcome == "killed"}
     killed_before = {m for m in valid if b.get(m) is not None and b[m].outcome == "killed"}
     by_group = {m for m in killed_after if group_ids & set(a[m].killed_by)}
-    problems, gaps = [], []
+    problems, gaps, unmeasurable = [], [], []
     lost = sorted(killed_before - killed_after)
     if lost:
         problems.append(
@@ -509,6 +566,12 @@ def mutation_check(
         )
     if not valid:
         gaps.append(f"none of the {len(mutants)} mutants of {function} could be executed cleanly")
+    elif not by_group and not fix and not killed_after and not killed_before:
+        unmeasurable.append(f"the updated tests detect none of the {len(valid)} executable mutants of {function}, "
+                            "and no test in the touched files killed any of them before the repair either, so its "
+                            "strength cannot be measured")
+        if not allow_unmeasurable:
+            gaps.append(unmeasurable[-1])
     elif not by_group:
         what = "tests that verify this fix" if fix else "updated tests"
         gaps.append(f"the {what} detect none of the {len(valid)} executable mutants of {function}, "
@@ -526,4 +589,5 @@ def mutation_check(
         mutants_total=len(valid), killed_by_repaired_tests=len(by_group),
     )
     return MutationCheck(result, tuple(problems), tuple(gaps), len(killed_after),
-                         None if fix else len(killed_before), after.outcomes, before.outcomes if before else ())
+                         None if fix else len(killed_before), after.outcomes, before.outcomes if before else (),
+                         tuple(unmeasurable))

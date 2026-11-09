@@ -29,7 +29,9 @@ import functools
 import os
 import shutil
 import subprocess
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -112,6 +114,38 @@ def bwrap_available() -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
+
+
+@dataclass(frozen=True)
+class SandboxDefaults:
+    """What an ``auto`` request means during one episode (``Settings.sandbox_isolation``/``sandbox_docker_image``)."""
+
+    isolation: Isolation = Isolation.AUTO
+    docker_image: str | None = None
+
+
+_DEFAULTS: ContextVar[SandboxDefaults | None] = ContextVar("testorcode_sandbox_defaults", default=None)
+
+
+@contextmanager
+def sandbox_defaults(isolation: Isolation | str = Isolation.AUTO, docker_image: str | None = None) -> Iterator[None]:
+    """Within the block, test runs that ask for ``auto`` isolation use ``isolation`` and, when they name no image,
+    ``docker_image``.  The orchestrator sets this per episode, so every test run (agents, Guard, mutants, probes)
+    uses the same sandbox; an explicit non-auto request is never overridden."""
+    token = _DEFAULTS.set(SandboxDefaults(Isolation(isolation), docker_image or None))
+    try:
+        yield
+    finally:
+        _DEFAULTS.reset(token)
+
+
+def apply_defaults(isolation: Isolation | str, docker_image: str | None) -> tuple[Isolation, str | None]:
+    """``(isolation, docker_image)`` after the current ``sandbox_defaults``: only an ``auto`` request is changed."""
+    mode = Isolation(isolation)
+    if mode is not Isolation.AUTO:
+        return mode, docker_image
+    defaults = _DEFAULTS.get() or SandboxDefaults()
+    return defaults.isolation, docker_image or defaults.docker_image
 
 
 def resolve_isolation(isolation: Isolation | str, docker_image: str | None) -> Isolation:

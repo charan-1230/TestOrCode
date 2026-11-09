@@ -45,6 +45,10 @@ PROFILES: dict[C, ConditionProfile] = {
 }
 
 
+# Tools that return change-intent text: withheld from a condition without any retrieval (A1).
+_RETRIEVAL_TOOLS = frozenset({ToolName.SEARCH_REPO, ToolName.GIT_LOG, ToolName.GIT_SHOW, ToolName.GIT_BLAME})
+
+
 def profile_for(condition: C) -> ConditionProfile:
     return PROFILES[condition]
 
@@ -55,7 +59,8 @@ def episode_for_condition(episode: EpisodeInput, condition: C) -> EpisodeInput:
     * No memory -> ``visible_memory=None`` (the schema's "memory disabled"; ``[]`` would mean enabled but empty).
     * A1 -> the commit message is withheld (``WITHHELD``) because the Analyst sees only failing output and the diff.
     * No retrieval at all (A1: neither intent retrieval nor standard RAG) -> the corpus is withheld (``items=[]``,
-      genuinely empty) and ``search_repo`` is removed from ``allowed_tools``.  Withholding the commit message alone is
+      genuinely empty) and ``search_repo`` and the history tools (``git_log``/``git_show``/``git_blame``: earlier commit
+      messages are change-intent text) are removed from ``allowed_tools``.  Withholding the commit message alone is
       not enough: every pilot corpus also holds the CI commit's own message (``msg:<sha>``), which any search would
       return.  Memory stays available when the profile has it.
     """
@@ -72,5 +77,5 @@ def episode_for_condition(episode: EpisodeInput, condition: C) -> EpisodeInput:
         update["ci_event"] = event
     if profile.uses_llm and not (profile.intent_retrieval or profile.standard_rag):
         update["corpus"] = episode.corpus.model_copy(update={"items": []})
-        update["allowed_tools"] = [t for t in episode.allowed_tools if t is not ToolName.SEARCH_REPO]
+        update["allowed_tools"] = [t for t in episode.allowed_tools if t not in _RETRIEVAL_TOOLS]
     return episode.model_copy(update=update) if update else episode
