@@ -26,3 +26,11 @@ results/*
 
 # docs
 docs/TestOrCode_5-day_emergency_execution_plan.pdf
+# Claude Code local worktrees
+.claude/worktrees/
+
+# LaTeX build artifacts
+docs/report/*.aux
+docs/report/*.out
+docs/report/*.toc
+docs/report/*.synctex.gz
