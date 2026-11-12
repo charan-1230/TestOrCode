@@ -14,7 +14,8 @@ Pieces, from low to high level:
 * ``memory_evidence``: only memory records whose probe passed become evidence.
 * ``hit_rank`` / ``recall_at_k`` / ``citation_existence_rate``: pure metric helpers.
 
-Deferred, behind the same ``Retriever`` protocol: embeddings, reranking, building the corpus from a worktree.
+Hybrid retrieval (BM25 + embeddings, optional rerank) is in ``retrieval_hybrid`` behind the same protocol and is chosen
+by ``build_retriever(..., settings=)`` (``RETRIEVAL_MODE``).  Deferred: building the corpus from a worktree.
 """
 
 from __future__ import annotations
@@ -113,8 +114,8 @@ class Bm25Retriever:
         return [_evidence(self._items[i], query, rank, scores[i], RetrievalMethod.BM25) for rank, i in enumerate(hits, 1)]
 
 
-def build_retriever(corpus: RetrievalCorpusSpec, worktree_path: Path | None = None) -> Retriever:
-    """Index the episode's materialised corpus.
+def build_retriever(corpus: RetrievalCorpusSpec, worktree_path: Path | None = None, *, settings=None) -> Retriever:
+    """Index the episode's materialised corpus: BM25, or hybrid when ``settings.retrieval_mode == "hybrid"``.
 
     Raises:
         NotImplementedError: ``corpus.items is None`` (building from a worktree is deferred).
@@ -134,6 +135,11 @@ def build_retriever(corpus: RetrievalCorpusSpec, worktree_path: Path | None = No
             and item.commit_index > corpus.history_cutoff_index
         ):
             raise HistoryCutoffError(f"{item.evidence_id} is newer than the history cutoff")
+    if settings is not None and getattr(settings, "retrieval_mode", "bm25") == "hybrid":
+        from testorcode.retrieval_hybrid import HybridRetriever, build_components
+
+        embedder, reranker = build_components(settings)
+        return HybridRetriever(corpus.items, embedder, reranker)
     return Bm25Retriever(corpus.items)
 
 
@@ -182,6 +188,13 @@ def _test_words(ci_event: CIEvent, group: FailureGroupDetail | None) -> set[str]
     return words
 
 
+def qualname_terms(qualname: str) -> list[str]:
+    """The informative parts of a dotted function name: the top-level package (``boltons`` in
+    ``boltons.cacheutils.CachedFunction.__call__``) names every item of the corpus, so it is dropped."""
+    parts = qualname.split(".")
+    return parts[1:] if len(parts) >= 3 else parts
+
+
 def naive_query(ci_event: CIEvent) -> str:
     """B1 'standard RAG': the failing test's own text (id, message, traceback head)."""
     parts = []
@@ -213,7 +226,7 @@ def intent_queries(
     names: list[str] = []
     qualname = group.group.function_qualname if group else None
     if qualname:
-        names += [part for part in qualname.split(".") if part != "boltons"]
+        names += qualname_terms(qualname)
     else:
         names += re.findall(r"^@@[^@]*@@\s*(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)
         names += re.findall(r"^[+-]\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)

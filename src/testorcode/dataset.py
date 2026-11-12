@@ -21,6 +21,16 @@ from testorcode.schemas.episode_schemas import Episode, EpisodeInput, find_leake
 DATASETS_DIR = Path(__file__).resolve().parents[2] / "datasets"
 
 
+DEFAULT_DATASET = "pilot"
+
+
+def _prefix(dataset: str) -> str:
+    """A dataset name is a plain file prefix (``pilot`` -> ``pilot_dev.jsonl``): letters, digits, ``-`` and ``_``."""
+    if not dataset or not all(ch.isalnum() or ch in "-_" for ch in dataset):
+        raise ValueError(f"dataset name must be a plain file prefix, not {dataset!r}")
+    return dataset
+
+
 def _records(path: str | Path) -> Iterator[tuple[int, dict]]:
     with open(path, encoding="utf-8") as handle:
         for number, line in enumerate(handle, 1):
@@ -59,17 +69,17 @@ def load_agent_inputs(path: str | Path) -> list[EpisodeInput]:
     return inputs
 
 
-def agent_view_path(split: str, datasets_dir: str | Path = DATASETS_DIR) -> Path:
+def agent_view_path(split: str, datasets_dir: str | Path = DATASETS_DIR, *, dataset: str = DEFAULT_DATASET) -> Path:
     """Path of the agent-view file for ``split`` ('dev' or 'test')."""
     if split not in ("dev", "test"):
         msg = f"split must be 'dev' or 'test', not {split!r}"
         raise ValueError(msg)
-    return Path(datasets_dir) / f"pilot_{split}_agent_view.jsonl"
+    return Path(datasets_dir) / f"{_prefix(dataset)}_{split}_agent_view.jsonl"
 
 
-def episode_path(split: str, datasets_dir: str | Path = DATASETS_DIR) -> Path:
+def episode_path(split: str, datasets_dir: str | Path = DATASETS_DIR, *, dataset: str = DEFAULT_DATASET) -> Path:
     """Path of the full (gold-label) file for ``split``.  Evaluation harness only."""
     if split not in ("dev", "test"):
         msg = f"split must be 'dev' or 'test', not {split!r}"
         raise ValueError(msg)
-    return Path(datasets_dir) / f"pilot_{split}.jsonl"
+    return Path(datasets_dir) / f"{_prefix(dataset)}_{split}.jsonl"

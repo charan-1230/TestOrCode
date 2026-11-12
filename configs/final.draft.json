@@ -1,0 +1,40 @@
+{
+  "name": "DRAFT-not-frozen",
+  "notes": "Every decision the final runs depend on, at the pilot's current value. Decide each on the dev split, then copy this file to configs/final.json, give it a real name (e.g. final-v1) and commit it BEFORE touching the test split. scripts/run_experiment.py --final refuses a config whose name starts with DRAFT. Keys are environment variable names (config.ENV_VARS); \"\" means unset, so the LLM_* entries must be filled in (the provider check, scripts/provider_check.py, gives the dated model id and the structured mode). tool_fault_rate is null as in the pilot; the proposal's scenario T is about 0.1. Secrets never go here.",
+  "settings": {
+    "LLM_PROVIDER": "",
+    "LLM_BASE_URL": "",
+    "LLM_MODEL": "",
+    "LLM_STRUCTURED_MODE": "json_schema",
+    "RETRIEVAL_MODE": "bm25",
+    "EMBEDDING_BACKEND": "voyage",
+    "RERANK_BACKEND": "none",
+    "GUARD_UNMEASURABLE_STRENGTH": "escalate",
+    "MUTANT_CACHE_PATH": "",
+    "TEST_PATCH_RULE": "literal",
+    "SANDBOX_ISOLATION": "auto",
+    "SANDBOX_DOCKER_IMAGE": "",
+    "MAX_REPAIR_REVISIONS": "1",
+    "RETRIEVAL_TOP_K": "8",
+    "TEST_TIMEOUT_SECONDS": "120"
+  },
+  "experiment": {
+    "tool_faults": true,
+    "tool_fault_rate": null
+  },
+  "scoring": {
+    "direction_from": "hypothesis",
+    "escalate_after_correct_repair": "wrong"
+  },
+  "hypothesis": {
+    "min_direction_f1_gain": 0.15,
+    "max_masked_regression_full": 0.05,
+    "min_masked_regression_b1": 0.2,
+    "min_retention_full": 0.9,
+    "max_retention_b1": 0.7,
+    "min_covered_tool_call_saving": 0.25,
+    "max_overgeneralisation_scoped": 0.1,
+    "min_overgeneralisation_coarse": 0.3,
+    "b2_gap": 0.05
+  }
+}

@@ -71,7 +71,15 @@ class EpisodeContext(_Contract):
     episode_id: Identifier
     repo: RepoRef
     worktree_path: Path = Field(description="Isolated checkout for this episode.")
-    commit_sha: CommitSha = Field(description="Current commit; also the history cutoff.")
+    commit_sha: CommitSha = Field(description="Current (CI) commit.")
+    history_cutoff_sha: CommitSha | None = Field(
+        default=None,
+        description=(
+            "Newest commit the history tools may show: the CI commit's parent, i.e. the worktree's HEAD.  The CI commit "
+            "itself carries the real message and the developer's test diff (and, for injected regressions, the code "
+            "without the mutant), so it is not visible.  None = history tools refuse."
+        ),
+    )
     edit_policy: EditPolicy = Field(default_factory=EditPolicy)
     budget: EpisodeBudget = Field(default_factory=EpisodeBudget)
     allowed_tools: tuple[ToolName, ...] = ()
@@ -86,6 +94,7 @@ class EpisodeContext(_Contract):
             repo=episode.repo,
             worktree_path=worktree_path,
             commit_sha=episode.ci_event.commit.sha,
+            history_cutoff_sha=episode.ci_event.parent_commit.sha if episode.ci_event.parent_commit else None,
             edit_policy=episode.edit_policy,
             budget=episode.budget,
             allowed_tools=tuple(episode.allowed_tools),
@@ -417,12 +426,15 @@ class MemoryRecordCheck(_Contract):
     record: MemoryRecord
     probe_status: ProbeStatus = ProbeStatus.NOT_RUN
     blocked_reason: Literal["probe_failed", "probe_not_run", "superseded", "out_of_scope"] | None = None
+    # False only for coarse memory (ablation A4): module-level notes are usable without running a probe.
+    probe_gated: bool = True
 
     @property
     def valid_as_evidence(self) -> bool:
-        """True only if the probe passed on the current code and the record is not stale."""
+        """True only if the probe passed on the current code (or the store does not gate on probes) and the record
+        is neither stale nor blocked."""
         return (
-            self.probe_status is ProbeStatus.PASSED
+            (self.probe_status is ProbeStatus.PASSED or not self.probe_gated)
             and not self.record.flagged_stale
             and self.blocked_reason is None
         )

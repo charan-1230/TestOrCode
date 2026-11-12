@@ -59,13 +59,13 @@ def test_import_does_not_configure_logging() -> None:
     )
 
 
-def test_deferred_functions_raise_not_implemented() -> None:
+def test_git_tools_are_implemented_and_fail_cleanly_outside_a_repository(tmp_path: Path) -> None:
+    from testorcode.errors import ToolError
     from testorcode.tools import git_tools
 
-    # pytest_runner and patch_tools are implemented (tests/test_pytest_runner.py,
-    # tests/test_patch_tools.py); the git history tools are still deferred.
-    with pytest.raises(NotImplementedError):
-        git_tools.git_log(Path("."), cutoff_commit="a1b2c3d4")
+    # The history tools are implemented (tests/test_git_tools.py); outside a work tree they raise ToolError.
+    with pytest.raises(ToolError):
+        git_tools.git_log(tmp_path, cutoff_commit="a1b2c3d4")
 
 
 def test_llm_client_needs_credentials_only_when_created() -> None:

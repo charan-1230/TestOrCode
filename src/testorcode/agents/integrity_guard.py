@@ -78,6 +78,7 @@ def verify_repair(
     probe: TrustedProbe | None = None,
     known_failures: frozenset[str] = frozenset(),
     cached_mutants: Mapping[str, Sequence[MutantSpec]] | None = None,
+    allow_unmeasurable_strength: bool = False,
 ) -> GuardResult:
     """Check the applied repair: tests, weakening, scope, evidence, mutants.
 
@@ -89,6 +90,8 @@ def verify_repair(
     keep failing (see ``verify_group``).  ``cached_mutants`` (function -> mutants,
     ``tools.mutation.load_cached_mutants``) replaces mutant generation for the
     functions it lists; the mutants are executed now either way.
+    ``allow_unmeasurable_strength``: an UPDATE_TEST repair whose strength the mutants cannot measure at all (no test in
+    the touched files kills any of them, before or after) is judged on the other checks instead of escalated.
 
     Raises:
         ToolError, ToolTimeoutError.
@@ -155,7 +158,10 @@ def verify_repair(
         mutation = mutation_check(  # UPDATE_TEST: strength of the edited tests; FIX_CODE: oracle sensitivity
             context, group, proposal, pre_patch, timeout_seconds=timeout_seconds,
             python_executable=python_executable, mutants=list(cached) if cached else None,
+            allow_unmeasurable=allow_unmeasurable_strength,
         )
+        if mutation.unmeasurable:
+            logger.info("guard: group %s: %s", group.group.group_id, "; ".join(mutation.unmeasurable))
         outcome = repair_outcome(
             proposal.decision, run, probe_verification=verification, mutation=mutation.result,
             mutation_problems=mutation.problems, mutation_gaps=mutation.gaps,

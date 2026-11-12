@@ -1,4 +1,5 @@
-"""Tools a model may call itself during an episode: ``search_repo``, ``read_file``, ``run_tests``.
+"""Tools a model may call itself during an episode: ``search_repo``, ``read_file``, ``run_tests`` and the history tools
+``git_log``, ``git_show``, ``git_blame``.
 
 The orchestrator builds one ``AgentTools`` per episode and hands it to the
 agents that use a tool loop (``agents.tool_loop``).  Every call:
@@ -15,7 +16,11 @@ failures are raised and end the run as execution failures.
 
 Nothing here writes to the worktree: patches stay proposals that the
 orchestrator validates and applies.  ``read_file`` sees the episode worktree only
-(no ``.git`` metadata, so no history past the CI commit, and no ``.env`` files).
+(no ``.git`` metadata and no ``.env`` files).  History comes only through the git tools, cut off at the CI commit's
+parent (``EpisodeContext.history_cutoff_sha``): the CI commit itself would show the real message and the developer's
+test diff.  Conditions without retrieval (A1) do not get the git tools (``conditions.episode_for_condition``).
+
+``faults`` (scenario T, ``tools.faults``): an injector that may fail a call instead of running it.
 
 ``code_only=True`` (conditions without any retrieval, i.e. A1) narrows ``read_file`` to code: Python source files
 under the policy's source roots and files under its test roots (test modules and fixtures).  Documentation and
@@ -30,16 +35,20 @@ from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 from testorcode.agents._common import clip, numbered, read_worktree_file
-from testorcode.errors import ToolError
+from testorcode.errors import HistoryCutoffError, ToolError
 from testorcode.schemas.contracts import EpisodeContext
 from testorcode.schemas.episode_schemas import EditPolicy, ToolName
 from testorcode.schemas.result_schemas import RetrievedEvidence, ToolCallStatus
+from testorcode.tools import git_tools
+from testorcode.tools.faults import FaultInjector
+from testorcode.tools.faults import agent_message as fault_message
 from testorcode.tools.pytest_runner import run_tests
-from testorcode.tools.trace import tool_call
+from testorcode.tools.trace import record_injected_fault, tool_call
 
 MAX_READ_LINES = 200
 MAX_RESULT_CHARS = 6000
-TOOL_NAMES = ("search_repo", "read_file", "run_tests")
+TOOL_NAMES = ("search_repo", "read_file", "run_tests", "git_log", "git_show", "git_blame")
+GIT_LOG_COMMITS = 20
 # code_only: what counts as a documentation/change-note file wherever it lives, and the source-file suffixes.
 _DOC_SUFFIXES = frozenset({".md", ".rst", ".adoc"})
 _DOC_STEMS = ("readme", "changelog", "changes", "history", "news", "releasenotes", "release_notes", "todo",
@@ -52,7 +61,7 @@ class _Searcher(Protocol):
 
 
 class AgentTools:
-    """The three model-callable tools for one episode."""
+    """The model-callable tools for one episode."""
 
     def __init__(
         self,
@@ -63,6 +72,7 @@ class AgentTools:
         python_executable: str | Path | None = None,
         top_k: int = 8,
         code_only: bool = False,
+        faults: FaultInjector | None = None,
     ) -> None:
         self._context = context
         self._retriever = retriever
@@ -70,17 +80,97 @@ class AgentTools:
         self._python = python_executable
         self._top_k = top_k
         self.code_only = code_only  # read_file limited to source and test files (A1)
+        self.faults = faults  # scenario T; None = no injected faults
 
     def call(self, name: str, *, query: str = "", path: str = "", start_line: int = 1, end_line: int = 0,
-             selectors: list[str] | tuple[str, ...] = ()) -> str:
-        """Run tool ``name`` and return its result as bounded text for the model."""
+             selectors: list[str] | tuple[str, ...] = (), sha: str = "") -> str:
+        """Run tool ``name`` and return its result as bounded text for the model.
+
+        With a fault plan (scenario T) the call may be failed instead of run (``tools.faults``): it is recorded as an
+        injected fault and the model gets the error a real failure would give.
+        """
+        if name not in TOOL_NAMES:
+            raise ValueError(f"unknown tool {name!r}")  # the step models only allow TOOL_NAMES
+        if self.faults is not None:
+            tool = ToolName(name)
+            kind = self.faults.fault_for(tool)
+            if kind is not None:
+                message = fault_message(kind, tool)
+                record_injected_fault(tool, kind, message, **_fault_arguments(name, query, path, selectors, sha))
+                return message
         if name == "search_repo":
             return self.search_repo(query)
         if name == "read_file":
             return self.read_file(path, start_line, end_line)
         if name == "run_tests":
             return self.run_tests(list(selectors))
-        raise ValueError(f"unknown tool {name!r}")  # the step models only allow TOOL_NAMES
+        if name == "git_log":
+            return self.git_log(path)
+        if name == "git_show":
+            return self.git_show(sha)
+        return self.git_blame(path, start_line, end_line)
+
+    # ----------------------------------------------------------------- #
+    # History (cutoff = the CI commit's parent, see EpisodeContext.history_cutoff_sha)
+
+    def git_log(self, path: str = "") -> str:
+        if not self._allowed(ToolName.GIT_LOG, path=path or None):
+            return "REFUSED: git_log is not permitted in this episode."
+        if path and _path_problem(path):
+            return self._invalid(ToolName.GIT_LOG, _path_problem(path) or "", path=path)
+        with tool_call(ToolName.GIT_LOG, path=path or None) as call:
+            try:
+                commits = git_tools.git_log(self._context.worktree_path, cutoff_commit=self._cutoff(),
+                                            path=path or None, max_commits=GIT_LOG_COMMITS)
+            except ToolError as exc:
+                call.fail(ToolCallStatus.INVALID_ARGUMENTS, str(exc))
+                return f"INVALID: {exc}"
+        if not commits:
+            return "No commits."
+        return clip("\n".join(
+            f"{c.sha[:12]} {c.committed_at.date() if c.committed_at else ''} {clip(c.message.splitlines()[0] if c.message else '', 160)}"
+            for c in commits
+        ), MAX_RESULT_CHARS)
+
+    def git_show(self, sha: str) -> str:
+        if not self._allowed(ToolName.GIT_SHOW, sha=sha[:40]):
+            return "REFUSED: git_show is not permitted in this episode."
+        with tool_call(ToolName.GIT_SHOW, sha=sha[:40]) as call:
+            try:
+                text = git_tools.git_show(self._context.worktree_path, sha.strip(), cutoff_commit=self._cutoff())
+            except HistoryCutoffError:
+                call.fail(ToolCallStatus.NOT_PERMITTED, "commit is not visible at the history cutoff")
+                return f"REFUSED: commit {sha} is not visible in this episode's history."
+            except ToolError as exc:
+                call.fail(ToolCallStatus.INVALID_ARGUMENTS, str(exc))
+                return f"INVALID: {exc}"
+        return clip(text, MAX_RESULT_CHARS)
+
+    def git_blame(self, path: str, start_line: int, end_line: int) -> str:
+        if not self._allowed(ToolName.GIT_BLAME, path=path):
+            return "REFUSED: git_blame is not permitted in this episode."
+        problem = _path_problem(path) or _resolved_problem(self._context.worktree_path, path)
+        if problem is None and (start_line < 1 or (end_line and end_line < start_line)):
+            problem = "start_line must be >= 1 and end_line >= start_line (0 = to the end)"
+        if problem:
+            return self._invalid(ToolName.GIT_BLAME, problem, path=path)
+        last = end_line or start_line + git_tools.MAX_BLAME_LINES - 1
+        with tool_call(ToolName.GIT_BLAME, path=path, start_line=start_line, end_line=last) as call:
+            try:
+                commits = git_tools.git_blame(self._context.worktree_path, path, start_line, last,
+                                              cutoff_commit=self._cutoff())
+            except ToolError as exc:
+                call.fail(ToolCallStatus.INVALID_ARGUMENTS, str(exc))
+                return f"INVALID: {exc}"
+        if not commits:
+            return "No committed lines in that range (lines changed by the CI diff belong to no commit yet)."
+        return clip("\n".join(f"{c.sha[:12]} {c.committed_at.date() if c.committed_at else ''} {clip(c.message, 160)}"
+                              for c in commits), MAX_RESULT_CHARS)
+
+    def _cutoff(self) -> str:
+        if not self._context.history_cutoff_sha:
+            raise ToolError("this episode has no history cutoff (no parent commit), so history is not available")
+        return self._context.history_cutoff_sha
 
     # ----------------------------------------------------------------- #
 
@@ -213,3 +303,14 @@ def _path_problem(path: str) -> str | None:
     if any(p == ".git" or p.startswith(".env") for p in parts):
         return "git metadata and .env files cannot be read"
     return None
+
+
+def _fault_arguments(name: str, query: str, path: str, selectors, sha: str) -> dict[str, object]:
+    """The small, content-free arguments logged for an injected call (as the real tool would log them)."""
+    if name == "search_repo":
+        return {"query_chars": len(query)}
+    if name == "run_tests":
+        return {"selectors": list(selectors)[:20]}
+    if name == "git_show":
+        return {"sha": sha[:40]}
+    return {"path": path or None}

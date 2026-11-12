@@ -172,12 +172,13 @@ Human 3 reports the pilot labels and gold evidence as finalised. This note recor
 ## Limitations (needs a human pass before relying on it)
 
 - **dev-01 (S5) is provisional.** `ESCALATE` is a judgement: nothing in the agent view states whether the leading space in the exception
-  message was intended, but the parent commit (`c4a489d`, 52 seconds earlier, same author) had just added the test that pins it. More
-  importantly the history-leak check cannot be run yet: `git_log`/`git_show`/`git_blame` are unimplemented stubs, and their contract
-  ("reachable from the cutoff commit", cutoff = the CI commit) would expose the withheld message and the developer's test diff. A
-  tripwire test (`test_history_access_tripwire_for_the_provisional_s5`) fails when those tools are implemented, to force a real
-  regression test with the cutoff at the parent commit. Until then do not report dev-01 as a validated S5. It is also a 2015 commit in a
-  stream of 2026 commits (higher chance of being in model training data) and has no changelog items.
+  message was intended, but the parent commit (`c4a489d`, 52 seconds earlier, same author) had just added the test that pins it.
+  **History leak: closed.** `git_log`/`git_show`/`git_blame` are implemented with the history cutoff at the CI commit's **parent**
+  (`EpisodeContext.history_cutoff_sha`), so they cannot return the withheld message or the developer's test diff; checked on the real
+  clone by `tests/test_git_tools.py::test_withheld_s5_message_is_invisible_through_history_tools`, which replaced the Day-1 tripwire.
+  The label itself stays a judgement (above), and the dataset files still carry their PROVISIONAL note (changing them would change
+  their hashes and invalidate the saved runs). It is also a 2015 commit in a stream of 2026 commits (higher chance of being in model
+  training data) and has no changelog items.
 - **dev-08's UPDATE_TEST half is weakly evidenced:** the only intent statement is a source comment added by the CI diff; an old test comment
   and an earlier commit point the other way, so `ESCALATE` is also arguable there. dev-09's message bundles 8 issues.
 - `gold_evidence_ids` come from manifest selectors resolved by the builder and checked for presence and function; whether each item

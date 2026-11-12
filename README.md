@@ -249,11 +249,37 @@ testorcode/
 └── scripts/
 ```
 
-All Day-2 modules are implemented (only `tools.git_tools.git_log/git_show/git_blame` remain stubs);
-`docs/interfaces.md` lists the modules, their contracts and owners.  Experiments: `scripts/run_experiment.py` then
+All Day-2 modules are implemented, including the git history tools (cutoff at the CI commit's parent);
+`docs/interfaces.md` lists the modules, their contracts and owners.  Final-phase additions (tool faults, hybrid retrieval,
+Docker sandbox defaults, several libraries per experiment, the new metrics and paired statistics) and how to use them:
+`docs/final-code-plan.md`.  Experiments: `scripts/run_experiment.py` then
 `scripts/summarize_results.py <out>/runs.jsonl`, and for test integrity across conditions (A3 and B1 have no Guard
-report) `scripts/audit_integrity.py --runs <out>/runs.jsonl --python ../boltons-venv/bin/python`.  Conditions that run:
-FULL, A1 (no intent retrieval), A2 (no memory), A3 (no Integrity Guard), B1 and the trivial baselines (A4, A5, B0, B2 are refused).
+report) `scripts/audit_integrity.py --runs <out>/runs.jsonl --python ../boltons-venv/bin/python`.  Every condition runs:
+FULL; B0 (plain LLM, one call), B1 (single tool-using agent), B2 (B1 + strong integrity prompt); A1 (no intent
+retrieval), A2 (no memory), A3 (no Integrity Guard), A4 (coarse memory: module-level notes without probes), A5 (single
+agent, everything else kept); and the trivial baselines.  **Numbering:** A3/A4 follow the 5-day plan; the detailed
+proposal swaps them (its A3 is coarse memory) - `conditions.PROPOSAL_NAME` gives the mapping and every report prints it.
+
+### Final runs: freeze, check, run, analyse
+
+```bash
+python scripts/provider_check.py --out results/final/provider-check.json      # model candidates: parse/correct rates, dated id
+cp configs/final.draft.json configs/final.json   # fill in every decision on dev, rename "DRAFT-..." (refused by --final)
+python scripts/run_experiment.py --dataset final --repos repos.json --freeze configs/final.json \
+    --conditions FULL,B0,B1,B2,A1,A2,A3,A4,A5,TRIVIAL_UPDATE_TEST,TRIVIAL_FIX_CODE --seeds 0,1 --out results/final/dev
+python scripts/run_experiment.py ... --env-file .env.mistral --conditions FULL,B1 --out results/final/model-check
+python scripts/contamination_probe.py --split dev --repos repos.json --out results/final/dev/contamination.json
+python scripts/audit_integrity.py --runs results/final/dev/runs.jsonl --python ../boltons-venv/bin/python
+python scripts/make_report.py results/final/dev/runs.jsonl --dataset final --freeze configs/final.json
+python scripts/compare_conditions.py results/final/dev/runs.jsonl --dataset final --freeze configs/final.json  # + hypothesis
+python docs/report/build_final_report.py --dev results/final/dev --test results/final/test --dataset final \
+    --freeze configs/final.json                     # docs/report/final/report.{md,tex,pdf}
+```
+
+`--tool-fault-rate 0.1` (or `experiment.tool_fault_rate` in the frozen config) fails about 10% of every agent's tool
+calls (scenario T).  Settings decided on dev and recorded with every run: `RETRIEVAL_MODE`, `GUARD_UNMEASURABLE_STRENGTH`,
+`MUTANT_CACHE_PATH`, `TEST_PATCH_RULE` (`literal` or `expected_value`), the model; scoring rules (`direction_from`,
+`escalate_after_correct_repair`) and the hypothesis thresholds live in the same frozen file.
 Per-day logs: `docs/day3-human1.md`, `docs/day3-human2.md`, `docs/day3-human3.md`, `docs/day4-human{1,2,3}.md`.
 
 ### Results and the mid-submission report
@@ -269,7 +295,12 @@ saved `runs.jsonl` files. **No TeX distribution was available when it was built,
 content and is not the output of compiling `report.tex`.** To compile the source: `cd docs/report && pdflatex report.tex` (twice).
 
 A fresh-environment check (Python 3.12 venv, `pip install -r requirements-lock.txt`, `pip install --no-deps -e .`) gives `pip check`
-clean and the imports work; see `docs/day4-human2.md`. `reportlab` is an optional report dependency and is not in `requirements-lock.txt`.
+clean and the imports work; see `docs/day4-human2.md`. `matplotlib` and `reportlab` (the `report` extra) are pinned in
+`requirements-lock.txt`.
+
+`build_report.py` reproduces the **mid-submission** report (30 October) and is kept as submitted; a pdfTeX compile of it is in
+`docs/report/report-mid-submission-pdflatex.pdf` (untracked, kept locally).  The **final** report skeleton is written by
+`docs/report/build_final_report.py` (see "Final runs" above): tables from the results directories, prose marked `[TO WRITE: ...]`.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
 

@@ -36,6 +36,7 @@ class _Step(Protocol):
     start_line: int
     end_line: int
     selectors: list[str]
+    sha: str
 
 
 def run_tool_loop[S: BaseModel](
@@ -66,7 +67,7 @@ def run_tool_loop[S: BaseModel](
             return None
         result = tools.call(
             step.action, query=step.query, path=step.path, start_line=step.start_line,
-            end_line=step.end_line, selectors=step.selectors,
+            end_line=step.end_line, selectors=step.selectors, sha=step.sha,
         )
         transcript.append(f"[{index}] {_describe(step)}\n{clip(result, 4000)}")
         logger.info("role=%s step %d: %s", role, index, step.action)
@@ -78,4 +79,10 @@ def _describe(step: _Step) -> str:
         return f"search_repo(query={step.query!r})"
     if step.action == "read_file":
         return f"read_file(path={step.path!r}, start_line={step.start_line}, end_line={step.end_line})"
+    if step.action == "git_log":
+        return f"git_log(path={step.path!r})"
+    if step.action == "git_show":
+        return f"git_show(sha={step.sha!r})"
+    if step.action == "git_blame":
+        return f"git_blame(path={step.path!r}, start_line={step.start_line}, end_line={step.end_line})"
     return f"run_tests(selectors={step.selectors!r})"

@@ -49,6 +49,17 @@ ENV_VARS: Final[dict[str, str]] = {
     "test_timeout_seconds": "TEST_TIMEOUT_SECONDS",
     "retrieval_top_k": "RETRIEVAL_TOP_K",
     "max_repair_revisions": "MAX_REPAIR_REVISIONS",
+    "retrieval_mode": "RETRIEVAL_MODE",
+    "embedding_backend": "EMBEDDING_BACKEND",
+    "local_embedding_model": "LOCAL_EMBEDDING_MODEL",
+    "rerank_backend": "RERANK_BACKEND",
+    "local_rerank_model": "LOCAL_RERANK_MODEL",
+    "embedding_cache_dir": "EMBEDDING_CACHE_DIR",
+    "mutant_cache_path": "MUTANT_CACHE_PATH",
+    "guard_unmeasurable_strength": "GUARD_UNMEASURABLE_STRENGTH",
+    "test_patch_rule": "TEST_PATCH_RULE",
+    "sandbox_isolation": "SANDBOX_ISOLATION",
+    "sandbox_docker_image": "SANDBOX_DOCKER_IMAGE",
     "log_level": "LOG_LEVEL",
     "log_file": "LOG_FILE",
 }
@@ -102,6 +113,37 @@ class Settings(BaseModel):
     max_repair_revisions: int = Field(
         default=1, ge=0, le=1, description="A rejected repair gets at most one revision."
     )
+
+    # Retrieval (``retrieval_hybrid``).  bm25 = keyword only (the pilot runs); hybrid = BM25 + dense embeddings fused
+    # with RRF, optionally reranked.  The same index serves every condition that retrieves.
+    retrieval_mode: Literal["bm25", "hybrid"] = "bm25"
+    embedding_backend: Literal["voyage", "local"] = Field(
+        default="voyage", description="voyage = voyage-code-3 over HTTPS (needs VOYAGE_API_KEY); local = sentence-transformers."
+    )
+    local_embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    rerank_backend: Literal["none", "voyage", "local"] = "none"
+    local_rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    embedding_cache_dir: Path | None = Field(default=None, description="On-disk embedding cache; None = memory only.")
+
+    # Integrity Guard (``tools.mutation``).
+    mutant_cache_path: Path | None = Field(
+        default=None, description="Cached-mutant catalogue given to the Guard; None = the Guard generates mutants."
+    )
+    guard_unmeasurable_strength: Literal["escalate", "allow"] = Field(
+        default="escalate",
+        description=(
+            "UPDATE_TEST repairs whose strength cannot be measured (neither the updated nor the pre-repair tests kill "
+            "any executable mutant): escalate (the pilot behaviour) or allow on the Guard's other checks."
+        ),
+    )
+
+    # Test-side patch content rule (``tools.patch_content``): literal = only expected literal values may change (the
+    # pilot); expected_value = the expected side of an equality assertion may become any side-effect-free expression.
+    test_patch_rule: Literal["literal", "expected_value"] = "literal"
+
+    # Sandbox for every test run of an episode (``tools.sandbox``).  The episode's own docker_image wins when set.
+    sandbox_isolation: Literal["auto", "docker", "bwrap"] = "auto"
+    sandbox_docker_image: str | None = None
 
     # Logging.
     log_level: LogLevelName = "INFO"

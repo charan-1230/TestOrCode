@@ -56,6 +56,7 @@ import subprocess
 import time
 import uuid
 from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -68,7 +69,18 @@ from testorcode.agents import integrity_guard as _integrity_guard
 from testorcode.agents import intent_analyst as _intent_analyst
 from testorcode.agents import repairer as _repairer
 from testorcode.agents import triage as _triage
-from testorcode.agents.prompts import B1_VERSION, PROMPT_VERSION, B1Decision, B1Step
+from testorcode.agents.prompts import (
+    A5_VERSION,
+    B0_SYSTEM,
+    B0_VERSION,
+    B1_VERSION,
+    B2_VERSION,
+    PROMPT_VERSION,
+    B0Reply,
+    B1Decision,
+    B1Step,
+    build_b0_user,
+)
 from testorcode.agents.repairer import build_diff, editable_files
 from testorcode.agents.single_agent import run_single_agent
 from testorcode.agents.tools import AgentTools
@@ -83,11 +95,12 @@ from testorcode.errors import (
     PatchError,
     ScopeViolationError,
     TestOrCodeError,
+    ToolError,
 )
 from testorcode.llm_client import LLMClient, LLMResponse, describe_validation_error, merge_usage
 from testorcode.logging_config import episode_logging, get_logger
 from testorcode.memory import MemoryStore
-from testorcode.retrieval import Retriever, build_retriever
+from testorcode.retrieval import Retriever, build_retriever, intent_queries, search_many
 from testorcode.schemas.contracts import (
     EpisodeContext,
     EscalationRequest,
@@ -108,13 +121,17 @@ from testorcode.schemas.episode_schemas import (
     DecisionLabel,
     EpisodeBudget,
     EpisodeInput,
+    EvidenceSourceType,
     FailingTest,
     FailureGroup,
     HypothesisKind,
     MemoryRecord,
+    MutantSpec,
     PathClass,
     RepairDirection,
+    ToolFaultPlan,
     ToolName,
+    same_commit,
 )
 from testorcode.schemas.result_schemas import (
     AgentRole,
@@ -131,6 +148,7 @@ from testorcode.schemas.result_schemas import (
     PatchApplicationStatus,
     PatchRecord,
     PredictedDecision,
+    RetrievalMethod,
     RetrievedEvidence,
     RunOutcome,
     RunProvenance,
@@ -140,11 +158,18 @@ from testorcode.schemas.result_schemas import (
     TestRunResult,
     TestRunStatus,
     TokenUsage,
+    ToolCallStatus,
+    ToolEvent,
 )
 from testorcode.tools import patch_tools as _patch_tools
+from testorcode.tools.faults import FaultInjector
+from testorcode.tools.faults import agent_message as fault_message
+from testorcode.tools.mutation import load_cached_mutants
+from testorcode.tools.patch_content import test_patch_rule
 from testorcode.tools.patch_tools import scope_for_decision
 from testorcode.tools.pytest_runner import run_tests
-from testorcode.tools.trace import ToolRecorder, recording, tool_call
+from testorcode.tools.sandbox import sandbox_defaults
+from testorcode.tools.trace import ToolRecorder, record_injected_fault, recording, tool_call
 
 logger = get_logger(__name__)
 
@@ -193,13 +218,16 @@ OPERATIONAL_CAP_DEFAULT = 200
 # another one's pipeline (e.g. B1 through the multi-agent EpisodeRun).  What a condition may see and use comes from
 # its ``ConditionProfile`` (``conditions.profile_for``): memory (a profile with memory needs a MemoryStore), intent
 # retrieval (A1: none), the commit message and the corpus (``episode_for_condition``).  A3 (no Integrity Guard, memory
-# on) runs on the multi-agent pipeline with its Guard stage replaced.  Not runnable yet: A4 (coarse memory, not in the proposal; its profile equals FULL's, so it
-# would silently run as FULL), A5, B0, B2.  The trivial baselines never reach a run class (``run_episode``).
+# on) runs on the multi-agent pipeline with its Guard stage replaced.  A4 (coarse memory) is FULL on a module-scope
+# store, which ``_condition_problem`` requires, so it can never silently run as FULL.  The trivial baselines never
+# reach a run class (``run_episode``).
 _MULTI_AGENT_CONDITIONS = frozenset(
     {ExperimentCondition.FULL, ExperimentCondition.A1_NO_INTENT_RETRIEVAL, ExperimentCondition.A2_NO_MEMORY,
-     ExperimentCondition.A3_NO_INTEGRITY_GUARD}
+     ExperimentCondition.A3_NO_INTEGRITY_GUARD, ExperimentCondition.A4_COARSE_MEMORY}
 )
-_SINGLE_AGENT_CONDITIONS = frozenset({ExperimentCondition.B1})
+_SINGLE_AGENT_CONDITIONS = frozenset(
+    {ExperimentCondition.B0, ExperimentCondition.B1, ExperimentCondition.B2, ExperimentCondition.A5_SINGLE_AGENT}
+)
 _ALTERNATIVE = {
     "outdated_test": "regression: the change broke behaviour the test rightly checks (FIX_CODE)",
     "regression": "outdated_test: the change was intended and the test encodes the old behaviour (UPDATE_TEST)",
@@ -329,6 +357,7 @@ class _ReadOnlyMemory:
                     record_id=check.record.record_id,
                     probe_status=check.probe_status,
                     blocked_reason=check.blocked_reason,
+                    probe_gated=check.probe_gated,
                 )
             )
             if check.valid_as_evidence:
@@ -359,6 +388,8 @@ class EpisodeRun:
 
     CONDITIONS = _MULTI_AGENT_CONDITIONS  # conditions this class executes
     PROMPTS = PROMPT_VERSION  # recorded as provenance.prompt_template_version
+    DECIDER = AgentRole.INTENT_ANALYST  # who an approved decision is attributed to
+    GUARD_REVIEW = True  # the Guard's model review (a separate role); A5 keeps only the Guard's deterministic checks
 
     def __init__(
         self,
@@ -372,6 +403,7 @@ class EpisodeRun:
         agents: Agents | None = None,
         patch_tools: PatchTools | None = None,
         maintainer: Maintainer | None = None,
+        fault_plan: ToolFaultPlan | None = None,
     ) -> None:
         if llm is None:
             raise ConfigError("run_episode requires an LLMClient")
@@ -386,6 +418,8 @@ class EpisodeRun:
         self.episode = episode
         self.settings = settings
         self.maintainer = maintainer
+        # Scenario T: harness-only (the plan comes from the full Episode, never from the agent view).
+        self.faults = FaultInjector.for_plan(fault_plan)
         self.store = memory
         self.context = EpisodeContext.from_episode_input(episode, worktree_path)
         self.agents = agents or Agents()
@@ -417,14 +451,26 @@ class EpisodeRun:
         self._tools: AgentTools | None = None
         self._current: tuple[str | None, Stage] = (None, Stage.SETUP)
         self._applied_diff: str | None = None
+        self._cached_mutants: dict[str, list[MutantSpec]] | None = None
         self._started = 0.0
 
     # -- driver ----------------------------------------------------------- #
 
+    @contextmanager
+    def _sandbox(self):
+        """Every test run of this episode uses the configured sandbox (``Settings.sandbox_*``); the episode's own
+        ``docker_image`` wins over the configured image.  Every patch check uses the configured test-patch rule
+        (``Settings.test_patch_rule``)."""
+        with sandbox_defaults(
+            self.settings.sandbox_isolation,
+            self.episode.environment.docker_image or self.settings.sandbox_docker_image,
+        ), test_patch_rule(self.settings.test_patch_rule):
+            yield
+
     def execute(self) -> ExperimentRunRecord:
         started_at = datetime.now(UTC)
         self._started = time.monotonic()
-        with episode_logging(self.episode.episode_id), recording(self.recorder):
+        with episode_logging(self.episode.episode_id), recording(self.recorder), self._sandbox():
             try:
                 if self.condition_problem:
                     raise _ConditionNotImplemented(self.condition_problem)
@@ -593,6 +639,13 @@ class EpisodeRun:
     def _patch_application(self, g: GroupState) -> Stage:
         proposal, patch = g.proposal, g.patch
         assert proposal is not None and patch is not None
+        kind = self.faults.fault_for(ToolName.APPLY_PATCH) if self.faults is not None else None
+        if kind is not None:  # scenario T: this application fails like a real one; the agent gets its one revision
+            patch.apply_error = fault_message(kind, ToolName.APPLY_PATCH).removeprefix("ERROR: ")
+            record_injected_fault(ToolName.APPLY_PATCH, kind, patch.apply_error, operation="apply",
+                                  scope=proposal.scope.value)
+            patch.application_status = PatchApplicationStatus.FAILED_TO_APPLY
+            return self._rejected(g, (patch.apply_error,))
         try:
             self.tools.apply(
                 self.context.worktree_path, proposal.unified_diff,
@@ -614,10 +667,12 @@ class EpisodeRun:
     def _integrity_guard(self, g: GroupState) -> Stage:
         assert g.proposal is not None and g.patch is not None and g.analysis is not None
         result = self.agents.integrity_guard(
-            self.context, g.detail, g.analysis, g.proposal, llm=self.llm, known_failures=self._known_failures(g),
+            self.context, g.detail, g.analysis, g.proposal, llm=self.llm if self.GUARD_REVIEW else None,
+            known_failures=self._known_failures(g),
             # The configured target interpreter and timeout reach the Guard on every path (direct run_episode and the
             # CLI alike); an injected Guard receives the same keywords.
             python_executable=self.settings.test_python, timeout_seconds=self.settings.test_timeout_seconds,
+            **self._guard_options(),
         )
         _require(isinstance(result, GuardResult), "integrity guard must return GuardResult")
         g.guard = result
@@ -628,7 +683,7 @@ class EpisodeRun:
         if result.decision is GuardDecision.APPROVE:
             self._applied_diff = None  # the repair stays in the worktree
             g.accepted = True
-            g.decision, g.decided_by = g.analysis.recommended_decision, AgentRole.INTENT_ANALYST
+            g.decision, g.decided_by = g.analysis.recommended_decision, self.DECIDER
             self._after_approval(g, result)
             return Stage.DECIDED
 
@@ -646,6 +701,18 @@ class EpisodeRun:
             g, "insufficient_evidence",
             "integrity guard escalated: " + "; ".join(result.reasons), AgentRole.INTEGRITY_GUARD,
         )
+
+    def _guard_options(self) -> dict[str, Any]:
+        """Optional Guard settings, passed only when configured (so an injected Guard need not know them):
+        the cached-mutant catalogue (``MUTANT_CACHE_PATH``) and the unmeasurable-strength policy."""
+        options: dict[str, Any] = {}
+        if self.settings.mutant_cache_path is not None:
+            if self._cached_mutants is None:
+                self._cached_mutants = load_cached_mutants(self.settings.mutant_cache_path)
+            options["cached_mutants"] = self._cached_mutants
+        if self.settings.guard_unmeasurable_strength == "allow":
+            options["allow_unmeasurable_strength"] = True
+        return options
 
     def _verify_without_guard(self, g: GroupState) -> Stage:
         """A3 (no Integrity Guard, proposal Table 5): the repair is accepted on test-level verification alone.
@@ -819,7 +886,7 @@ class EpisodeRun:
     def _ensure_retriever(self) -> _RecordingRetriever:
         if self.retriever is None:
             self.retriever = _RecordingRetriever(
-                build_retriever(self.episode.corpus, self.context.worktree_path)
+                build_retriever(self.episode.corpus, self.context.worktree_path, settings=self.settings)
             )
         return self.retriever
 
@@ -832,6 +899,7 @@ class EpisodeRun:
                 # A condition without any retrieval (A1) may not read documentation or change notes either: they
                 # carry the change-intent evidence it withholds.  Enforced in AgentTools.read_file, not by the prompt.
                 code_only=not (self.profile.intent_retrieval or self.profile.standard_rag),
+                faults=self.faults,
             )
         return self._tools
 
@@ -1029,7 +1097,7 @@ class EpisodeRun:
             integrity=self.integrity or IntegrityReport(),
             memory_reads=list(self.memory.events) if self.memory else [],
             memory_writes=self.memory_writes,
-            tool_events=list(self.recorder.events),
+            tool_events=_mark_recovery(self.recorder.events, failed=self.failure_status in _EXECUTION_FAILURES),
             usage=self.llm.usage,
             errors=self.errors,
             outcome=RunOutcome(
@@ -1039,6 +1107,28 @@ class EpisodeRun:
                 revisions_used=self.revisions_used,
             ),
         )
+
+
+_EXECUTION_FAILURES = frozenset(
+    {RunStatus.TOOL_FAILURE, RunStatus.API_FAILURE, RunStatus.ORCHESTRATOR_ERROR, RunStatus.BUDGET_EXHAUSTED}
+)
+
+
+def _mark_recovery(events: list[ToolEvent], *, failed: bool) -> list[ToolEvent]:
+    """Set ``recovered`` on every injected-fault event (scenario T): True when a later call of the same tool by the
+    same role succeeded (for ``apply_patch``: a later successful application) and the run did not end in an execution
+    failure.  Other events are returned unchanged."""
+    out = list(events)
+    for i, event in enumerate(out):
+        if event.status is not ToolCallStatus.INJECTED_FAULT:
+            continue
+        later_ok = any(
+            e.tool is event.tool and e.called_by is event.called_by and e.status is ToolCallStatus.OK
+            and (e.tool is not ToolName.APPLY_PATCH or e.arguments.get("operation") == "apply")
+            for e in out[i + 1:]
+        )
+        out[i] = event.model_copy(update={"recovered": later_ok and not failed})
+    return out
 
 
 def _disposition(g: GroupState | None, patches: list[PatchRecord]) -> str | None:
@@ -1070,8 +1160,13 @@ def _condition_problem(
         return f"condition {condition.value} is not implemented in run_episode yet"
     if condition not in runnable:
         return f"condition {condition.value} is not executed by this pipeline (use run_episode)"
-    if profile_for(condition).memory and memory is None:
+    profile = profile_for(condition)
+    if profile.memory and memory is None:
         return f"condition {condition.value} needs a MemoryStore; none was given"
+    if profile.memory and getattr(memory, "scope", "function") != profile.memory_scope:
+        # A4 must never run on a scoped store (it would silently be FULL), nor FULL on a coarse one.
+        return (f"condition {condition.value} needs a {profile.memory_scope}-scope memory store, "
+                f"not {getattr(memory, 'scope', 'function')!r}")
     return None
 
 
@@ -1114,15 +1209,17 @@ class SingleAgentRun(EpisodeRun):
     ``integrity.guard_ran`` stays False.
     """
 
-    CONDITIONS = _SINGLE_AGENT_CONDITIONS
+    CONDITIONS = frozenset({ExperimentCondition.B1})
     PROMPTS = B1_VERSION
+    STRONG_PROMPT = False  # B2: the integrity instructions are appended to the prompt
+    PLACEMENT_RETRY = True  # one re-ask when the edits cannot be placed (B0, a single call, has none)
 
     def execute(self) -> ExperimentRunRecord:
         started_at = datetime.now(UTC)
         self._started = time.monotonic()
         self._pending: dict[str, B1Decision | str] = {}
         self._placement_retried: set[tuple[str, int]] = set()
-        with episode_logging(self.episode.episode_id), recording(self.recorder):
+        with episode_logging(self.episode.episode_id), recording(self.recorder), self._sandbox():
             try:
                 if self.condition_problem:
                     raise _ConditionNotImplemented(self.condition_problem)
@@ -1167,7 +1264,7 @@ class SingleAgentRun(EpisodeRun):
     def _ask(self, tests: list[FailingTest], reasons: tuple[str, ...] = ()) -> B1Step | None:
         return run_single_agent(
             self.context, self.episode.ci_event, tests, llm=self.llm, tools=self._agent_tools(),
-            rejection_reasons=reasons,
+            rejection_reasons=reasons, strong_prompt=self.STRONG_PROMPT,
         )
 
     def _plan_groups(self, step: B1Step | None, tests: list[FailingTest]) -> list[FailureGroupDetail]:
@@ -1232,6 +1329,8 @@ class SingleAgentRun(EpisodeRun):
         if problem:
             trigger = "contradictory_evidence" if "both for and against" in problem else "insufficient_evidence"
             return self._escalate(g, trigger, problem, AgentRole.SINGLE_AGENT)
+        if self.memory is not None:  # A5: cited usable records count as used evidence, as in FULL
+            self.memory.mark_cited(set(g.analysis.cited_evidence_ids))
         if g.analysis.recommended_decision is DecisionLabel.ESCALATE:
             return self._escalate(g, "insufficient_evidence", item.explanation, AgentRole.SINGLE_AGENT)
         scope = scope_for_decision(g.analysis.recommended_decision)
@@ -1239,7 +1338,7 @@ class SingleAgentRun(EpisodeRun):
         if not diff:
             # Same as the Repairer: one re-ask when the edits cannot be placed, then an escalation.  Placement is not
             # a rejected repair, so it does not use up the group's revision.
-            if (g.group_id, g.revision) not in self._placement_retried:
+            if self.PLACEMENT_RETRY and (g.group_id, g.revision) not in self._placement_retried:
                 self._placement_retried.add((g.group_id, g.revision))
                 reason = f"YOUR PREVIOUS EDITS COULD NOT BE APPLIED: {problem}"
                 self._pending[g.group_id] = self._item_for(
@@ -1280,6 +1379,156 @@ class SingleAgentRun(EpisodeRun):
         return next((d for d in step.decisions if wanted & set(d.test_ids)), f"the agent gave no decision ({when})")
 
 
+class StrongPromptRun(SingleAgentRun):
+    """Condition B2 (proposal section 11): B1 with a strong instruction prompt ("edit tests only with evidence of an
+    intended change, never weaken assertions").  Same agent, tools, RAG, budgets and verification as B1; only the
+    prompt differs (``prompts.B2_RULES``), so B2 tests whether prompting alone closes the gap to the full system."""
+
+    CONDITIONS = frozenset({ExperimentCondition.B2})
+    PROMPTS = B2_VERSION
+    STRONG_PROMPT = True
+
+
+class MergedRolesRun(SingleAgentRun):
+    """Condition A5 (proposal section 11): one agent, everything else kept; tests the value of role separation.
+
+    One model call loop (``prompts.A5_SYSTEM``) groups the tests, decides and writes the repair, as in B1, but it gets
+    what FULL's roles would have had and its repairs face what FULL's face:
+
+    * intent retrieval: the harness searches the corpus with intent queries (``retrieval.intent_queries``, as the
+      Intent Analyst does) and hands the evidence over; ``search_repo`` stays available;
+    * memory: the probe-gated records of every function the CI diff changed, citable by id (read once per episode);
+    * the decision policy and the cited-id check (shared with B1);
+    * the Integrity Guard's checks (re-runs, weakening, scope, evidence, mutants), the one revision, the simulated
+      maintainer and the Guard-only memory write.  The Guard's *model* review is not used: it is a second role.
+
+    Groups get the changed function their tests' tracebacks run through (Triage's code-only mapping), so mutants and
+    memory records are scoped as in FULL.  Decisions are ``decided_by=SINGLE_AGENT``.
+    """
+
+    CONDITIONS = frozenset({ExperimentCondition.A5_SINGLE_AGENT})
+    PROMPTS = A5_VERSION
+    DECIDER = AgentRole.SINGLE_AGENT
+    GUARD_REVIEW = False
+
+    def _handlers(self) -> dict[Stage, Callable[[GroupState], Stage]]:
+        return {**super()._handlers(), Stage.INTEGRITY_GUARD: self._integrity_guard}
+
+    def _ask(self, tests: list[FailingTest], reasons: tuple[str, ...] = ()) -> B1Step | None:
+        if not hasattr(self, "_intent_context"):
+            self._intent_context = self._read_intent_context()
+        evidence, lines, checked = self._intent_context
+        return run_single_agent(
+            self.context, self.episode.ci_event, tests, llm=self.llm, tools=self._agent_tools(),
+            rejection_reasons=reasons, intent_evidence=evidence, memory_lines=lines, probe_checked=checked,
+        )
+
+    def _read_intent_context(self) -> tuple[list[RetrievedEvidence], tuple[str, ...], bool]:
+        """Intent evidence and memory lines, gathered once per episode (the Analyst's automatic searches)."""
+        evidence = search_many(self._ensure_retriever(), intent_queries(self.episode.ci_event),
+                               top_k=_intent_analyst.TOP_K)
+        lines: list[str] = []
+        checked = True
+        if self.memory is not None:
+            names = [self._function_for(t) for t in self.episode.ci_event.failing_tests]
+            names += [span[3] for span in self._changed_spans()]
+            for name in dict.fromkeys(n for n in names if n):
+                found, ok = _intent_analyst.read_memory_lines(self.memory, self.context, name)
+                lines += found
+                checked = checked and ok
+        return evidence, tuple(lines), checked
+
+    def _changed_spans(self) -> list[tuple[str, int, int, str]]:
+        """Changed functions of the CI source diff (Triage's ``changed_functions``), computed once."""
+        if not hasattr(self, "_spans"):
+            diff = "\n".join(
+                c.unified_diff for c in self.episode.ci_event.changed_files
+                if c.unified_diff and self.context.edit_policy.classify_path(c.path) is PathClass.SRC
+            )
+            self._spans = _triage.changed_functions(self.context.worktree_path, diff) if diff else []
+        return self._spans
+
+    def _function_for(self, test: FailingTest) -> str | None:
+        """Triage's rule-based mapping: the test's declared target function, else its traceback's changed function."""
+        return test.target_function or _triage._from_traceback(test, self._changed_spans())
+
+    def _detail(self, index: int, tests: list[FailingTest], source: list[str]) -> FailureGroupDetail:
+        """B1's group, plus the function its tests map to (Triage's rules), or the only changed function."""
+        detail = super()._detail(index, tests, source)
+        spans = self._changed_spans()
+        names = [n for n in map(self._function_for, tests) if n]
+        qualname = names[0] if names else (spans[0][3] if len(spans) == 1 else None)
+        if qualname is None:
+            return detail
+        return detail.model_copy(update={"group": detail.group.model_copy(update={"function_qualname": qualname})})
+
+
+class _GivenEvidence:
+    """B0's 'retriever': nothing is searched; it only holds the evidence the prompt shows (the commit message)."""
+
+    def __init__(self, evidence: list[RetrievedEvidence]) -> None:
+        self.evidence = evidence
+
+    def search(self, query: str, *, top_k: int) -> list[RetrievedEvidence]:  # pragma: no cover - never called
+        raise ToolError("B0 has no retrieval")
+
+
+class PlainLLMRun(SingleAgentRun):
+    """Condition B0 (proposal section 11): a plain LLM given the failing output and the diff; no tools, memory,
+    retrieval, Guard or revision.
+
+    One model call (``prompts.B0_SYSTEM``, reply ``B0Reply``) answers for every failing test.  Its only citable
+    evidence is the CI commit message, shown with its corpus id when the corpus has one (``msg:<sha12>``); with the
+    message withheld nothing is citable.  The shared decision contract still applies (UPDATE_TEST and FIX_CODE need a
+    cited id), so an uncited repair is recorded as an escalation; direction metrics score its hypothesis.  The edits
+    are validated, applied and re-run by the harness, which is measurement, not help: no rejection is fed back.
+    """
+
+    CONDITIONS = frozenset({ExperimentCondition.B0})
+    PROMPTS = B0_VERSION
+    PLACEMENT_RETRY = False
+
+    def __init__(self, episode: EpisodeInput, **kwargs: Any) -> None:
+        message = _commit_message_evidence(episode)  # read before the condition view withholds the corpus
+        super().__init__(episode, **kwargs)
+        self.revision_limit = 0
+        self.retriever = _GivenEvidence([message] if message is not None else [])
+
+    def _ask(self, tests: list[FailingTest], reasons: tuple[str, ...] = ()) -> B0Reply:
+        event = self.episode.ci_event
+        message_id = self.retriever.evidence[0].evidence_id if self.retriever.evidence else None
+        diff = "\n".join(c.unified_diff or "" for c in event.changed_files if c.unified_diff) or None
+        return self.llm.complete_structured(
+            role=AgentRole.SINGLE_AGENT, system=B0_SYSTEM,
+            user=build_b0_user(self.context, tests, event.commit_message, message_id, diff), response_model=B0Reply,
+        ).parsed
+
+
+def _commit_message_evidence(episode: EpisodeInput) -> RetrievedEvidence | None:
+    """The corpus item of the CI commit's own message, as evidence the prompt shows (None if withheld or absent)."""
+    event = episode.ci_event
+    if event.commit_message is None:
+        return None
+    for item in episode.corpus.items or []:
+        if item.source_type is EvidenceSourceType.COMMIT_MESSAGE and item.commit_sha and same_commit(
+            item.commit_sha, event.commit.sha
+        ):
+            return RetrievedEvidence(
+                evidence_id=item.evidence_id, source_type=item.source_type, source_ref=item.source_ref,
+                commit_sha=item.commit_sha, snippet=event.commit_message[:500],
+                retrieval_method=RetrievalMethod.DIRECT_READ, rank=1,
+            )
+    return None
+
+
+_RUNNERS: dict[ExperimentCondition, type[EpisodeRun]] = {
+    ExperimentCondition.B1: SingleAgentRun,
+    ExperimentCondition.B2: StrongPromptRun,
+    ExperimentCondition.A5_SINGLE_AGENT: MergedRolesRun,
+    ExperimentCondition.B0: PlainLLMRun,
+}
+
+
 def run_episode(
     episode: EpisodeInput,
     *,
@@ -1291,18 +1540,21 @@ def run_episode(
     agents: Agents | None = None,
     patch_tools: PatchTools | None = None,
     maintainer: Maintainer | None = None,
+    fault_plan: ToolFaultPlan | None = None,
 ) -> ExperimentRunRecord:
     """Run one episode and return its run record.
 
     Every condition enters here.  The deterministic sanity baselines (``TRIVIAL_UPDATE_TEST``/``TRIVIAL_FIX_CODE``)
     are answered by ``baselines.trivial_record``: no model, tool, worktree or memory is used (``llm`` may be None
-    for them); B1 runs ``SingleAgentRun``; every other condition ``EpisodeRun``.
+    for them); B0 runs ``PlainLLMRun``, B1 ``SingleAgentRun``, B2 ``StrongPromptRun``, A5 ``MergedRolesRun``
+    (``_RUNNERS``); every other condition ``EpisodeRun``.
 
     Takes ``EpisodeInput`` (never ``Episode``) so gold labels cannot reach the
     agents.  The condition comes from ``settings.experiment_condition``; memory is
     used only when its profile has memory (``memory`` is ignored otherwise).
     ``maintainer`` is the harness's simulated maintainer, asked after a Guard
-    APPROVE; it may see gold labels, so it must never be handed to an agent.
+    APPROVE; it may see gold labels, so it must never be handed to an agent.  ``fault_plan`` (scenario T,
+    ``Episode.fault_plan``) is harness-only too: agents only ever see the failures it injects.
     Execution failures are recorded in the returned record, not raised,
     wherever possible.
 
@@ -1317,7 +1569,7 @@ def run_episode(
         return trivial_record(
             episode, settings.experiment_condition, seed=settings.random_seed, code_revision=_code_revision()
         )
-    runner = SingleAgentRun if settings.experiment_condition is ExperimentCondition.B1 else EpisodeRun
+    runner = _RUNNERS.get(settings.experiment_condition, EpisodeRun)
     return runner(
         episode,
         worktree_path=worktree_path,
@@ -1328,4 +1580,5 @@ def run_episode(
         agents=agents,
         patch_tools=patch_tools,
         maintainer=maintainer,
+        fault_plan=fault_plan,
     ).execute()

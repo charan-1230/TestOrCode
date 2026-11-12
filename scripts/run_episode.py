@@ -34,9 +34,16 @@ from pathlib import Path
 from testorcode.baselines import is_trivial
 from testorcode.conditions import profile_for
 from testorcode.config import Settings
-from testorcode.dataset import agent_view_path, episode_path, load_agent_inputs, load_episodes
+from testorcode.dataset import (
+    DEFAULT_DATASET,
+    agent_view_path,
+    episode_path,
+    load_agent_inputs,
+    load_episodes,
+)
 from testorcode.evaluation import predicted_direction
-from testorcode.experiment import dataset_version, simulated_maintainer
+from testorcode.experiment import dataset_version, fault_plan_for, simulated_maintainer
+from testorcode.freeze import load_frozen
 from testorcode.llm_client import create_llm_client
 from testorcode.logging_config import configure_logging
 from testorcode.memory import JsonlMemoryStore, memory_namespace
@@ -69,21 +76,31 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--episode", required=True)
     parser.add_argument("--split", choices=("dev", "test"), default="dev")
+    parser.add_argument("--dataset", default=DEFAULT_DATASET, help="dataset file prefix (<dataset>_<split>.jsonl)")
     parser.add_argument("--allow-test-split", action="store_true", help="the test split is frozen; refuse it by default")
     parser.add_argument("--repo", default=str(ROOT.parent / "boltons"), help="clone of the pinned repository")
     parser.add_argument("--worktree", default=None, help="default: ../episode-worktrees/<episode>")
     parser.add_argument("--condition", default="A2", choices=[c.value for c in ExperimentCondition])
     parser.add_argument("--out", default=str(ROOT / "results" / "day2"))
     parser.add_argument("--memory", default=None, help="JSONL memory store (needed for FULL and A3; ignored without memory)")
+    parser.add_argument("--freeze", default=None, help="frozen configuration JSON applied on top of .env")
+    parser.add_argument("--model", default=None, help="LLM_MODEL override")
+    parser.add_argument("--tool-fault-rate", type=float, default=None,
+                        help="also fail this share of the agent's tool calls (scenario T)")
     args = parser.parse_args()
     if args.split == "test" and not args.allow_test_split:
         parser.error("the test split is frozen; pass --allow-test-split only for the frozen evaluation")
 
     condition = ExperimentCondition(args.condition)
     settings = Settings.from_env(env_file=ROOT / ".env").model_copy(update={"experiment_condition": condition})
+    if args.freeze:
+        frozen, _ = load_frozen(args.freeze)
+        settings = frozen.apply(settings)
+    if args.model:
+        settings = settings.model_copy(update={"llm_model": args.model})
     configure_logging(settings.log_level, log_file=settings.log_file, secrets=settings.secret_values())
 
-    episode = next(e for e in load_agent_inputs(agent_view_path(args.split)) if e.episode_id == args.episode)
+    episode = next(e for e in load_agent_inputs(agent_view_path(args.split, dataset=args.dataset)) if e.episode_id == args.episode)
     worktree = Path(args.worktree or ROOT.parent / "episode-worktrees" / args.episode).absolute()
     trivial = is_trivial(condition)  # deterministic baseline: no worktree, memory or model
     if not trivial:
@@ -96,6 +113,7 @@ def main() -> int:
             args.memory, python_executable=settings.test_python, timeout_seconds=settings.test_timeout_seconds,
             docker_image=episode.environment.docker_image,
             namespace=memory_namespace(condition.value, settings.random_seed, args.split),
+            scope=profile_for(condition).memory_scope,  # A4: coarse, module-level notes
         )
         # Harness side, before any agent acts: the CI state is pristine, so seeded probes get their support code here.
         seeded = memory.seed(episode.visible_memory or [], worktree_path=worktree)
@@ -104,16 +122,17 @@ def main() -> int:
 
     llm = None if trivial else create_llm_client(settings)
     # Harness side: gold labels feed only the simulated maintainer and the scoring below.
-    full = next(e for e in load_episodes(episode_path(args.split)) if e.episode_id == args.episode)
+    full = next(e for e in load_episodes(episode_path(args.split, dataset=args.dataset)) if e.episode_id == args.episode)
     gold = full.gold_actions()
     record = run_episode(
         episode, worktree_path=worktree, settings=settings, llm=llm, memory=memory,
-        maintainer=simulated_maintainer(gold),
+        maintainer=simulated_maintainer(gold), fault_plan=fault_plan_for(full, args.tool_fault_rate),  # scenario T
     )
     record = record.model_copy(update={"provenance": record.provenance.model_copy(
-        update={"split": args.split, "dataset_version": dataset_version(args.split)}
+        update={"split": args.split, "dataset_version": dataset_version(args.split, args.dataset)}
     )})
-    summary = _summary(record, gold, full.scenario, None if trivial else worktree)
+    roots = [*episode.edit_policy.allowed_source_roots, *episode.edit_policy.allowed_test_roots]
+    summary = _summary(record, gold, full.scenario, None if trivial else worktree, roots)
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -123,8 +142,9 @@ def main() -> int:
     return 0
 
 
-def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path | None) -> dict:
-    status = run_git(worktree, ["status", "--porcelain", "--", "boltons", "tests"]).stdout if worktree else ""
+def _summary(record: ExperimentRunRecord, gold: dict, scenario, worktree: Path | None, roots: list[str]) -> dict:
+    # The episode's own editable roots (its edit policy), not a hard-coded package name: any library works.
+    status = run_git(worktree, ["status", "--porcelain", "--", *roots]).stdout if worktree else ""
     ci_dirty = run_git(worktree, ["diff", "--name-only"]).stdout.split() if worktree else []
     return {
         "run_id": record.provenance.run_id,

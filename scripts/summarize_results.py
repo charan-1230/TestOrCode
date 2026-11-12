@@ -16,9 +16,10 @@ import json
 import sys
 from pathlib import Path
 
-from testorcode.dataset import episode_path, load_episodes
+from testorcode.dataset import DEFAULT_DATASET, episode_path, load_episodes
 from testorcode.evaluation import ConditionSummary, summarize
 from testorcode.experiment import dataset_version, read_records
+from testorcode.freeze import load_rules
 
 SHOWN = (
     "n_runs", "n_incompatible_records", "n_execution_failures", "n_direction_scored", "direction_macro_f1",
@@ -51,7 +52,10 @@ def markdown(summaries: list[ConditionSummary]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("runs", type=Path)
+    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--freeze", default=None, help="frozen config whose scoring rules to use")
     args = parser.parse_args()
+    rules, _, _ = load_rules(args.freeze)
     records = read_records(args.runs)
     if not records:
         sys.stderr.write(f"no records in {args.runs}\n")
@@ -61,9 +65,9 @@ def main() -> int:
         sys.stderr.write(f"records must come from exactly one known split, found {sorted(map(str, splits))}\n")
         return 2
     split = splits.pop()
-    episodes = load_episodes(episode_path(split))
+    episodes = load_episodes(episode_path(split, dataset=args.dataset))
     # Records made with another revision of the dataset are set aside and reported, never scored against it.
-    summaries = summarize(records, episodes, dataset_version=dataset_version(split))
+    summaries = summarize(records, episodes, dataset_version=dataset_version(split, args.dataset), rules=rules)
     (args.runs.parent / "summary.json").write_text(
         json.dumps([s.model_dump(mode="json") for s in summaries], indent=2) + "\n", encoding="utf-8"
     )

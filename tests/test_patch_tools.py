@@ -1114,3 +1114,46 @@ def test_other_setup_changes_are_still_rejected(repo: Path, updated: str, reason
     _, result = _setup_patch(repo, updated)
     assert not result.ok
     assert any(reason in r for r in result.rejection_reasons), result.rejection_reasons
+
+
+# --------------------------------------------------------------------------- #
+# Relaxed test-patch rule (TEST_PATCH_RULE=expected_value)
+# --------------------------------------------------------------------------- #
+
+
+def _content(before: str, after: str, rule: str) -> list[str]:
+    from testorcode.tools import patch_content
+
+    policy = EditPolicy(allowed_source_roots=("src/",), allowed_test_roots=("tests/",))
+    with patch_content.test_patch_rule(rule):
+        return patch_content.content_problems(
+            {"tests/test_x.py": before.encode()}, {"tests/test_x.py": after.encode()}, policy
+        )
+
+
+EXPECTED_VAR = "EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('a') == EXPECTED  # old\n"
+
+
+@pytest.mark.parametrize(("after", "relaxed_ok"), [
+    ("EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('a') == {'a': 2}\n", True),  # expected side, comment gone
+    ("EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('a') == EXPECTED['a']\n", True),
+    ("EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('b') == EXPECTED\n", False),  # the tested side changed
+    ("EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('a') == parse('a')\n", False),  # a call on both sides
+    ("EXPECTED = {'a': 1}\n\n\ndef test_x():\n    assert parse('a') == [x for x in 'a']\n", False),
+    ("EXPECTED = {'a': 2}\n\n\ndef test_x():\n    assert parse('a') == EXPECTED\n", False),  # module data: not a test edit
+])
+def test_expected_value_rule_admits_only_the_expected_side(after: str, relaxed_ok: bool) -> None:
+    assert _content(EXPECTED_VAR, after, "literal")  # the pilot rule refuses every one of them
+    assert (_content(EXPECTED_VAR, after, "expected_value") == []) is relaxed_ok
+
+
+def test_literal_rule_is_the_default_and_unknown_rules_are_refused() -> None:
+    from testorcode.tools import patch_content
+
+    literal = "def test_x():\n    assert parse('a') == 1\n"
+    assert patch_content.content_problems(
+        {"tests/test_x.py": literal.encode()}, {"tests/test_x.py": literal.replace("1", "2").encode()},
+        EditPolicy(allowed_source_roots=("src/",), allowed_test_roots=("tests/",)),
+    ) == []
+    with pytest.raises(ValueError), patch_content.test_patch_rule("anything"):  # type: ignore[arg-type]
+        pass

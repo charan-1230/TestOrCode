@@ -239,7 +239,7 @@ def test_summaries_are_per_condition_and_unknown_episodes_are_refused() -> None:
     sums = summarize([record("dev-05", D.FIX_CODE), a2], list(DEV.values()))
     assert [s.condition for s in sums] == [ExperimentCondition.A2_NO_MEMORY, ExperimentCondition.B1]
     assert sums[0].metrics["accuracy"] == 1.0 and sums[1].metrics["accuracy"] == 0.0
-    assert any("mutation_fixtures" in n for n in sums[0].notes)  # what is not computed is stated, not hidden
+    assert any("mutant_kill_retention" in n for n in sums[0].notes)  # what is not computed here is stated, not hidden
     with pytest.raises(ValueError, match="unknown episode"):
         summarize([record("dev-05", D.UPDATE_TEST)], [DEV["dev-02"]])
 

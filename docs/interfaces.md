@@ -206,8 +206,9 @@ with episode_logging(episode.episode_id):             # orchestrator, per episod
 **Stable (branch against these):** all of `schemas/`, `errors.py`, `config.py`, `logging_config.py`, the function signatures in
 section 3, and the `LLMClient`, `Retriever` and `MemoryStore` protocols.
 
-**Deferred (raise `NotImplementedError`):** `tools.git_tools.git_log/git_show/git_blame`, and building a
-retrieval corpus from a worktree; `ConditionSummary` is provisional.  (`memory.JsonlMemoryStore` and
+**Deferred (raise `NotImplementedError`):** building a retrieval corpus from a worktree; `ConditionSummary` is
+provisional.  (`tools.git_tools.git_log/git_show/git_blame` are implemented, with the history cutoff at the CI commit's
+parent, `EpisodeContext.history_cutoff_sha`: see `docs/final-code-plan.md`.)  (`memory.JsonlMemoryStore` and
 `integrity_guard.build_memory_record` are implemented since Day 2, Human 2: see `docs/day2-human2.md`.)
 
 **Agents.** Signatures are as in section 3.
@@ -346,3 +347,18 @@ the final newline that contract stripping removes, and the orchestrator reverts 
 rules, the frozen test split and limitations: `datasets/README.md`.
 
 `retrieval` and `conditions` are implemented: BM25 retrieval, the A1/A2/B1 switches, the `search_repo` tool wrapper and metric helpers (`docs/retrieval.md`). A1 runs end to end since Day 3 (`docs/day3-human1.md`).
+
+## 11. Final-phase modules (2026-11-09)
+
+| Module | Contract |
+|---|---|
+| `orchestrator.PlainLLMRun` / `SingleAgentRun` / `StrongPromptRun` / `MergedRolesRun` | B0 / B1 / B2 / A5; `run_episode` picks the runner from `_RUNNERS`; every other condition runs `EpisodeRun` |
+| `memory.JsonlMemoryStore(scope="module")` | A4's coarse store; `MemoryRecordCheck.probe_gated=False` and `MemoryReadEvent.probe_gated=False` mark unchecked notes |
+| `conditions.PROPOSAL_NAME`, `DESCRIPTION`, `condition_label` | Condition names as the proposal numbers them (A3/A4 swapped) |
+| `evaluation.ScoringRules`, `scored_direction`, `escalated_after_correct_repair` | Frozen scoring rules; `summarize`, `report_tables` and `stats` take `rules=` |
+| `hypothesis.HypothesisThresholds`, `check_hypothesis` | Proposal §7 thresholds and the rejection rule |
+| `freeze.FrozenConfig`, `load_frozen`, `load_rules`, `settings_snapshot` | The frozen final configuration (`--freeze`) |
+| `contamination.run_probe` | Contamination probe (proposal §11) |
+| `provider_check.run_check` | Structured-output / tool-step reliability of a provider and model |
+| `tools.patch_content.test_patch_rule` | Context default for `TEST_PATCH_RULE` (`literal` / `expected_value`) |
+| `experiment.fault_plan_for`, `ExperimentConfig.tool_fault_rate/env_file/model/frozen` | Runner options of the final runs |

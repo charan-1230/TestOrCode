@@ -16,6 +16,12 @@ re-runs its probe (``tools.probes.run_executable_probe``, sandboxed, against the
 passing probe makes it usable.  Records are scoped to ``(repo_id, function_qualname)``; their behaviour signature and
 direction travel with them so the Intent Analyst can judge relevance (a passing probe proves the *approved* behaviour
 still holds, not that a new failure is the same change: S4 decoys keep passing probes by design).
+
+**Coarse memory (ablation A4, the proposal's "module-level notes without probes").**  A store opened with
+``scope="module"`` keeps the same approved records but reads them coarsely: a read for one function returns every active
+record of the same **module** (source file), no probe is run, and every such note is usable as evidence
+(``MemoryRecordCheck.probe_gated=False``).  Approval-gated writes, supersession and the history check are unchanged, so
+the two scopes differ only in what a read matches and whether a probe gates it.
 """
 
 from __future__ import annotations
@@ -69,6 +75,7 @@ except ImportError:  # pragma: no cover - non-POSIX
 logger = get_logger(__name__)
 
 STALE_AFTER_FAILURES = 2  # consecutive probe failures before a record is flagged stale ("keeps failing")
+MemoryScope = Literal["function", "module"]
 
 
 class MemoryStore(Protocol):
@@ -124,7 +131,11 @@ class JsonlMemoryStore:
         stale_after_failures: int = STALE_AFTER_FAILURES,
         check_history: bool = True,
         namespace: str | None = None,
+        scope: MemoryScope = "function",
     ) -> None:
+        if scope not in ("function", "module"):
+            raise ConfigError(f"memory scope must be 'function' or 'module', not {scope!r}")
+        self.scope: MemoryScope = scope
         self.path = Path(path)
         self.namespace = namespace
         if namespace is not None:
@@ -142,8 +153,11 @@ class JsonlMemoryStore:
         """Every record for ``(context.repo, function_qualname)``, each with its probe run on the current code.
 
         Superseded, stale-flagged and out-of-history records are returned blocked without running their probe.  A
-        probe failure counts towards stale flagging; an execution error (``ERROR``) does not.
+        probe failure counts towards stale flagging; an execution error (``ERROR``) does not.  A module-scope store
+        (coarse memory) delegates to ``_read_module``.
         """
+        if self.scope == "module":
+            return self._read_module(context, function_qualname)
         checks: list[MemoryRecordCheck] = []
         with self._locked():  # snapshot only: probes run without holding the lock
             entries, _ = self._load()
@@ -177,6 +191,29 @@ class JsonlMemoryStore:
             checks = [c.model_copy(update={"record": c.record.model_copy(update={"flagged_stale": True})})
                       if c.record.record_id in stale else c for c in checks]
         logger.info("memory.read %s: %d records, %d usable", function_qualname, len(checks),
+                    sum(c.valid_as_evidence for c in checks))
+        return MemoryReadResult(checks=tuple(checks))
+
+    def _read_module(self, context: EpisodeContext, function_qualname: str) -> MemoryReadResult:
+        """Coarse read: every record of ``function_qualname``'s module, unchecked (no probe runs, none is flagged).
+
+        Superseded and out-of-history records stay blocked: coarse memory loses scope and probes, not the approval
+        and no-future-information guarantees."""
+        module = module_of(function_qualname, context.worktree_path)
+        with self._locked():
+            entries, _ = self._load()
+        checks: list[MemoryRecordCheck] = []
+        for entry in entries:
+            record = entry.record
+            if record.repo_id != context.repo.repo_id or module_of(record.function_qualname, context.worktree_path) != module:
+                continue
+            blocked = (
+                "superseded" if entry.superseded_by is not None
+                else "out_of_scope" if self.check_history and not _at_or_before(context, record.approved_at_commit)
+                else None
+            )
+            checks.append(MemoryRecordCheck(record=record, blocked_reason=blocked, probe_gated=False))
+        logger.info("memory.read (module %s) for %s: %d notes, %d usable", module, function_qualname, len(checks),
                     sum(c.valid_as_evidence for c in checks))
         return MemoryReadResult(checks=tuple(checks))
 
@@ -263,6 +300,8 @@ class JsonlMemoryStore:
         return added
 
     def _add(self, record: MemoryRecord, *, origin: Literal["approved", "seeded"]) -> None:
+        if self.scope == "module":
+            record = record.model_copy(update={"scope": "module"})  # a coarse store keeps module-level notes
         with self._locked():
             entries, invalid = self._load()
             for entry in entries:
@@ -356,6 +395,25 @@ class JsonlMemoryStore:
                 yield
             finally:
                 fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def module_of(function_qualname: str, worktree_path: Path | None = None) -> str:
+    """The module (source file, dotted) of a path-derived qualname such as ``boltons.cacheutils.CachedFunction.__call__``.
+
+    With a worktree: the longest dotted prefix that names a ``.py`` file there (``boltons.cacheutils``), so packages of
+    any depth work.  Without one, or when no prefix is a file: every component before the first one that starts with
+    an upper-case letter (a class), else all but the last component.
+    """
+    parts = function_qualname.split(".")
+    if worktree_path is not None:
+        for end in range(len(parts) - 1, 0, -1):
+            candidate = Path(worktree_path, *parts[:end]).with_suffix(".py")
+            if candidate.is_file():
+                return ".".join(parts[:end])
+    for index, part in enumerate(parts[1:], start=1):
+        if part[:1].isupper():
+            return ".".join(parts[:index])
+    return ".".join(parts[:-1]) or function_qualname
 
 
 def memory_namespace(condition: str, seed: int, stream: str) -> str:

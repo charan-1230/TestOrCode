@@ -234,7 +234,7 @@ def test_repairer_uses_real_tools_before_patching(worktree: Path) -> None:
     third_prompt = [c["user"] for c in llm.calls if c["role"] is AgentRole.REPAIRER][2]
     assert "return s.capitalize()" in third_prompt  # the real file content came back
     assert "status=failed" in third_prompt and "test_normalise" in third_prompt  # the real pytest result came back
-    assert record.provenance.prompt_template_version.endswith("+repair-v5+guard-v1")
+    assert record.provenance.prompt_template_version.endswith("+repair-v6+guard-v1")
 
 
 def test_tool_outside_allowed_tools_is_refused_and_the_model_continues(worktree: Path) -> None:
@@ -462,3 +462,109 @@ def test_full_repairer_may_still_read_change_notes(worktree: Path) -> None:
     [read] = [e for e in record.tool_events if e.tool is ToolName.READ_FILE]
     assert read.status is ToolCallStatus.OK
     assert "INTENT-MARKER" in [c for c in llm.calls if c["role"] is AgentRole.REPAIRER][1]["user"]
+
+
+# --------------------------------------------------------------------------- #
+# B2: B1 with the strong instruction prompt
+# --------------------------------------------------------------------------- #
+
+B2_SETTINGS = B1_SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.B2})
+
+
+def test_b2_is_b1_with_only_the_integrity_instructions_added(worktree: Path) -> None:
+    from testorcode.agents.prompts import B1_SYSTEM, B1_VERSION, B2_RULES, B2_VERSION
+
+    b1_llm = FakeLLMClient({AgentRole.SINGLE_AGENT: [b1_finish(b1_item("FIX_CODE", [LOWER]))]})
+    b1 = run_episode(S1, worktree_path=worktree, settings=B1_SETTINGS, llm=b1_llm)
+    subprocess.run(["git", "-C", str(worktree), "checkout", "-q", "--", "."], check=True)
+    b2_llm = FakeLLMClient({AgentRole.SINGLE_AGENT: [b1_finish(b1_item("FIX_CODE", [LOWER]))]})
+    b2 = run_episode(S1, worktree_path=worktree, settings=B2_SETTINGS, llm=b2_llm)
+
+    assert b2.provenance.condition is ExperimentCondition.B2 and b2.outcome.status is RunStatus.COMPLETED
+    assert (b1.provenance.prompt_template_version, b2.provenance.prompt_template_version) == (B1_VERSION, B2_VERSION)
+    b1_system, b2_system = b1_llm.calls[0]["system"], b2_llm.calls[0]["system"]
+    assert B2_RULES not in b1_system and b2_system == b1_system + "\n" + B2_RULES + "\n"
+    assert b1_llm.calls[0]["user"] == b2_llm.calls[0]["user"]  # same input, tools and RAG
+    assert B1_SYSTEM.startswith("You are a coding agent") and b2.integrity.guard_ran is False
+    assert b2.predictions[0].decided_by is AgentRole.SINGLE_AGENT
+
+
+# --------------------------------------------------------------------------- #
+# A5: one agent, everything else kept
+# --------------------------------------------------------------------------- #
+
+
+class _RecordingMemory(_ProbedMemory):
+    def __init__(self) -> None:
+        self.written: list[str] = []
+
+    def write(self, record, approval):
+        self.written.append(record.record_id)
+
+
+def test_a5_one_agent_gets_intent_evidence_and_memory_and_faces_the_guard_checks(worktree: Path) -> None:
+    from testorcode.agents.prompts import A5_RULES, A5_VERSION
+
+    a5 = SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.A5_SINGLE_AGENT})
+    memory = _RecordingMemory()
+    llm = FakeLLMClient({AgentRole.SINGLE_AGENT: [b1_finish(b1_item("FIX_CODE", [LOWER], cited=["mem-lower"]))]})
+    record = run_episode(
+        S1, worktree_path=worktree, settings=a5, llm=llm, memory=memory,
+        agents=Agents(integrity_guard=partial(integrity_guard.verify_repair, probe=PROBE)),
+        maintainer=lambda *_: True,
+    )
+
+    assert record.outcome.status is RunStatus.COMPLETED and record.provenance.prompt_template_version == A5_VERSION
+    [pred] = record.predictions
+    assert pred.predicted_action is DecisionLabel.FIX_CODE and pred.decided_by is AgentRole.SINGLE_AGENT
+    # The Guard's checks ran (FULL's verification), but no second model role: one agent made every model call.
+    assert record.integrity.guard_ran and record.integrity.guard_decision is GuardDecision.APPROVE
+    assert {c["role"] for c in llm.calls} == {AgentRole.SINGLE_AGENT}
+    system, user = llm.calls[0]["system"], llm.calls[0]["user"]
+    assert A5_RULES in system and "EVIDENCE (retrieved for change intent" in user and "[mem-lower]" in user
+    assert "SEARCH RESULTS for the failing tests" not in user  # intent retrieval, not B1's standard RAG
+    assert [m.record_id for m in record.memory_reads] == ["mem-lower"] and record.memory_reads[0].used_as_evidence
+    assert record.failure_groups[0].function_qualname.endswith("normalise")  # scoped like FULL's groups
+    assert memory.written and record.memory_writes[0].written  # Guard approval + maintainer -> memory write
+
+
+# --------------------------------------------------------------------------- #
+# B0: plain LLM, one call, no tools
+# --------------------------------------------------------------------------- #
+
+B0_SETTINGS = B1_SETTINGS.model_copy(update={"experiment_condition": ExperimentCondition.B0})
+
+
+def b0_reply(*items: dict) -> dict:
+    return {"decisions": list(items), "rationale": "scripted"}
+
+
+def test_b0_answers_in_one_call_and_can_cite_only_the_commit_message(worktree: Path) -> None:
+    from testorcode.agents.prompts import B0_VERSION
+
+    llm = FakeLLMClient({AgentRole.SINGLE_AGENT: [b0_reply(b1_item("FIX_CODE", [LOWER], cited=["ev-msg"]))]})
+    record = run_episode(S1, worktree_path=worktree, settings=B0_SETTINGS, llm=llm)
+
+    assert record.outcome.status is RunStatus.COMPLETED and record.provenance.prompt_template_version == B0_VERSION
+    assert len(llm.calls) == 1 and "[ev-msg]" in llm.calls[0]["user"] and "Capitalise normalise()" in llm.calls[0]["user"]
+    assert "SEARCH RESULTS" not in llm.calls[0]["user"] and "docstring:" not in llm.calls[0]["user"]
+    model_tools = {ToolName.SEARCH_REPO, ToolName.READ_FILE, ToolName.RUN_TESTS, ToolName.GIT_LOG}
+    agent_calls = [e for e in record.tool_events if e.tool in model_tools and e.called_by is AgentRole.SINGLE_AGENT]
+    assert agent_calls == []  # the model used no tool (the harness's stability runs and reruns are its own)
+    assert [e.evidence_id for e in record.retrieved_evidence] == ["ev-msg"]
+    assert record.predictions[0].predicted_action is DecisionLabel.FIX_CODE and record.integrity.guard_ran is False
+
+
+def test_b0_gets_no_revision_and_an_uncited_repair_escalates_with_its_hypothesis(worktree: Path) -> None:
+    wrong = ("src/synthlib/core.py", "s.capitalize()", "s.title()")
+    llm = FakeLLMClient({AgentRole.SINGLE_AGENT: [b0_reply(b1_item("FIX_CODE", [wrong], cited=["ev-msg"]))]})
+    record = run_episode(S1, worktree_path=worktree, settings=B0_SETTINGS, llm=llm)
+    assert len(llm.calls) == 1 and record.outcome.status is RunStatus.ESCALATED  # failed rerun: no second chance
+    assert record.patches[0].application_status is PatchApplicationStatus.REVERTED
+    assert (worktree / "src/synthlib/core.py").read_text() == CORE
+
+    uncited = FakeLLMClient({AgentRole.SINGLE_AGENT: [b0_reply(b1_item("FIX_CODE", [LOWER], cited=[]))]})
+    record = run_episode(S1, worktree_path=worktree, settings=B0_SETTINGS, llm=uncited)
+    [pred] = record.predictions
+    assert pred.predicted_action is DecisionLabel.ESCALATE and record.patches == []
+    assert pred.hypothesis is not None and pred.hypothesis.value == "regression"  # scored by direction metrics

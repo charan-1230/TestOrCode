@@ -17,7 +17,7 @@ from testorcode.agents.prompts import INTENT_SYSTEM, build_intent_user
 from testorcode.llm_client import LLMClient
 from testorcode.logging_config import get_logger
 from testorcode.memory import MemoryStore
-from testorcode.retrieval import Retriever, search_many
+from testorcode.retrieval import Retriever, qualname_terms, search_many
 from testorcode.schemas.contracts import EpisodeContext, FailureGroupDetail, IntentAnalysis
 from testorcode.schemas.result_schemas import AgentRole
 
@@ -50,13 +50,10 @@ def analyse_intent(
     retrieval = retriever is not None
     evidence = search_many(retriever, group_queries(group), top_k=TOP_K) if retrieval else []
     memory_lines: list[str] = []
+    probe_checked = True
     if memory is not None and group.group.function_qualname:
-        for record in memory.read(context, group.group.function_qualname).usable:
-            memory_lines.append(
-                f"[{record.record_id}] (approved memory, probe passed) {record.function_qualname}: "
-                f"{clip(record.behaviour_signature, 400)} -> {record.direction.value}"
-            )
-    user = build_intent_user(context, group, evidence, memory_lines, retrieval=retrieval)
+        memory_lines, probe_checked = read_memory_lines(memory, context, group.group.function_qualname)
+    user = build_intent_user(context, group, evidence, memory_lines, retrieval=retrieval, probe_checked=probe_checked)
     logger.info("intent: group %s, %d evidence items, %d memory items", group.group.group_id, len(evidence), len(memory_lines))
     response = llm.complete_structured(
         role=AgentRole.INTENT_ANALYST, system=INTENT_SYSTEM, user=user, response_model=IntentAnalysis
@@ -64,12 +61,33 @@ def analyse_intent(
     return response.parsed
 
 
+def read_memory_lines(memory: MemoryStore, context: EpisodeContext, function_qualname: str) -> tuple[list[str], bool]:
+    """Prompt lines for the usable memory records of ``function_qualname`` (citable by record id), and whether every
+    one of them was probe-checked (False when a coarse, module-level note is among them: ablation A4)."""
+    lines: list[str] = []
+    probe_checked = True
+    for check in memory.read(context, function_qualname).checks:
+        if not check.valid_as_evidence:
+            continue
+        record = check.record
+        if check.probe_gated:
+            label = "approved memory, probe passed"
+        else:  # coarse memory (A4): a module-level note nothing re-checked on the current code
+            probe_checked = False
+            label = "approved note for this module, not re-checked"
+        lines.append(
+            f"[{record.record_id}] ({label}) {record.function_qualname}: "
+            f"{clip(record.behaviour_signature, 400)} -> {record.direction.value}"
+        )
+    return lines, probe_checked
+
+
 def group_queries(group: FailureGroupDetail) -> list[str]:
     """Intent queries from what Triage handed over (mirrors ``retrieval.intent_queries``)."""
     diff = group.diff_context or ""
     names: list[str] = []
     if group.group.function_qualname:
-        names += [p for p in group.group.function_qualname.split(".") if p != "boltons"]
+        names += qualname_terms(group.group.function_qualname)
     names += re.findall(r"^@@[^@]*@@\s*(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)
     names += re.findall(r"^[+-]\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", diff, flags=re.MULTILINE)
     names += [p.rsplit("/", 1)[-1].removesuffix(".py") for p in group.affected_files if not p.startswith("tests")]
