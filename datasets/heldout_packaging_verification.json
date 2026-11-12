@@ -1,0 +1,2151 @@
+{
+ "pkg-01": {
+  "key": "pkg-s5-is_compatible",
+  "scenario": "S5",
+  "ci_commit": "538cd15c7d73d5a7466f8343e256923e77ab7113",
+  "parent_commit": "2b389f3a1ae895d050e4afc5152877f2c100564a",
+  "failing_tests": [
+   "tests/test_manylinux.py::test_glibc_version_string_none",
+   "tests/test_manylinux.py::test_is_manylinux_compatible",
+   "tests/test_manylinux.py::test_is_manylinux_compatible_glibc_support[version0-True]",
+   "tests/test_manylinux.py::test_is_manylinux_compatible_glibc_support[version1-True]",
+   "tests/test_manylinux.py::test_is_manylinux_compatible_glibc_support[version2-False]",
+   "tests/test_manylinux.py::test_is_manylinux_compatible_old",
+   "tests/test_manylinux.py::test_module_declaration[1-glibc0-False]",
+   "tests/test_manylinux.py::test_module_declaration[1-glibc0-True]",
+   "tests/test_manylinux.py::test_module_declaration[2010-glibc1-False]",
+   "tests/test_manylinux.py::test_module_declaration[2010-glibc1-True]",
+   "tests/test_manylinux.py::test_module_declaration[2014-glibc2-False]",
+   "tests/test_manylinux.py::test_module_declaration[2014-glibc2-True]",
+   "tests/test_manylinux.py::test_module_declaration_missing_attribute[1-glibc0]",
+   "tests/test_manylinux.py::test_module_declaration_missing_attribute[2010-glibc1]",
+   "tests/test_manylinux.py::test_module_declaration_missing_attribute[2014-glibc2]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux1",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014_armhf_abi"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "packaging._manylinux._is_compatible"
+  ],
+  "modules": [
+   "_manylinux"
+  ],
+  "corpus_items": 115,
+  "notes": {
+   "withheld_message_sha256": "8e9d947196cb46f5d601a4b8ff489bd7763229c07c08eff93bec5b6f9f460a56",
+   "withheld_message_chars": 60,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_manylinux._is_compatible#L174",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      174,
+      174
+     ],
+     "function": "_manylinux._is_compatible",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_manylinux.platform_tags#L209",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      209,
+      209
+     ],
+     "function": "_manylinux.platform_tags",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_manylinux.platform_tags#L212",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      212,
+      212
+     ],
+     "function": "_manylinux.platform_tags",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_manylinux.platform_tags#L216",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      216,
+      221
+     ],
+     "function": "_manylinux.platform_tags",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_manylinux.platform_tags#L229",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      229,
+      229
+     ],
+     "function": "_manylinux.platform_tags",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_manylinux.platform_tags#L236",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      236,
+      236
+     ],
+     "function": "_manylinux.platform_tags",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": "@@ -231,10 +231,10 @@ def platform_tags(linux: str, arch: str) -> Iterator[str]:",
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "pkg-02": {
+  "key": "pkg-s5-musl_version",
+  "scenario": "S5",
+  "ci_commit": "e5a7893a99d64acb18ca8eec8848daa026c1c4de",
+  "parent_commit": "3030822b0b06a43fbbb2710da7b0846d1bebd2ba",
+  "failing_tests": [
+   "tests/test_musllinux.py::test_get_musl_version[aarch64]",
+   "tests/test_musllinux.py::test_get_musl_version[i386]",
+   "tests/test_musllinux.py::test_get_musl_version[x86_64]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "packaging._musllinux._get_musl_version"
+  ],
+  "modules": [
+   "_musllinux",
+   "tags"
+  ],
+  "corpus_items": 133,
+  "notes": {
+   "withheld_message_sha256": "b42e5749d91b09a10b3e19bd728ebb563ddd9c2ab16db3de63a70fc72a00a117",
+   "withheld_message_chars": 38,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags.mac_platforms#L397",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      397,
+      398
+     ],
+     "function": "tags.mac_platforms",
+     "origin": "pre_existing",
+     "commit_sha": "67c4a2820c549070bbfc4bfbf5e2a250075048da",
+     "blame_commits": [
+      "67c4a2820c54"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags.mac_platforms#L420",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      420,
+      421
+     ],
+     "function": "tags.mac_platforms",
+     "origin": "pre_existing",
+     "commit_sha": "746aff4b98b4e26f11cae3ef314fa61f18bf9ba5",
+     "blame_commits": [
+      "746aff4b98b4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags.mac_platforms#L431",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      431,
+      432
+     ],
+     "function": "tags.mac_platforms",
+     "origin": "pre_existing",
+     "commit_sha": "746aff4b98b4e26f11cae3ef314fa61f18bf9ba5",
+     "blame_commits": [
+      "746aff4b98b4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags.mac_platforms#L442",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      442,
+      448
+     ],
+     "function": "tags.mac_platforms",
+     "origin": "pre_existing",
+     "commit_sha": "746aff4b98b4e26f11cae3ef314fa61f18bf9ba5",
+     "blame_commits": [
+      "1b26f8455d8c",
+      "746aff4b98b4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "pkg-03": {
+  "key": "pkg-s2-a",
+  "scenario": "S2",
+  "ci_commit": "e120b49667e1c769ff60a4181cb1897c78f4f386",
+  "parent_commit": "e5a7893a99d64acb18ca8eec8848daa026c1c4de",
+  "failing_tests": [
+   "tests/test_version.py::TestVersion::test_micro_version"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.version.Version.micro"
+  ],
+  "modules": [
+   "version"
+  ],
+  "corpus_items": 128,
+  "notes": {
+   "mutant": "Version.micro line 449: '>=' -> '>'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "pkg-04": {
+  "key": "pkg-s1-exceptiongroup",
+  "scenario": "S1",
+  "ci_commit": "080405b1974efff3e7b5a199c3b6592f36ad97e0",
+  "parent_commit": "5e84eeb660b7261098a5f673f2d4fe184805704b",
+  "failing_tests": [
+   "tests/test_metadata.py::TestExceptionGroup::test_attributes"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.metadata.Metadata.from_raw"
+  ],
+  "modules": [
+   "metadata"
+  ],
+  "corpus_items": 123,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L675",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      675,
+      675
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": "@@ -672,7 +675,7 @@ class Metadata:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L686",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      686,
+      687
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L689",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      689,
+      689
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L695",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      695,
+      696
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:080405b1974e",
+     "source_type": "commit_message",
+     "text": "Correctly use the ExceptionGroup shim only when needed (#736)"
+    }
+   ]
+  }
+ },
+ "pkg-05": {
+  "key": "pkg-s1-gil_disabled",
+  "scenario": "S1",
+  "ci_commit": "a2b3e346b03c0446df2ab8e7f9c997d65495dc6d",
+  "parent_commit": "992b3991b4797cf85802d8b44521273061e51840",
+  "failing_tests": [
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_disable_gil"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags._cpython_abis"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 130,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags._cpython_abis#L155",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      155,
+      155
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "41b0ad532bc3520cf0b800de1e94e1bfa94fe0a3",
+     "blame_commits": [
+      "41b0ad532bc3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L161",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      161,
+      163
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "9b1fa103a5a3",
+      "fda938fa3372"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L180",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      180,
+      181
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "fda938fa3372"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:a2b3e346b03c",
+     "source_type": "commit_message",
+     "text": "Rename Py_NOGIL to Py_GIL_DISABLED (#747)"
+    }
+   ]
+  }
+ },
+ "pkg-06": {
+  "key": "pkg-s4-gil_disabled",
+  "scenario": "S4",
+  "ci_commit": "4dce7618f59d623512b21d846da3e072e86aaf2e",
+  "parent_commit": "57a6a7ff661930a8b0dde55663947b80cf3c196a",
+  "failing_tests": [
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[4-1114111-version4-False]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags._cpython_abis"
+  ],
+  "modules": [
+   "_manylinux",
+   "tags"
+  ],
+  "corpus_items": 135,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "packaging.tags._cpython_abis",
+   "mutant": "_cpython_abis line 173: '<' -> '<='",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags._cpython_abis#L155",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      155,
+      155
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "41b0ad532bc3520cf0b800de1e94e1bfa94fe0a3",
+     "blame_commits": [
+      "41b0ad532bc3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L161",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      161,
+      163
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "9b1fa103a5a3",
+      "fda938fa3372"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L180",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      180,
+      181
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "fda938fa3372"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "pkg-07": {
+  "key": "pkg-s4-exceptiongroup",
+  "scenario": "S4",
+  "ci_commit": "4d8534061364e3cbfee582192ab81a095ec2db51",
+  "parent_commit": "4dce7618f59d623512b21d846da3e072e86aaf2e",
+  "failing_tests": [
+   "tests/test_metadata.py::TestMetadata::test_metadata_version_field_introduction[2.2]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.metadata.Metadata.from_raw"
+  ],
+  "modules": [
+   "_manylinux",
+   "metadata"
+  ],
+  "corpus_items": 128,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "packaging.metadata.Metadata.from_raw",
+   "mutant": "Metadata.from_raw line 706: '>' -> '>='",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L675",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      675,
+      675
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L686",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      686,
+      687
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L689",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      689,
+      689
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_raw#L695",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      695,
+      696
+     ],
+     "function": "metadata.Metadata.from_raw",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "pkg-08": {
+  "key": "pkg-s3-python_full_version",
+  "scenario": "S3",
+  "ci_commit": "c385b58c4d0e4d66f5c8273ebb155801c92aadf3",
+  "parent_commit": "ead9d34f9b6a5e504a4563d9246f76d37a112e85",
+  "failing_tests": [
+   "tests/test_markers.py::TestMarker::test_environment_assumes_empty_extra",
+   "tests/test_markers.py::TestMarker::test_environment_with_extra_none",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' != extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' < extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' <= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' == extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' === extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' > extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' >= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' not in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' ~= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' != extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' < extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' <= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' == extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' === extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' > extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' >= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' not in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' ~= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra != 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra != 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra < 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra < 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra <= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra <= 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra == 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra == 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra === 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra === 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra > 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra > 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra >= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra >= 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra in 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra in 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra not in 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra not in 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra ~= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra ~= 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_python_full_version_untagged_user_provided",
+   "tests/test_metadata.py::TestMetadata::test_caching",
+   "tests/test_metadata.py::TestMetadata::test_metadata_version_field_introduction[2.2]",
+   "tests/test_metadata.py::TestMetadata::test_metadata_version_field_introduction[2.3]",
+   "tests/test_metadata.py::TestMetadata::test_raw_data_not_mutated",
+   "tests/test_metadata.py::TestMetadata::test_raw_validate_unrecognized_field",
+   "tests/test_metadata.py::TestMetadata::test_required_fields",
+   "tests/test_metadata.py::TestMetadata::test_valid_name",
+   "tests/test_metadata.py::TestMetadata::test_valid_provides_extra",
+   "tests/test_utils.py::test_canonicalize_name_invalid"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.markers.Marker.evaluate",
+   "packaging.utils.canonicalize_name"
+  ],
+  "modules": [
+   "markers",
+   "utils"
+  ],
+  "corpus_items": 118,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:markers.Marker.evaluate#L314",
+     "path": "src/packaging/markers.py",
+     "lines": [
+      314,
+      315
+     ],
+     "function": "markers.Marker.evaluate",
+     "origin": "pre_existing",
+     "commit_sha": "5c70ed4f983c4b27e67c34fe67266e1514484bf0",
+     "blame_commits": [
+      "5c70ed4f983c"
+     ],
+     "diff_hunk": "@@ -309,12 +309,6 @@ class Marker:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:utils.canonicalize_name#L48",
+     "path": "src/packaging/utils.py",
+     "lines": [
+      48,
+      48
+     ],
+     "function": "utils.canonicalize_name",
+     "origin": "pre_existing",
+     "commit_sha": "deb584639f053d70924cd3aeb6e8f1614709fc91",
+     "blame_commits": [
+      "deb584639f05"
+     ],
+     "diff_hunk": "@@ -43,7 +43,7 @@ _build_tag_regex = re.compile(r\"(\\d+)(.*)\")",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:c385b58c4d0e",
+     "source_type": "commit_message",
+     "text": "Patch python_full_version unconditionally (#825)\n\n* Extract a method for repairing the python_full_version.\n\n* Repair the version even if passed in.\n\n* Update test to reflect the new expectation."
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "canonicalize_name line 46: 'and' -> 'or'"
+  }
+ },
+ "pkg-09": {
+  "key": "pkg-s2-b",
+  "scenario": "S2",
+  "ci_commit": "6c338a8425803476769151953cc5de5548e2befa",
+  "parent_commit": "28e7da78f6f73b4856260e24051b35a4517c0149",
+  "failing_tests": [
+   "tests/test_markers.py::TestMarker::test_environment_assumes_empty_extra",
+   "tests/test_markers.py::TestMarker::test_environment_with_extra_none",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' != extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' < extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' <= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' == extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' === extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' > extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' >= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' not in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['literally any string can go here' ~= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' != extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' < extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' <= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' == extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' === extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' > extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' >= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' not in extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid['things @#4 dsfd (((' ~= extra]",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra != 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra != 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra < 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra < 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra <= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra <= 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra == 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra == 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra === 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra === 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra > 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra > 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra >= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra >= 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra in 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra in 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra not in 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra not in 'things @#4 dsfd (((']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra ~= 'literally any string can go here']",
+   "tests/test_markers.py::TestMarker::test_parses_valid[extra ~= 'things @#4 dsfd (((']",
+   "tests/test_metadata.py::TestMetadata::test_caching",
+   "tests/test_metadata.py::TestMetadata::test_metadata_version_field_introduction[2.2]",
+   "tests/test_metadata.py::TestMetadata::test_metadata_version_field_introduction[2.3]",
+   "tests/test_metadata.py::TestMetadata::test_raw_data_not_mutated",
+   "tests/test_metadata.py::TestMetadata::test_raw_validate_unrecognized_field",
+   "tests/test_metadata.py::TestMetadata::test_required_fields",
+   "tests/test_metadata.py::TestMetadata::test_valid_name",
+   "tests/test_metadata.py::TestMetadata::test_valid_provides_extra",
+   "tests/test_utils.py::test_canonicalize_name_invalid"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.utils.canonicalize_name"
+  ],
+  "modules": [
+   "utils"
+  ],
+  "corpus_items": 117,
+  "notes": {
+   "mutant": "canonicalize_name line 47: 'and' -> 'or'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:utils.canonicalize_name#L49",
+     "path": "src/packaging/utils.py",
+     "lines": [
+      49,
+      49
+     ],
+     "function": "utils.canonicalize_name",
+     "origin": "pre_existing",
+     "commit_sha": "deb584639f053d70924cd3aeb6e8f1614709fc91",
+     "blame_commits": [
+      "deb584639f05"
+     ],
+     "diff_hunk": "@@ -44,7 +44,7 @@ _build_tag_regex = re.compile(r\"(\\d+)(.*)\")",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:utils.parse_wheel_filename#L111",
+     "path": "src/packaging/utils.py",
+     "lines": [
+      111,
+      111
+     ],
+     "function": "utils.parse_wheel_filename",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": "@@ -96,28 +96,28 @@ def parse_wheel_filename(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:utils.parse_sdist_filename#L148",
+     "path": "src/packaging/utils.py",
+     "lines": [
+      148,
+      149
+     ],
+     "function": "utils.parse_sdist_filename",
+     "origin": "pre_existing",
+     "commit_sha": "da68002685b0a7d0027e189129d6bde35303a58b",
+     "blame_commits": [
+      "da68002685b0"
+     ],
+     "diff_hunk": "@@ -142,14 +142,14 @@ def parse_sdist_filename(filename: str) -> tuple[NormalizedName, Version]:",
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "pkg-10": {
+  "key": "pkg-s3-semicolon_message",
+  "scenario": "S3",
+  "ci_commit": "888eb1452625196985701e2727c5416b70e969fd",
+  "parent_commit": "d08417c707d2d5355c85d58e588a1cbefcb3f432",
+  "failing_tests": [
+   "tests/test_requirements.py::TestRequirementParsing::test_error_no_space_after_url",
+   "tests/test_requirements.py::TestRequirementParsing::test_error_on_legacy_version_outside_triple_equals",
+   "tests/test_requirements.py::TestRequirementParsing::test_error_on_missing_op_after_name",
+   "tests/test_requirements.py::TestRequirementParsing::test_error_on_missing_version_after_op",
+   "tests/test_requirements.py::TestRequirementParsing::test_error_on_random_char_after_specifier",
+   "tests/test_specifiers.py::TestSpecifier::test_specifier_prereleases_detection[==1.0.dev1-True]",
+   "tests/test_specifiers.py::TestSpecifierSet::test_specifier_prereleases_explicit[None-False-2.0.dev1-True-False-==2.0.dev1]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging._parser._parse_requirement_marker",
+   "packaging.specifiers.Specifier.prereleases"
+  ],
+  "modules": [
+   "_parser",
+   "specifiers"
+  ],
+  "corpus_items": 123,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_parser._parse_requirement_details#L109",
+     "path": "src/packaging/_parser.py",
+     "lines": [
+      109,
+      109
+     ],
+     "function": "_parser._parse_requirement_details",
+     "origin": "pre_existing",
+     "commit_sha": "ddf54e1c7eed60406de14615556650633e84799c",
+     "blame_commits": [
+      "ddf54e1c7eed"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L249",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      249,
+      250
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "4e393c9e270b0639515e244558d9ab4a0643e258",
+     "blame_commits": [
+      "4e393c9e270b"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L254",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      254,
+      255
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "f567445b45c9d4a18c89c683f7ad4e516f16552e",
+     "blame_commits": [
+      "f567445b45c9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L258",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      258,
+      259
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "4e393c9e270b0639515e244558d9ab4a0643e258",
+     "blame_commits": [
+      "4e393c9e270b"
+     ],
+     "diff_hunk": "@@ -257,7 +257,7 @@ class Specifier(BaseSpecifier):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L263",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      263,
+      264
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "4e393c9e270b0639515e244558d9ab4a0643e258",
+     "blame_commits": [
+      "4e393c9e270b"
+     ],
+     "diff_hunk": "@@ -257,7 +257,7 @@ class Specifier(BaseSpecifier):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:888eb1452625",
+     "source_type": "commit_message",
+     "text": "Improve the message around expecting a semicolon (#833)\n\nThis makes it clearer that another character can be used.\n\nCo-authored-by: Pradyun Gedam <pradyunsg@users.noreply.github.com>"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "Specifier.prereleases line 260: 'and' -> 'or'"
+  }
+ },
+ "pkg-11": {
+  "key": "pkg-s2-c",
+  "scenario": "S2",
+  "ci_commit": "c39b6da9ab11f649f5497a11628f9dfc98380bb2",
+  "parent_commit": "842c16cef598bf80178b3894b7039b69cca3621c",
+  "failing_tests": [
+   "tests/test_requirements.py::TestRequirementParsing::test_error_no_space_after_url"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging._parser._parse_requirement_details"
+  ],
+  "modules": [
+   "_parser"
+  ],
+  "corpus_items": 119,
+  "notes": {
+   "mutant": "_parse_requirement_details line 125: 'and' -> 'or'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_parser._parse_requirement_details#L118",
+     "path": "src/packaging/_parser.py",
+     "lines": [
+      118,
+      118
+     ],
+     "function": "_parser._parse_requirement_details",
+     "origin": "pre_existing",
+     "commit_sha": "ddf54e1c7eed60406de14615556650633e84799c",
+     "blame_commits": [
+      "ddf54e1c7eed"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "pkg-12": {
+  "key": "pkg-s1-abi3t",
+  "scenario": "S1",
+  "ci_commit": "e892020b3721179bbf097c3083b8aa424d50b6c9",
+  "parent_commit": "15fdefcb0db954d3288e03773d439d22bf6922a9",
+  "failing_tests": [
+   "tests/test_tags.py::TestCPythonTags::test_all_args"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags.cpython_tags"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 132,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags.cpython_tags#L303",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      303,
+      303
+     ],
+     "function": "tags.cpython_tags",
+     "origin": "pre_existing",
+     "commit_sha": "41b0ad532bc3520cf0b800de1e94e1bfa94fe0a3",
+     "blame_commits": [
+      "41b0ad532bc3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags.cpython_tags#L334",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      334,
+      336
+     ],
+     "function": "tags.cpython_tags",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "e892020b3721179bbf097c3083b8aa424d50b6c9",
+     "blame_commits": [
+      "e892020b3721"
+     ],
+     "diff_hunk": "@@ -297,16 +314,27 @@ def cpython_tags(",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:e892020b3721",
+     "source_type": "commit_message",
+     "text": "feat: add support for abi3.abi3t tag from PEP 803 (#1099)"
+    }
+   ]
+  }
+ },
+ "pkg-13": {
+  "key": "pkg-s5-emscripten",
+  "scenario": "S5",
+  "ci_commit": "37b023285c27bc51940f33e50c1ebf692acf92c5",
+  "parent_commit": "b51fc198071f5ee5ea84a84ed8efc7b7d46c0edd",
+  "failing_tests": [
+   "tests/test_tags.py::TestSysTags::test_pyemscripten"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "packaging.tags._emscripten_platforms"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 131,
+  "notes": {
+   "withheld_message_sha256": "82b4180dd2e34f2c875222a501562c3b67ee3ebddb436715447f316cc0954801",
+   "withheld_message_chars": 118,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "pkg-14": {
+  "key": "pkg-s4-abi3t",
+  "scenario": "S4",
+  "ci_commit": "963118e37caae97bc8b72f72956c7fb4ca9857ec",
+  "parent_commit": "66e34a80256c96dea11da143682950c84b8133bb",
+  "failing_tests": [
+   "tests/test_tags.py::TestCPythonTags::test_major_only_python_version_with_default_abis"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags.cpython_tags"
+  ],
+  "modules": [
+   "metadata",
+   "tags"
+  ],
+  "corpus_items": 151,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "packaging.tags.cpython_tags",
+   "mutant": "cpython_tags line 331: '>' -> '>='",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags.cpython_tags#L333",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      333,
+      333
+     ],
+     "function": "tags.cpython_tags",
+     "origin": "pre_existing",
+     "commit_sha": "41b0ad532bc3520cf0b800de1e94e1bfa94fe0a3",
+     "blame_commits": [
+      "41b0ad532bc3"
+     ],
+     "diff_hunk": "@@ -328,7 +328,7 @@ def cpython_tags(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags.cpython_tags#L364",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      364,
+      366
+     ],
+     "function": "tags.cpython_tags",
+     "origin": "pre_existing",
+     "commit_sha": "e892020b3721179bbf097c3083b8aa424d50b6c9",
+     "blame_commits": [
+      "e892020b3721"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "pkg-15": {
+  "key": "pkg-s1-native_linux",
+  "scenario": "S1",
+  "ci_commit": "68cdb4d400823b401c1a40969964f509636a8094",
+  "parent_commit": "403df75052a9f7adc3c867956fbcdb12323b3da8",
+  "failing_tests": [
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux1",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2010",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014_armhf_abi[aarch64-armv8l]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014_armhf_abi[armv7l-armv7l]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014_armhf_abi[armv8l-armv8l]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux2014_i386_abi",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_manylinux_glibc3",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[cross-aarch64-armv8l-musl_version1]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[cross-armv7l-armv7l-musl_version0]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[cross-i386-i386-musl_version2]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[cross-x86_64-i686-musl_version3]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[native-aarch64-armv8l-musl_version1]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[native-armv7l-armv7l-musl_version0]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[native-i386-i386-musl_version2]",
+   "tests/test_tags.py::TestManylinuxPlatform::test_linux_platforms_musllinux[native-x86_64-i686-musl_version3]",
+   "tests/test_tags.py::TestSysTags::test_linux_use_manylinux_compatible[s390x-2-22-True]",
+   "tests/test_tags.py::TestSysTags::test_linux_use_manylinux_compatible_none",
+   "tests/test_tags.py::TestSysTags::test_skip_manylinux_2014"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags._linux_platforms"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 132,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags._linux_platforms#L766",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      766,
+      766
+     ],
+     "function": "tags._linux_platforms",
+     "origin": "pre_existing",
+     "commit_sha": "1277904652c497ec84560a830a2e01d434358818",
+     "blame_commits": [
+      "1277904652c4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:68cdb4d40082",
+     "source_type": "commit_message",
+     "text": "Prefer native linux tags before manylinux (#1187)"
+    }
+   ]
+  }
+ },
+ "pkg-16": {
+  "key": "pkg-s3-fat3",
+  "scenario": "S3",
+  "ci_commit": "45d15309ac4a2411196e800378f257ade132483d",
+  "parent_commit": "68cdb4d400823b401c1a40969964f509636a8094",
+  "failing_tests": [
+   "tests/test_specifiers.py::TestSpecifier::test_specifier_prereleases_detection[==1.0.*-False]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version0-x86_64-expected0]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version1-x86_64-expected1]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version15-ppc-expected15]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version16-ppc-expected16]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version18-x86_64-expected18]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version3-i386-expected3]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_binary_formats[version4-i386-expected4]",
+   "tests/test_tags.py::TestMacOSPlatforms::test_mac_platforms"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.specifiers.Specifier.prereleases",
+   "packaging.tags._mac_binary_formats"
+  ],
+  "modules": [
+   "specifiers",
+   "tags"
+  ],
+  "corpus_items": 137,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L441",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      441,
+      442
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "4e393c9e270b0639515e244558d9ab4a0643e258",
+     "blame_commits": [
+      "4e393c9e270b"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L446",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      446,
+      447
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "f567445b45c9d4a18c89c683f7ad4e516f16552e",
+     "blame_commits": [
+      "f567445b45c9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L452",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      452,
+      453
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "16cfaebac3e872a5d45901e199b2aa64167351e2",
+     "blame_commits": [
+      "16cfaebac3e8"
+     ],
+     "diff_hunk": "@@ -451,7 +451,7 @@ class Specifier(BaseSpecifier):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L457",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      457,
+      458
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "16cfaebac3e872a5d45901e199b2aa64167351e2",
+     "blame_commits": [
+      "16cfaebac3e8"
+     ],
+     "diff_hunk": "@@ -451,7 +451,7 @@ class Specifier(BaseSpecifier):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:specifiers.Specifier.prereleases#L463",
+     "path": "src/packaging/specifiers.py",
+     "lines": [
+      463,
+      464
+     ],
+     "function": "specifiers.Specifier.prereleases",
+     "origin": "pre_existing",
+     "commit_sha": "16cfaebac3e872a5d45901e199b2aa64167351e2",
+     "blame_commits": [
+      "16cfaebac3e8"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._mac_binary_formats#L556",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      556,
+      556
+     ],
+     "function": "tags._mac_binary_formats",
+     "origin": "pre_existing",
+     "commit_sha": "76bc450c18c909f5167f518cd310db550da0e0cb",
+     "blame_commits": [
+      "76bc450c18c9"
+     ],
+     "diff_hunk": "@@ -545,12 +545,12 @@ def _mac_binary_formats(version: AppleVersion, cpu_arch: str) -> list[str]:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:45d15309ac4a",
+     "source_type": "commit_message",
+     "text": "Fix tag typo of \"fat32\" to \"fat3\" (#1199)\n\nThis was introduced in #156 and appears to originate in CPython via\ndistutils via https://github.com/python/cpython/commit/bea37aee6b2d.\nAfaict this was likely a Windows-user Freudian file-system slip but\nnever was an issue since the PR was in 2019 which wa"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "Specifier.prereleases line 454: '==' -> '!='"
+  }
+ },
+ "pkg-17": {
+  "key": "pkg-s1-manylinux_cache",
+  "scenario": "S1",
+  "ci_commit": "684427106cfbb3eae8f4ee9f4489c4d22757a9d2",
+  "parent_commit": "0b8f100bbe5bc79920d4a0a2ee5712f86175893c",
+  "failing_tests": [
+   "tests/test_manylinux.py::test_module_declaration[1-glibc0-False]",
+   "tests/test_manylinux.py::test_module_declaration[2010-glibc1-False]",
+   "tests/test_manylinux.py::test_module_declaration[2014-glibc2-False]",
+   "tests/test_tags.py::TestSysTags::test_linux_use_manylinux_compatible[s390x-2-22-True]",
+   "tests/test_tags.py::TestSysTags::test_linux_use_manylinux_compatible[x86_64-2-20-False]",
+   "tests/test_tags.py::TestSysTags::test_linux_use_manylinux_compatible_none",
+   "tests/test_tags.py::TestSysTags::test_skip_manylinux_2014"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging._manylinux._is_compatible"
+  ],
+  "modules": [
+   "_manylinux"
+  ],
+  "corpus_items": 112,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_manylinux._is_compatible#L203",
+     "path": "src/packaging/_manylinux.py",
+     "lines": [
+      203,
+      203
+     ],
+     "function": "_manylinux._is_compatible",
+     "origin": "pre_existing",
+     "commit_sha": "d650cfd74fb9e63175b73603793ccae1d984a8b5",
+     "blame_commits": [
+      "d650cfd74fb9"
+     ],
+     "diff_hunk": "@@ -182,30 +183,44 @@ def _get_glibc_version() -> _GLibCVersion:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:684427106cfb",
+     "source_type": "commit_message",
+     "text": "perf(manylinux): cache _manylinux module lookup process-wide (#1254)"
+    },
+    {
+     "evidence_id": "docstring:_manylinux._get_manylinux_module",
+     "source_type": "docstring",
+     "text": "Return the ``_manylinux`` C extension module, or None if unavailable.\n\nThe result is cached for the lifetime of the process, since the presence\nof the module does not change while running."
+    }
+   ]
+  }
+ },
+ "pkg-18": {
+  "key": "pkg-s1-default_environment",
+  "scenario": "S1",
+  "ci_commit": "cf100d20e09c270cb6e19e72edbd0d40728de501",
+  "parent_commit": "4c663c9ef5e1ec4f64b01ea9a61c981890a56407",
+  "failing_tests": [
+   "tests/test_markers.py::TestDefaultEnvironment::test_multidigit_minor_version",
+   "tests/test_markers.py::TestMarker::test_python_full_version_untagged"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.markers.default_environment"
+  ],
+  "modules": [
+   "markers"
+  ],
+  "corpus_items": 122,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:cf100d20e09c",
+     "source_type": "commit_message",
+     "text": "perf(markers): cache the default environment (#1250)\n\n* perf(markers): avoid rebuilding default environment on every evaluate\n\nProfiling showed default_environment() accounted for ~25% of\nMarker.evaluate() time. Its values are derived from process-constant\ndata (the running interpreter and host plat"
+    }
+   ]
+  }
+ },
+ "pkg-19": {
+  "key": "pkg-s1-utf8_charset",
+  "scenario": "S1",
+  "ci_commit": "abf000549c2ec5b31357046498d6e4f0f9d7d743",
+  "parent_commit": "58c6cd700bdfd33cb3ebfbb9ad5d8cfde4e82f08",
+  "failing_tests": [
+   "tests/test_metadata.py::TestMetadata::test_invalid_description_content_type[text/plain; charset=utf-8]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.metadata._Validator._process_description_content_type"
+  ],
+  "modules": [
+   "metadata"
+  ],
+  "corpus_items": 127,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:metadata._Validator._process_description_content_type#L647",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      647,
+      648
+     ],
+     "function": "metadata._Validator._process_description_content_type",
+     "origin": "pre_existing",
+     "commit_sha": "9d0ec47b36a1bcdf705b397b84cd89272410a00d",
+     "blame_commits": [
+      "9d0ec47b36a1"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata._Validator._process_description_content_type#L661",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      661,
+      661
+     ],
+     "function": "metadata._Validator._process_description_content_type",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata._Validator._process_description_content_type#L665",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      665,
+      666
+     ],
+     "function": "metadata._Validator._process_description_content_type",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata._Validator._process_description_content_type#L677",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      677,
+      677
+     ],
+     "function": "metadata._Validator._process_description_content_type",
+     "origin": "pre_existing",
+     "commit_sha": "61e6efb6b6ee99e445f575bc522b716daeaa37cf",
+     "blame_commits": [
+      "61e6efb6b6ee"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:abf000549c2e",
+     "source_type": "commit_message",
+     "text": "fix(metadata): accept UTF-8 charset case-insensitively (#1330)\n\n* fix(metadata): accept UTF-8 charset case-insensitively\n\n* Use lower for ASCII charset comparison\n\n---------\n\nCo-authored-by: r266-tech <r266-tech@users.noreply.github.com>"
+    }
+   ]
+  }
+ },
+ "pkg-20": {
+  "key": "pkg-s3-from_email",
+  "scenario": "S3",
+  "ci_commit": "206834025040aca6f8a2fdfc4039dbfa2a9861a6",
+  "parent_commit": "5b583e309996a085ad3b5b045f3bf50a09c11b58",
+  "failing_tests": [
+   "tests/test_metadata.py::TestMetadata::test_from_email_unparsed",
+   "tests/test_requirements.py::test_pickle_requirement_setstate_rejects_invalid_state"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.metadata.Metadata.from_email",
+   "packaging.requirements.Requirement.__setstate__"
+  ],
+  "modules": [
+   "metadata",
+   "requirements"
+  ],
+  "corpus_items": 128,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:metadata.Metadata.from_email#L881",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      881,
+      881
+     ],
+     "function": "metadata.Metadata.from_email",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "206834025040aca6f8a2fdfc4039dbfa2a9861a6",
+     "blame_commits": [
+      "206834025040"
+     ],
+     "diff_hunk": "@@ -868,20 +868,32 @@ class Metadata:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:metadata.Metadata.from_email#L883",
+     "path": "src/packaging/metadata.py",
+     "lines": [
+      883,
+      885
+     ],
+     "function": "metadata.Metadata.from_email",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "206834025040aca6f8a2fdfc4039dbfa2a9861a6",
+     "blame_commits": [
+      "206834025040"
+     ],
+     "diff_hunk": "@@ -868,20 +868,32 @@ class Metadata:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:requirements.Requirement.__setstate__#L118",
+     "path": "src/packaging/requirements.py",
+     "lines": [
+      118,
+      118
+     ],
+     "function": "requirements.Requirement.__setstate__",
+     "origin": "pre_existing",
+     "commit_sha": "5c163f5382fb6cba408b7c42efb8a03ffa041f4b",
+     "blame_commits": [
+      "5c163f5382fb"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:requirements.Requirement.__setstate__#L127",
+     "path": "src/packaging/requirements.py",
+     "lines": [
+      127,
+      127
+     ],
+     "function": "requirements.Requirement.__setstate__",
+     "origin": "pre_existing",
+     "commit_sha": "5c163f5382fb6cba408b7c42efb8a03ffa041f4b",
+     "blame_commits": [
+      "5c163f5382fb"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:requirements.Requirement.__setstate__#L130",
+     "path": "src/packaging/requirements.py",
+     "lines": [
+      130,
+      130
+     ],
+     "function": "requirements.Requirement.__setstate__",
+     "origin": "pre_existing",
+     "commit_sha": "48a8a069805291186522de3eff73ea80a8ca96ad",
+     "blame_commits": [
+      "48a8a0698052"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:206834025040",
+     "source_type": "commit_message",
+     "text": "fix(metadata): aggregate from_email validation errors (#1268)\n\n* fix(metadata): aggregate from_email validation errors\n\n* fix(metadata): repair from_email aggregation CI\n\n* refactor(metadata): simplify from_email error aggregation\n\nfrom_raw(validate=True) always raises ExceptionGroup (never a bare\nI"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "Requirement.__setstate__ line 123: 'and' -> 'or'"
+  }
+ },
+ "pkg-21": {
+  "key": "pkg-s2-d",
+  "scenario": "S2",
+  "ci_commit": "c5675838046cf8b7cf93787f9e3e1d16fcdc24ef",
+  "parent_commit": "d1ebe59dedf03ba8248d3205dcc1db6275582384",
+  "failing_tests": [
+   "tests/test_tags.py::TestBitness::test_32bit_interpreter[2147483647-4-True]",
+   "tests/test_tags.py::TestBitness::test_32bit_interpreter[2147483647-8-False]",
+   "tests/test_tags.py::TestBitness::test_32bit_interpreter[9223372036854775807-8-False]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags._compute_32_bit_interpreter"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 134,
+  "notes": {
+   "mutant": "_compute_32_bit_interpreter line 87: '==' -> '!='",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "pkg-22": {
+  "key": "pkg-s1-abi_iterators",
+  "scenario": "S1",
+  "ci_commit": "f8630ea2b7c810de81841459dcdb481d5b7a1318",
+  "parent_commit": "902ca322a745e135c3d49af5ab66eca4fce084c5",
+  "failing_tests": [
+   "tests/test_tags.py::TestCPythonABI::test__debug_cp38[False-expected1]",
+   "tests/test_tags.py::TestCPythonABI::test__debug_cp38[True-expected0]",
+   "tests/test_tags.py::TestCPythonABI::test_debug[0-False-False]",
+   "tests/test_tags.py::TestCPythonABI::test_debug[1-False-True]",
+   "tests/test_tags.py::TestCPythonABI::test_debug[None-True-True]",
+   "tests/test_tags.py::TestCPythonABI::test_debug_file_extension",
+   "tests/test_tags.py::TestCPythonABI::test_pymalloc[0-version1-False]",
+   "tests/test_tags.py::TestCPythonABI::test_pymalloc[1-version0-True]",
+   "tests/test_tags.py::TestCPythonABI::test_pymalloc[1-version3-False]",
+   "tests/test_tags.py::TestCPythonABI::test_pymalloc[None-version2-True]",
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[2-65535-version1-False]",
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[4-1114111-version0-True]",
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[4-1114111-version4-False]",
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[None-1114111-version2-True]",
+   "tests/test_tags.py::TestCPythonABI::test_wide_unicode[None-65535-version3-False]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_agree",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_cpython_missing_version[.cpython-.so]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_cpython_missing_version[.cpython.so]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_disable_gil",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_error[None]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_error[]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_error[invalid]",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_graal",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_jp",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_linux_cpython",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_linux_pypy",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_macos",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_none",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_old_windows",
+   "tests/test_tags.py::TestGenericTags::test__generic_abi_windows",
+   "tests/test_tags.py::TestSysTags::test_mac_cpython"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.tags._cpython_abis"
+  ],
+  "modules": [
+   "tags"
+  ],
+  "corpus_items": 142,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:tags._cpython_abis#L366",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      366,
+      366
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "41b0ad532bc3520cf0b800de1e94e1bfa94fe0a3",
+     "blame_commits": [
+      "41b0ad532bc3"
+     ],
+     "diff_hunk": "@@ -362,9 +362,8 @@ def _abi3t_applies(python_version: PythonVersion, threading: bool) -> bool:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L371",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      371,
+      373
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "9b1fa103a5a3",
+      "fda938fa3372"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._cpython_abis#L391",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      391,
+      392
+     ],
+     "function": "tags._cpython_abis",
+     "origin": "pre_existing",
+     "commit_sha": "fda938fa3372363600ab4b7a81267215f8b7b9c3",
+     "blame_commits": [
+      "fda938fa3372"
+     ],
+     "diff_hunk": "@@ -387,12 +386,11 @@ def _cpython_abis(py_version: PythonVersion, warn: bool = False) -> list[str]:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._generic_abi#L481",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      481,
+      490
+     ],
+     "function": "tags._generic_abi",
+     "origin": "pre_existing",
+     "commit_sha": "30554f503a5368aabf6ee571bd9cdf29d5f00c12",
+     "blame_commits": [
+      "30554f503a53"
+     ],
+     "diff_hunk": "@@ -476,9 +474,9 @@ def cpython_tags(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._generic_abi#L497",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      497,
+      497
+     ],
+     "function": "tags._generic_abi",
+     "origin": "pre_existing",
+     "commit_sha": "30554f503a5368aabf6ee571bd9cdf29d5f00c12",
+     "blame_commits": [
+      "30554f503a53"
+     ],
+     "diff_hunk": "@@ -497,7 +495,8 @@ def _generic_abi() -> list[str]:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._generic_abi#L502",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      502,
+      502
+     ],
+     "function": "tags._generic_abi",
+     "origin": "pre_existing",
+     "commit_sha": "30554f503a5368aabf6ee571bd9cdf29d5f00c12",
+     "blame_commits": [
+      "30554f503a53"
+     ],
+     "diff_hunk": "@@ -497,7 +495,8 @@ def _generic_abi() -> list[str]:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._generic_abi#L508",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      508,
+      508
+     ],
+     "function": "tags._generic_abi",
+     "origin": "pre_existing",
+     "commit_sha": "30554f503a5368aabf6ee571bd9cdf29d5f00c12",
+     "blame_commits": [
+      "30554f503a53"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:tags._generic_abi#L515",
+     "path": "src/packaging/tags.py",
+     "lines": [
+      515,
+      515
+     ],
+     "function": "tags._generic_abi",
+     "origin": "pre_existing",
+     "commit_sha": "30554f503a5368aabf6ee571bd9cdf29d5f00c12",
+     "blame_commits": [
+      "30554f503a53"
+     ],
+     "diff_hunk": "@@ -516,8 +515,8 @@ def _generic_abi() -> list[str]:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:f8630ea2b7c8",
+     "source_type": "commit_message",
+     "text": "refactor(tags): make _generic_abi and _cpython_abis iterators (#1347)\n\nYield ABI tags lazily instead of building lists, so a consumer that\nonly needs the first tag (e.g. next(iter(...))) can stop early. Internal\ncallers wrap the result in list() as before.\n\nAssisted-by: ClaudeCode:claude-opus-4.8"
+    }
+   ]
+  }
+ },
+ "pkg-23": {
+  "key": "pkg-s1-sibling_includes",
+  "scenario": "S1",
+  "ci_commit": "959bb79c06cb883bf1ecd1ddc94a079294907e0f",
+  "parent_commit": "d17cfaf0b77a5690f03087359e7c8d665a3c728d",
+  "failing_tests": [
+   "tests/test_dependency_groups.py::test_expand_contract_model_only_does_inner_lookup_once"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.dependency_groups.DependencyGroupResolver._parse_group"
+  ],
+  "modules": [
+   "dependency_groups"
+  ],
+  "corpus_items": 123,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver._resolve#L196",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      196,
+      200
+     ],
+     "function": "dependency_groups.DependencyGroupResolver._resolve",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver._resolve#L222",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      222,
+      224
+     ],
+     "function": "dependency_groups.DependencyGroupResolver._resolve",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver._parse_group#L235",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      235,
+      235
+     ],
+     "function": "dependency_groups.DependencyGroupResolver._parse_group",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver._parse_group#L262",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      262,
+      264
+     ],
+     "function": "dependency_groups.DependencyGroupResolver._parse_group",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "30824d9e3b33",
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": "@@ -242,6 +256,7 @@ class DependencyGroupResolver:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver._parse_group#L289",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      289,
+      290
+     ],
+     "function": "dependency_groups.DependencyGroupResolver._parse_group",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "959bb79c06cb883bf1ecd1ddc94a079294907e0f",
+     "blame_commits": [
+      "959bb79c06cb"
+     ],
+     "diff_hunk": "@@ -271,7 +286,9 @@ class DependencyGroupResolver:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:959bb79c06cb",
+     "source_type": "commit_message",
+     "text": "fix(dependency-groups): collect errors from sibling includes after a first parse error (#1411)\n\n* fix(dependency-groups): collect errors from sibling includes after a first parse error\n\n* Apply review suggestion for the parse error comment\n\nCo-authored-by: Henry Schreiner <4616906+henryiii@users.nor"
+    }
+   ]
+  }
+ },
+ "pkg-24": {
+  "key": "pkg-s1-validate_includes",
+  "scenario": "S1",
+  "ci_commit": "2d57ce2b15a85be2c2b07ad5831ed4921429edcb",
+  "parent_commit": "6973aafb53dd00ae0e0bd767f884996bb11d2e99",
+  "failing_tests": [
+   "tests/test_dependency_groups.py::test_expand_contract_model_only_does_inner_lookup_once"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "packaging.dependency_groups.DependencyGroupResolver._resolve"
+  ],
+  "modules": [
+   "dependency_groups"
+  ],
+  "corpus_items": 121,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver.__init__#L122",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      122,
+      122
+     ],
+     "function": "dependency_groups.DependencyGroupResolver.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:dependency_groups.DependencyGroupResolver.__init__#L126",
+     "path": "src/packaging/dependency_groups.py",
+     "lines": [
+      126,
+      126
+     ],
+     "function": "dependency_groups.DependencyGroupResolver.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "a3b6a1f6c34182414558ad3628814cce1f039004",
+     "blame_commits": [
+      "a3b6a1f6c341"
+     ],
+     "diff_hunk": "@@ -123,8 +123,6 @@ class DependencyGroupResolver:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:2d57ce2b15a8",
+     "source_type": "commit_message",
+     "text": "refactor(dependency-groups): validate includes before resolving (#1439)\n\nResolution now has two phases. A depth-first pass parses each reachable\ngroup once and collects parse errors and include cycles. Resolution then\nruns only on valid data. Path state for cycle detection is local to each\ncall, so "
+    }
+   ]
+  }
+ }
+}

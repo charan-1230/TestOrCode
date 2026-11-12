@@ -1,0 +1,210 @@
+{
+ "pin": {
+  "repo_url": "https://github.com/python-attrs/attrs",
+  "head": "9d9f94a043de7fc4012459853a4ed597a5577855",
+  "python": "3.10",
+  "pytest": "8.4.2",
+  "test_command": "python -m pytest tests --import-mode=importlib --ignore=tests/test_pyright.py --ignore=tests/test_packaging.py (PYTHONPATH=src; attr/-era episodes: repository root)",
+  "stability_runs": 5
+ },
+ "dependency_lock_hash": "16e576e689a0d9367358d4ad6f6bb6ce9f4839dd0bdbb440823646f5f7b0c037",
+ "splits": {
+  "dev": [],
+  "test": [
+   {
+    "id": "att-01",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "58d5c0a7677fe27aa726fc0e823f60e185abaab2",
+    "key": "att-s1-repr"
+   },
+   {
+    "id": "att-02",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "d291e8c4dc249373e026e680a824839fd854a748",
+    "key": "att-s1-ls_classes"
+   },
+   {
+    "id": "att-03",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "774cf0142abbf0aee55940d1d793c79ddfd1a71c",
+    "key": "att-s1-validator_attribute"
+   },
+   {
+    "id": "att-04",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "69a460d336e2dc193261eed7b486af7e73e57381",
+    "key": "att-s4-validator_attribute"
+   },
+   {
+    "id": "att-05",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "692e4613a08314014a14ac57e3a0d5227c9173fc",
+    "key": "att-s1-add_methods"
+   },
+   {
+    "id": "att-06",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "ab6b3e9b4b6895678eaf0b48a4465dd013101087",
+    "key": "att-s5-transform_attrs"
+   },
+   {
+    "id": "att-07",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "445b6b2e007f8b7dd621648341526927e1b9e2ac",
+    "key": "att-s1-these"
+   },
+   {
+    "id": "att-08",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "d96484589912dab786f57acb493c4b147d71cdb0",
+    "key": "att-s1-attrs_tuple"
+   },
+   {
+    "id": "att-09",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "365cd89921e22e98364c7710279d87348f1f3720",
+    "key": "att-s1-convert"
+   },
+   {
+    "id": "att-10",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "8ae2d6f1c3c067c941fd9d212e52972c7d3382cc",
+    "key": "att-s2-a"
+   },
+   {
+    "id": "att-11",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "38580632ceac1cd6e477db71e1d190a4130beed4",
+    "key": "att-s1-linecache"
+   },
+   {
+    "id": "att-12",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "3df7bbe089658ecf1dcc21308926bfd9133b12e1",
+    "key": "att-s5-setattr_speedup"
+   },
+   {
+    "id": "att-13",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "fe9432ddf733c736f200b39a8b009bfef4795334",
+    "key": "att-s2-b"
+   },
+   {
+    "id": "att-14",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "2257a0c60cba6a3cff0841c884981b5b7b99aef8",
+    "key": "att-s3-in_validator"
+   },
+   {
+    "id": "att-15",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "a8191556c0aad84125d2c3435c5a2352b2f8a9ba",
+    "key": "att-s5-setattr_regression"
+   },
+   {
+    "id": "att-16",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "c860e9dd2548e634c83f8e425ced3aede15d316a",
+    "key": "att-s3-nothing_enum"
+   },
+   {
+    "id": "att-17",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "a365cdc5fe17cb8147042e3c554f4b920f4bbd9c",
+    "key": "att-s2-c"
+   },
+   {
+    "id": "att-18",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "1c962d15a743a3c18401f0c788f0fd0cb3d9acf8",
+    "key": "att-s1-annotation_conflict"
+   },
+   {
+    "id": "att-19",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "6e3786c599279f24e91b0d57ef448f7a85d7a69f",
+    "key": "att-s1-kw_only"
+   },
+   {
+    "id": "att-20",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+    "key": "att-s3-aliases"
+   },
+   {
+    "id": "att-21",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "eccd966d80aff5196efc959316961cfa780439f9",
+    "key": "att-s4-aliases-a"
+   },
+   {
+    "id": "att-22",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "48b8611c27779811d161200e17de8da24aae7feb",
+    "key": "att-s3-fields_instance"
+   },
+   {
+    "id": "att-23",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "45de9beb093d2142517ab7d1ebda6522e3d3c4ac",
+    "key": "att-s4-aliases-b"
+   },
+   {
+    "id": "att-24",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "8f76a5262b3b426bfb6a1127f12d49430d168c8b",
+    "key": "att-s2-d"
+   }
+  ]
+ },
+ "module_pools": {
+  "dev": [],
+  "test": [
+   "__init__",
+   "_cmp",
+   "_compat",
+   "_config",
+   "_dunders",
+   "_funcs",
+   "_make",
+   "_next_gen",
+   "_version_info",
+   "converters",
+   "exceptions",
+   "filters",
+   "setters",
+   "validators"
+  ]
+ },
+ "corpus_version": "heldout-1",
+ "source_comment_policy": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+ "files_sha256": {
+  "heldout_attrs.jsonl": "aebe8721617a57175d20e33de6879d9274fa25b727cad6b6806baa5146824b00",
+  "heldout_attrs_agent_view.jsonl": "41ff0a06ffe1454813af26b72afa64d8b5c8c6f023c077550d1a62daac466e19"
+ },
+ "frozen_test_split": "datasets/heldout_attrs*.jsonl: do not tune on it; regenerate only deliberately"
+}

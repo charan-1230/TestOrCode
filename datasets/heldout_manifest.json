@@ -1,0 +1,79 @@
+{
+ "description": "Held-out evaluation set (proposal section 9): 3 libraries x 24 episodes, one chronological stream per library. Gold labels live only in heldout_<lib>.jsonl; agents receive heldout_<lib>_agent_view.jsonl.",
+ "scenario_target_per_library": {
+  "S1": 10,
+  "S2": 4,
+  "S3": 4,
+  "S4": 3,
+  "S5": 3
+ },
+ "libraries": [
+  {
+   "library": "more_itertools",
+   "repo_url": "https://github.com/more-itertools/more-itertools",
+   "head": "ceafee8ce96f4bc1eb74c528bc247c91d648a0bb",
+   "python": "3.12",
+   "pytest": "8.4.2",
+   "dependency_lock_hash": "912081a0c76469b883eac802e68e82d7af4f0d08fa2f07130c71a360a73df95c",
+   "episodes": 24,
+   "scenario_counts": {
+    "S1": 10,
+    "S2": 4,
+    "S3": 4,
+    "S4": 3,
+    "S5": 3
+   },
+   "files_sha256": {
+    "heldout_more_itertools.jsonl": "615a063eda7b41c26a2dcd77b9cae873485449c8bcdb30aef484be2ab014b35b",
+    "heldout_more_itertools_agent_view.jsonl": "c3b8f12dac4df0bebbfba3523d715be04e0d2ea966d616bb07d2fe8dc4665954"
+   },
+   "manifest_sha256": "c529ad4efc1b2e98a3d1f9a1fa64253acd134a5e00d33cdfd91a654e6db4fa44",
+   "verification_sha256": "4a9bfdeac702c77a441eebe0447be03e4bc9aeb5a1fe46587b15195b0c005521"
+  },
+  {
+   "library": "attrs",
+   "repo_url": "https://github.com/python-attrs/attrs",
+   "head": "9d9f94a043de7fc4012459853a4ed597a5577855",
+   "python": "3.10",
+   "pytest": "8.4.2",
+   "dependency_lock_hash": "16e576e689a0d9367358d4ad6f6bb6ce9f4839dd0bdbb440823646f5f7b0c037",
+   "episodes": 24,
+   "scenario_counts": {
+    "S1": 10,
+    "S2": 4,
+    "S3": 4,
+    "S4": 3,
+    "S5": 3
+   },
+   "files_sha256": {
+    "heldout_attrs.jsonl": "aebe8721617a57175d20e33de6879d9274fa25b727cad6b6806baa5146824b00",
+    "heldout_attrs_agent_view.jsonl": "41ff0a06ffe1454813af26b72afa64d8b5c8c6f023c077550d1a62daac466e19"
+   },
+   "manifest_sha256": "e1a0e86ee8a2cb29bd60249c5d8d6b579498214af791e3ede37c6e029464e190",
+   "verification_sha256": "dc357fcda89f58c79b53d326c5bbbc57d7091575090e29bd457bdf46ac368b2a"
+  },
+  {
+   "library": "packaging",
+   "repo_url": "https://github.com/pypa/packaging",
+   "head": "9afc187996400b417b7109b1b3452d7fdcfe7696",
+   "python": "3.12",
+   "pytest": "8.4.2",
+   "dependency_lock_hash": "beed872362627382c8f4b92b9a31623a807cba177035506e1ea82859d613d5c9",
+   "episodes": 24,
+   "scenario_counts": {
+    "S1": 10,
+    "S2": 4,
+    "S3": 4,
+    "S4": 3,
+    "S5": 3
+   },
+   "files_sha256": {
+    "heldout_packaging.jsonl": "2b7248b5fe56110118dfbada65e85ec7c9447a6151cb4d28c5c76b667af7f5d2",
+    "heldout_packaging_agent_view.jsonl": "e1836941f1e9c628ad29080de5508ef7dcb2741d440b03e352cea4584445f194"
+   },
+   "manifest_sha256": "fdc8accba873d5b856103c4cd317919892007511e48dcb7187f1682a87a1336c",
+   "verification_sha256": "2c5cb260474016138e7edebe09237d3357a503257c0ab18382576438a1ae8d2a"
+  }
+ ],
+ "total_episodes": 72
+}

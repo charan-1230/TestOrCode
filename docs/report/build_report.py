@@ -326,7 +326,7 @@ def to_tex(blocks) -> str:
     for b in blocks:
         k = b[0]
         if k == "title":
-            o += [r"\begin{center}{\LARGE\bfseries " + tex(b[1]) + r"}\\[4pt]" + tex(b[2]) + r"\end{center}"]
+            o += [r"\begin{center}{\LARGE\bfseries " + tex(b[1]) + r"}\\[4pt]\url{https://github.com/charan-1230/TestOrCode/}\\[4pt]" + tex(b[2]) + r"\end{center}"]
         elif k == "h1":
             o.append(r"\section*{" + tex(b[1]) + "}")
         elif k == "p":
@@ -374,6 +374,9 @@ def to_pdf(blocks, path: Path) -> None:
         k = b[0]
         if k == "title":
             story += [Paragraph(m(b[1]), ParagraphStyle("t", parent=ss["Title"], fontSize=19)),
+                      Paragraph('<link href="https://github.com/charan-1230/TestOrCode/" color="blue">'
+                                "https://github.com/charan-1230/TestOrCode/</link>",
+                                ParagraphStyle("u", parent=body, alignment=1)),
                       Paragraph(m(b[2]), ParagraphStyle("s", parent=body, alignment=1)), Spacer(1, 6)]
         elif k == "h1":
             story.append(Paragraph(m(b[1]), h1))

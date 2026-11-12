@@ -1,0 +1,15 @@
+# Exact pip freeze of the attrs test interpreter (system Python 3.10): python3.10 -m venv <venv> && <venv>/bin/python -m pip install -r requirements.txt
+cloudpickle==3.1.2
+exceptiongroup==1.3.1
+hypothesis==6.168.5
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+Pygments==2.21.0
+Pympler==1.1
+pytest==8.4.2
+six==1.17.0
+sortedcontainers==2.4.0
+tomli==2.5.0
+typing_extensions==4.16.0
+zope.interface==8.6

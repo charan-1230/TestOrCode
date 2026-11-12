@@ -1,0 +1,3089 @@
+{
+ "att-01": {
+  "key": "att-s1-repr",
+  "scenario": "S1",
+  "ci_commit": "58d5c0a7677fe27aa726fc0e823f60e185abaab2",
+  "parent_commit": "5ce5e48074a53f7b95421f64f15a858e2d6d9263",
+  "failing_tests": [
+   "tests/test_dunders.py::TestAddRepr::test_repr",
+   "tests/test_make.py::TestS::test_empty"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._dunders._add_repr"
+  ],
+  "modules": [
+   "_dunders"
+  ],
+  "corpus_items": 18,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:58d5c0a7677f",
+     "source_type": "commit_message",
+     "text": "Get rid of <> in repr\n\nCloses #1"
+    }
+   ]
+  }
+ },
+ "att-02": {
+  "key": "att-s1-ls_classes",
+  "scenario": "S1",
+  "ci_commit": "d291e8c4dc249373e026e680a824839fd854a748",
+  "parent_commit": "f3e16ed15ecdf658348d8f58adc554c77ac4cf6c",
+  "failing_tests": [
+   "tests/test_funcs.py::TestLs::test_handler_non_attrs_class",
+   "tests/test_funcs.py::TestLs::test_instance"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._funcs.ls"
+  ],
+  "modules": [
+   "__init__",
+   "_funcs",
+   "_make"
+  ],
+  "corpus_items": 23,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._add_methods#L120",
+     "path": "attr/_make.py",
+     "lines": [
+      120,
+      122
+     ],
+     "function": "_make._add_methods",
+     "origin": "pre_existing",
+     "commit_sha": "fdd41b0466a263af2bbb5b353baf91255ee2740d",
+     "blame_commits": [
+      "fdd41b0466a2"
+     ],
+     "diff_hunk": "@@ -85,6 +95,28 @@ def _get_attrs(cl):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:d291e8c4dc24",
+     "source_type": "commit_message",
+     "text": "Add some API docs\n\nAlso define ls and has only for classes."
+    }
+   ]
+  }
+ },
+ "att-03": {
+  "key": "att-s1-validator_attribute",
+  "scenario": "S1",
+  "ci_commit": "774cf0142abbf0aee55940d1d793c79ddfd1a71c",
+  "parent_commit": "8bfa3a3c6febcaa0a9fd2d375742caa79ca6a99c",
+  "failing_tests": [
+   "tests/test_dunders.py::TestAddInit::test_validator"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._dunders._attrs_to_script"
+  ],
+  "modules": [
+   "_dunders"
+  ],
+  "corpus_items": 34,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:774cf0142abb",
+     "source_type": "commit_message",
+     "text": "Pass the Attribute object into validators\n\nThis allows for more generic validators."
+    }
+   ]
+  }
+ },
+ "att-04": {
+  "key": "att-s4-validator_attribute",
+  "scenario": "S4",
+  "ci_commit": "69a460d336e2dc193261eed7b486af7e73e57381",
+  "parent_commit": "774cf0142abbf0aee55940d1d793c79ddfd1a71c",
+  "failing_tests": [
+   "tests/test_dunders.py::TestAddInit::test_default_factory",
+   "tests/test_dunders.py::TestAddInit::test_default_value"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._dunders._attrs_to_script"
+  ],
+  "modules": [
+   "__init__",
+   "_dunders"
+  ],
+  "corpus_items": 35,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "attr._dunders._attrs_to_script",
+   "mutant": "_attrs_to_script line 186: 'is not' -> 'is'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "att-05": {
+  "key": "att-s1-add_methods",
+  "scenario": "S1",
+  "ci_commit": "692e4613a08314014a14ac57e3a0d5227c9173fc",
+  "parent_commit": "69a460d336e2dc193261eed7b486af7e73e57381",
+  "failing_tests": [
+   "tests/test_make.py::TestGetAttrs::test_normal"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._add_methods"
+  ],
+  "modules": [
+   "__init__",
+   "_dunders",
+   "_make",
+   "validators"
+  ],
+  "corpus_items": 43,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._add_methods#L144",
+     "path": "attr/_make.py",
+     "lines": [
+      144,
+      146
+     ],
+     "function": "_make._add_methods",
+     "origin": "pre_existing",
+     "commit_sha": "fdd41b0466a263af2bbb5b353baf91255ee2740d",
+     "blame_commits": [
+      "fdd41b0466a2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._add_methods#L150",
+     "path": "attr/_make.py",
+     "lines": [
+      150,
+      150
+     ],
+     "function": "_make._add_methods",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "692e4613a08314014a14ac57e3a0d5227c9173fc",
+     "blame_commits": [
+      "692e4613a083"
+     ],
+     "diff_hunk": "@@ -143,10 +146,12 @@ def _add_methods(maybe_cl=None, add_repr=True, add_cmp=True, add_hash=True,",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "comment:_make._add_methods#L150",
+     "source_type": "source_file",
+     "text": "# Replace internal `_CountingAttr`s with `Attribute`s."
+    }
+   ]
+  }
+ },
+ "att-06": {
+  "key": "att-s5-transform_attrs",
+  "scenario": "S5",
+  "ci_commit": "ab6b3e9b4b6895678eaf0b48a4465dd013101087",
+  "parent_commit": "6a1a740c46e3071296eaa7b64d0120913ddadade",
+  "failing_tests": [
+   "tests/test_make.py::TestTransformAttrs::test_conflicting_defaults"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "attr._make._transform_attrs"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 74,
+  "notes": {
+   "withheld_message_sha256": "a9d9947296feaa22d031ff6f46f3ccc34bdc0ac48da718b8e786d3a30caf8d8e",
+   "withheld_message_chars": 8,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "att-07": {
+  "key": "att-s1-these",
+  "scenario": "S1",
+  "ci_commit": "445b6b2e007f8b7dd621648341526927e1b9e2ac",
+  "parent_commit": "ab6b3e9b4b6895678eaf0b48a4465dd013101087",
+  "failing_tests": [
+   "tests/test_make.py::TestTransformAttrs::test_conflicting_defaults",
+   "tests/test_make.py::TestTransformAttrs::test_empty",
+   "tests/test_make.py::TestTransformAttrs::test_normal",
+   "tests/test_make.py::TestTransformAttrs::test_transforms_to_attribute[x]",
+   "tests/test_make.py::TestTransformAttrs::test_transforms_to_attribute[y]",
+   "tests/test_make.py::TestTransformAttrs::test_transforms_to_attribute[z]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.attributes"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 76,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.attributes#L172",
+     "path": "attr/_make.py",
+     "lines": [
+      172,
+      174
+     ],
+     "function": "_make.attributes",
+     "origin": "pre_existing",
+     "commit_sha": "fdd41b0466a263af2bbb5b353baf91255ee2740d",
+     "blame_commits": [
+      "4f62d47d087a",
+      "fdd41b0466a2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:445b6b2e007f",
+     "source_type": "commit_message",
+     "text": "Add these argument to attr.s\n\nUseful for third party classes and when using properties.\n\nBased on feedback by @econchick & @hawkowl"
+    }
+   ]
+  }
+ },
+ "att-08": {
+  "key": "att-s1-attrs_tuple",
+  "scenario": "S1",
+  "ci_commit": "d96484589912dab786f57acb493c4b147d71cdb0",
+  "parent_commit": "46cbd75411b2051a570c09fa449bbfb4ac677bda",
+  "failing_tests": [
+   "tests/test_dark_magic.py::TestDarkMagic::test_fields",
+   "tests/test_dark_magic.py::TestDarkMagic::test_programmatic",
+   "tests/test_make.py::TestTransformAttrs::test_empty",
+   "tests/test_make.py::TestTransformAttrs::test_recurse",
+   "tests/test_make.py::TestTransformAttrs::test_these"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._transform_attrs"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 105,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:d96484589912",
+     "source_type": "commit_message",
+     "text": "Make __attrs_attrs__ a tuple\n\nHaving a mutable and rather heavy data structure for something that is supposed\nto be immutable doesn't seem to make sense."
+    }
+   ]
+  }
+ },
+ "att-09": {
+  "key": "att-s1-convert",
+  "scenario": "S1",
+  "ci_commit": "365cd89921e22e98364c7710279d87348f1f3720",
+  "parent_commit": "253491908baf78ceda24e611e7fd3a44c10977ae",
+  "failing_tests": [
+   "tests/test_make.py::TestAttribute::test_too_many_arguments",
+   "tests/test_make.py::TestTransformAttrs::test_conflicting_defaults"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.Attribute.__init__"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 129,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._add_init#L341",
+     "path": "src/attr/_make.py",
+     "lines": [
+      341,
+      341
+     ],
+     "function": "_make._add_init",
+     "origin": "pre_existing",
+     "commit_sha": "f61fb5d18538b77e67f0fc30d2fe9cc20a1c0d27",
+     "blame_commits": [
+      "f61fb5d18538"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._add_init#L358",
+     "path": "src/attr/_make.py",
+     "lines": [
+      358,
+      359
+     ],
+     "function": "_make._add_init",
+     "origin": "pre_existing",
+     "commit_sha": "f61fb5d18538b77e67f0fc30d2fe9cc20a1c0d27",
+     "blame_commits": [
+      "f61fb5d18538"
+     ],
+     "diff_hunk": "@@ -342,7 +351,8 @@ def _add_init(cl):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:365cd89921e2",
+     "source_type": "commit_message",
+     "text": "add a `convert` keyword to attr.ib() that allows specifying a function to convert the passed-in value."
+    }
+   ]
+  }
+ },
+ "att-10": {
+  "key": "att-s2-a",
+  "scenario": "S2",
+  "ci_commit": "8ae2d6f1c3c067c941fd9d212e52972c7d3382cc",
+  "parent_commit": "932902c29fd813a414697fde4c40b0a7b072a83d",
+  "failing_tests": [
+   "tests/test_dunders.py::TestAddHash::test_enforce_no_cache_hash_without_hash",
+   "tests/test_dunders.py::TestAddHash::test_hash_default",
+   "tests/test_make.py::TestAttributes::test_adds_all_by_default[__hash__]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.attrs"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 184,
+  "notes": {
+   "mutant": "attrs line 1533: 'and' -> 'or'",
+   "mutant_in_changed_function": true,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.attrs#L1450",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1450,
+      1450
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "277a5c1d45e52857bbd3eb314853498592490e39",
+     "blame_commits": [
+      "277a5c1d45e5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1519",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1519,
+      1519
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1524",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1524,
+      1525
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1535",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1535,
+      1535
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": "@@ -1530,7 +1530,7 @@ def attrs(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1538",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1538,
+      1538
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1561",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1561,
+      1562
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "03c10ad0ef888f920bc6453f08093857d88534e7",
+     "blame_commits": [
+      "03c10ad0ef88"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "att-11": {
+  "key": "att-s1-linecache",
+  "scenario": "S1",
+  "ci_commit": "38580632ceac1cd6e477db71e1d190a4130beed4",
+  "parent_commit": "fb154878ebd2758d2a3b4dc518d21fd4f73e12d2",
+  "failing_tests": [
+   "tests/test_dunders.py::TestFilenames::test_filenames"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._generate_unique_filename"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 179,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._make_method#L331",
+     "path": "src/attr/_make.py",
+     "lines": [
+      331,
+      332
+     ],
+     "function": "_make._make_method",
+     "origin": "pre_existing",
+     "commit_sha": "1499c77e79315ef8c5c98c088dc3ef99bdba72b4",
+     "blame_commits": [
+      "1499c77e7931"
+     ],
+     "diff_hunk": "@@ -329,16 +328,25 @@ def _make_method(name, script, filename, globs=None):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:38580632ceac",
+     "source_type": "commit_message",
+     "text": "Rework linecache handling (#828)\n\n* Rework linecache handling\n\n* lint\n\n* Add changelog"
+    }
+   ]
+  }
+ },
+ "att-12": {
+  "key": "att-s5-setattr_speedup",
+  "scenario": "S5",
+  "ci_commit": "3df7bbe089658ecf1dcc21308926bfd9133b12e1",
+  "parent_commit": "c162c783dceffa2aec15acb945d23b7e0b730a0b",
+  "failing_tests": [
+   "tests/test_functional.py::TestFunctional::test_on_setattr_detect_inherited_validators"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "attr._make._attrs_to_init_script"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 207,
+  "notes": {
+   "withheld_message_sha256": "95ac99725c85daea013fc1c08512ad9d4e747c1accdf9e72db015f34dfebe9c8",
+   "withheld_message_chars": 109,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._ClassBuilder._patch_original_class#L783",
+     "path": "src/attr/_make.py",
+     "lines": [
+      783,
+      783
+     ],
+     "function": "_make._ClassBuilder._patch_original_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._patch_original_class#L793",
+     "path": "src/attr/_make.py",
+     "lines": [
+      793,
+      795
+     ],
+     "function": "_make._ClassBuilder._patch_original_class",
+     "origin": "pre_existing",
+     "commit_sha": "73ae718ec5f44b7d57a2897d8675c5a0f2825a05",
+     "blame_commits": [
+      "73ae718ec5f4",
+      "746f047a27e5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._patch_original_class#L798",
+     "path": "src/attr/_make.py",
+     "lines": [
+      798,
+      798
+     ],
+     "function": "_make._ClassBuilder._patch_original_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._patch_original_class#L802",
+     "path": "src/attr/_make.py",
+     "lines": [
+      802,
+      803
+     ],
+     "function": "_make._ClassBuilder._patch_original_class",
+     "origin": "pre_existing",
+     "commit_sha": "106c33c205fd06aed175d138ac01d5832522232e",
+     "blame_commits": [
+      "106c33c205fd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L824",
+     "path": "src/attr/_make.py",
+     "lines": [
+      824,
+      831
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "48755905ee8088da927a6dc583d4962f7ca16b9b",
+     "blame_commits": [
+      "48755905ee80"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L841",
+     "path": "src/attr/_make.py",
+     "lines": [
+      841,
+      842
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "1f627dd3d53e04be96a2f26d7f9f1cdde34953c4",
+     "blame_commits": [
+      "1f627dd3d53e"
+     ],
+     "diff_hunk": "@@ -835,7 +835,7 @@ class _ClassBuilder(object):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L866",
+     "path": "src/attr/_make.py",
+     "lines": [
+      866,
+      867
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62",
+      "48755905ee80"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L869",
+     "path": "src/attr/_make.py",
+     "lines": [
+      869,
+      872
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "1f627dd3d53e04be96a2f26d7f9f1cdde34953c4",
+     "blame_commits": [
+      "1f627dd3d53e",
+      "7cfa3b68c581"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L888",
+     "path": "src/attr/_make.py",
+     "lines": [
+      888,
+      888
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L891",
+     "path": "src/attr/_make.py",
+     "lines": [
+      891,
+      896
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62",
+      "6e04e869e659"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L899",
+     "path": "src/attr/_make.py",
+     "lines": [
+      899,
+      900
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L903",
+     "path": "src/attr/_make.py",
+     "lines": [
+      903,
+      904
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "9de675f4b4289b218913bd642c1c59ac376df34f",
+     "blame_commits": [
+      "9de675f4b428"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L909",
+     "path": "src/attr/_make.py",
+     "lines": [
+      909,
+      909
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._create_slots_class#L914",
+     "path": "src/attr/_make.py",
+     "lines": [
+      914,
+      914
+     ],
+     "function": "_make._ClassBuilder._create_slots_class",
+     "origin": "pre_existing",
+     "commit_sha": "07810aec7b98198944a98d26fe7e809dbcfb0068",
+     "blame_commits": [
+      "07810aec7b98"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._make_init#L2166",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2166,
+      2166
+     ],
+     "function": "_make._make_init",
+     "origin": "pre_existing",
+     "commit_sha": "1499c77e79315ef8c5c98c088dc3ef99bdba72b4",
+     "blame_commits": [
+      "1499c77e7931"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._make_init#L2172",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2172,
+      2173
+     ],
+     "function": "_make._make_init",
+     "origin": "pre_existing",
+     "commit_sha": "2f6fd8516c60868cc2f0b04177d9293eae826e77",
+     "blame_commits": [
+      "2f6fd8516c60"
+     ],
+     "diff_hunk": "@@ -2172,7 +2171,7 @@ def _make_init(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2318",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2318,
+      2321
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "b47c6ce8b1fea884867d58f6c312d216a308b2fa",
+     "blame_commits": [
+      "3e0ecbd89153",
+      "b47c6ce8b1fe"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2345",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2345,
+      2345
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "b47c6ce8b1fea884867d58f6c312d216a308b2fa",
+     "blame_commits": [
+      "b47c6ce8b1fe"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2353",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2353,
+      2354
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "5428710ead6d398d8369fdfb4cac0a19f043dd96",
+     "blame_commits": [
+      "5428710ead6d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2498",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2498,
+      2498
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "e09b1d642339d7d94ba58d7855da40e65ed1a88f",
+     "blame_commits": [
+      "e09b1d642339"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2502",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2502,
+      2502
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "e09b1d642339d7d94ba58d7855da40e65ed1a88f",
+     "blame_commits": [
+      "e09b1d642339"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2513",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2513,
+      2513
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "dd4140ebcdb3944a8f7237b88ac845beb3b84d09",
+     "blame_commits": [
+      "dd4140ebcdb3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2528",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2528,
+      2532
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "3df7bbe089658ecf1dcc21308926bfd9133b12e1",
+     "blame_commits": [
+      "3df7bbe08965",
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": "@@ -2535,7 +2525,7 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2536",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2536,
+      2536
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "3e0ecbd891532e8f85f90ebbbd56da78cedb9688",
+     "blame_commits": [
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": "@@ -2544,7 +2534,7 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2539",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2539,
+      2539
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "3e0ecbd891532e8f85f90ebbbd56da78cedb9688",
+     "blame_commits": [
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": "@@ -2544,7 +2534,7 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2545",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2545,
+      2546
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "25a98cbfe5270b647d3c4bb8f0a76777dc5f7870",
+     "blame_commits": [
+      "25a98cbfe527"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2557",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2557,
+      2557
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "bc527b9f299cf418ee293e03657d37b4cf840eb3",
+     "blame_commits": [
+      "bc527b9f299c"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2560",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2560,
+      2560
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "bc527b9f299cf418ee293e03657d37b4cf840eb3",
+     "blame_commits": [
+      "bc527b9f299c"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2561",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2561,
+      2561
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "bc527b9f299cf418ee293e03657d37b4cf840eb3",
+     "blame_commits": [
+      "bc527b9f299c"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "att-13": {
+  "key": "att-s2-b",
+  "scenario": "S2",
+  "ci_commit": "fe9432ddf733c736f200b39a8b009bfef4795334",
+  "parent_commit": "8f9558d93dc3904f77b27b6d5d5b2a5345f9f128",
+  "failing_tests": [
+   "tests/test_make.py::TestMatchArgs::test_explicit_match_args",
+   "tests/test_next_gen.py::TestAsDict::test_smoke",
+   "tests/test_next_gen.py::TestAsTuple::test_smoke",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_detect",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_detect_annotations",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_detect_fields_and_annotations",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_partially_annotated",
+   "tests/test_next_gen.py::TestNextGen::test_auto_detect_eq",
+   "tests/test_next_gen.py::TestNextGen::test_converts_and_validates_by_default",
+   "tests/test_next_gen.py::TestNextGen::test_frozen",
+   "tests/test_next_gen.py::TestNextGen::test_mro_ng",
+   "tests/test_next_gen.py::TestNextGen::test_no_order",
+   "tests/test_next_gen.py::TestNextGen::test_no_slots",
+   "tests/test_next_gen.py::TestNextGen::test_override_auto_attribs_false",
+   "tests/test_next_gen.py::TestNextGen::test_simple",
+   "tests/test_next_gen.py::TestNextGen::test_subclass_frozen",
+   "tests/test_next_gen.py::TestNextGen::test_validates",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_explicit_match_args",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_match_args_kw_only",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[dec2]",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[define]"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.attrs"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 184,
+  "notes": {
+   "mutant": "attrs line 1517: 'and' -> 'or'",
+   "mutant_in_changed_function": true,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.attrs#L1506",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1506,
+      1506
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "277a5c1d45e52857bbd3eb314853498592490e39",
+     "blame_commits": [
+      "277a5c1d45e5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1575",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1575,
+      1575
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1580",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1580,
+      1581
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1591",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1591,
+      1591
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1594",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1594,
+      1594
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1624",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1624,
+      1625
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "03c10ad0ef888f920bc6453f08093857d88534e7",
+     "blame_commits": [
+      "03c10ad0ef88"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "att-14": {
+  "key": "att-s3-in_validator",
+  "scenario": "S3",
+  "ci_commit": "2257a0c60cba6a3cff0841c884981b5b7b99aef8",
+  "parent_commit": "985e8ef76716fe340520deab473ee65d2da70980",
+  "failing_tests": [
+   "tests/test_converters.py::TestDefaultIfNone::test_factory_takes_self",
+   "tests/test_converters.py::TestDefaultIfNone::test_none_factory",
+   "tests/test_converters.py::TestDefaultIfNone::test_none_value",
+   "tests/test_validators.py::TestIn_::test_fail",
+   "tests/test_validators.py::TestIn_::test_fail_with_string"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr.converters.default_if_none",
+   "attr.validators._InValidator.__call__"
+  ],
+  "modules": [
+   "converters",
+   "validators"
+  ],
+  "corpus_items": 134,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:validators._InValidator.__call__#L295",
+     "path": "src/attr/validators.py",
+     "lines": [
+      295,
+      295
+     ],
+     "function": "validators._InValidator.__call__",
+     "origin": "pre_existing",
+     "commit_sha": "4202dcbce05556ab19b7ebd18067d942e990ec5b",
+     "blame_commits": [
+      "4202dcbce055"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:2257a0c60cba",
+     "source_type": "commit_message",
+     "text": "Complete error signature of _InValidator (#951)\n\nThe docstring of _in() says the ValueError would contain these, however\nit didn't. Adding said arguments enables uniform processing of\nValueErrors raised by validators. One might for example want to extract\nthe attr.name and the value that raised the "
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "default_if_none line 80: 'is not' -> 'is'"
+  }
+ },
+ "att-15": {
+  "key": "att-s5-setattr_regression",
+  "scenario": "S5",
+  "ci_commit": "a8191556c0aad84125d2c3435c5a2352b2f8a9ba",
+  "parent_commit": "983c2c42935ccfc2fce77d6f20dac7821bc720e8",
+  "failing_tests": [
+   "tests/test_functional.py::TestFunctional::test_on_setattr_detect_inherited_validators"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "attr._make._attrs_to_init_script"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 192,
+  "notes": {
+   "withheld_message_sha256": "a05bc6e4a3ccae4769aa145a50656a44af3905742679562027c95defcc4ca558",
+   "withheld_message_chars": 196,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._ClassBuilder._make_getstate_setstate#L901",
+     "path": "src/attr/_make.py",
+     "lines": [
+      901,
+      901
+     ],
+     "function": "_make._ClassBuilder._make_getstate_setstate",
+     "origin": "pre_existing",
+     "commit_sha": "277a5c1d45e52857bbd3eb314853498592490e39",
+     "blame_commits": [
+      "277a5c1d45e5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder._make_getstate_setstate.slots_setstate#L922",
+     "path": "src/attr/_make.py",
+     "lines": [
+      922,
+      925
+     ],
+     "function": "_make._ClassBuilder._make_getstate_setstate.slots_setstate",
+     "origin": "pre_existing",
+     "commit_sha": "277a5c1d45e52857bbd3eb314853498592490e39",
+     "blame_commits": [
+      "277a5c1d45e5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._make_init#L2015",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2015,
+      2015
+     ],
+     "function": "_make._make_init",
+     "origin": "pre_existing",
+     "commit_sha": "1499c77e79315ef8c5c98c088dc3ef99bdba72b4",
+     "blame_commits": [
+      "1499c77e7931"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._make_init#L2021",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2021,
+      2022
+     ],
+     "function": "_make._make_init",
+     "origin": "pre_existing",
+     "commit_sha": "2f6fd8516c60868cc2f0b04177d9293eae826e77",
+     "blame_commits": [
+      "2f6fd8516c60"
+     ],
+     "diff_hunk": "@@ -2019,7 +2020,7 @@ def _make_init(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2108",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2108,
+      2110
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "a8191556c0aad84125d2c3435c5a2352b2f8a9ba",
+     "blame_commits": [
+      "a8191556c0aa"
+     ],
+     "diff_hunk": "@@ -2101,6 +2103,14 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2119",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2119,
+      2122
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "b47c6ce8b1fea884867d58f6c312d216a308b2fa",
+     "blame_commits": [
+      "3e0ecbd89153",
+      "b47c6ce8b1fe"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2146",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2146,
+      2146
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "b47c6ce8b1fea884867d58f6c312d216a308b2fa",
+     "blame_commits": [
+      "b47c6ce8b1fe"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2154",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2154,
+      2155
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "5428710ead6d398d8369fdfb4cac0a19f043dd96",
+     "blame_commits": [
+      "5428710ead6d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2299",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2299,
+      2299
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "e09b1d642339d7d94ba58d7855da40e65ed1a88f",
+     "blame_commits": [
+      "e09b1d642339"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2304",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2304,
+      2304
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "dd4140ebcdb3944a8f7237b88ac845beb3b84d09",
+     "blame_commits": [
+      "dd4140ebcdb3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2319",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2319,
+      2323
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "3df7bbe089658ecf1dcc21308926bfd9133b12e1",
+     "blame_commits": [
+      "3df7bbe08965",
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2327",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2327,
+      2327
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "3e0ecbd891532e8f85f90ebbbd56da78cedb9688",
+     "blame_commits": [
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": "@@ -2315,7 +2325,7 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2330",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2330,
+      2330
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "3e0ecbd891532e8f85f90ebbbd56da78cedb9688",
+     "blame_commits": [
+      "3e0ecbd89153"
+     ],
+     "diff_hunk": "@@ -2315,7 +2325,7 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2336",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2336,
+      2337
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "25a98cbfe5270b647d3c4bb8f0a76777dc5f7870",
+     "blame_commits": [
+      "25a98cbfe527"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2346",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2346,
+      2346
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "980c8b04f59d93c429fc66d901d2a24c70a8d777",
+     "blame_commits": [
+      "980c8b04f59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2347",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2347,
+      2347
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "980c8b04f59d93c429fc66d901d2a24c70a8d777",
+     "blame_commits": [
+      "980c8b04f59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2422",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2422,
+      2422
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "08fcfe91d4f44bc3273c00e5cc726bf961c950f2",
+     "blame_commits": [
+      "08fcfe91d4f4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2440",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2440,
+      2440
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "a7ba5122f692ab04c75654f712538418a384d876",
+     "blame_commits": [
+      "a7ba5122f692"
+     ],
+     "diff_hunk": "@@ -2428,7 +2438,7 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2443",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2443,
+      2444
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "bc0b437e58cf5a9c60143909c93cb0d727b15300",
+     "blame_commits": [
+      "bc0b437e58cf"
+     ],
+     "diff_hunk": "@@ -2428,7 +2438,7 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2459",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2459,
+      2459
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "e18b5f340a793432312a5f7e709b99439520d98e",
+     "blame_commits": [
+      "e18b5f340a79"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "att-16": {
+  "key": "att-s3-nothing_enum",
+  "scenario": "S3",
+  "ci_commit": "c860e9dd2548e634c83f8e425ced3aede15d316a",
+  "parent_commit": "20453b1a61b514b13d1023edb7d42ba6950076e0",
+  "failing_tests": [
+   "tests/test_dunders.py::TestNothing::test_copy",
+   "tests/test_dunders.py::TestNothing::test_deepcopy",
+   "tests/test_dunders.py::TestNothing::test_eq",
+   "tests/test_validators.py::TestDeepMapping::test_success"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._Nothing.__new__",
+   "attr.validators._DeepMapping.__call__"
+  ],
+  "modules": [
+   "_make",
+   "validators"
+  ],
+  "corpus_items": 173,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:c860e9dd2548",
+     "source_type": "commit_message",
+     "text": "Use enum for typing NOTHING (#983)\n\n* Use enum for typing NOTHING.\n\nThis will allow those extending attrs\nto type NOTHING as Literal[NOTHING].\n\n* Make test_dunders test `NOTHING` directly\n\n* Reflect NOTHING enum typing in __init__.pyi\n\n* Fix docs for NOTHING\n\n* Add changelog entry\n\n* [pre-commit.ci]"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "_DeepMapping.__call__ line 432: 'is not' -> 'is'"
+  }
+ },
+ "att-17": {
+  "key": "att-s2-c",
+  "scenario": "S2",
+  "ci_commit": "a365cdc5fe17cb8147042e3c554f4b920f4bbd9c",
+  "parent_commit": "c24b8ad6f77e1cc2ff9dda20800fef3d2e9a7773",
+  "failing_tests": [
+   "tests/test_dunders.py::TestAddHash::test_cache_hashing",
+   "tests/test_make.py::TestAttributes::test_factory_sugar",
+   "tests/test_make.py::TestAttributes::test_sugar_callable",
+   "tests/test_make.py::TestAttributes::test_sugar_factory_mutex"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.attrib"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 195,
+  "notes": {
+   "mutant": "attrib line 295: 'is not' -> 'is'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.attrib#L308",
+     "path": "src/attr/_make.py",
+     "lines": [
+      308,
+      308
+     ],
+     "function": "_make.attrib",
+     "origin": "pre_existing",
+     "commit_sha": "2f6fd8516c60868cc2f0b04177d9293eae826e77",
+     "blame_commits": [
+      "2f6fd8516c60"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2385",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2385,
+      2387
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "a8191556c0aad84125d2c3435c5a2352b2f8a9ba",
+     "blame_commits": [
+      "a8191556c0aa",
+      "f5683b852b1e"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2400",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2400,
+      2401
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "5428710ead6d398d8369fdfb4cac0a19f043dd96",
+     "blame_commits": [
+      "5428710ead6d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2413",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2413,
+      2414
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "ee3ecb112f6af7f131a518058b2d0a7793edaa06",
+     "blame_commits": [
+      "ee3ecb112f6a"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2553",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2553,
+      2553
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "f5683b852b1e7ec1f26aabbb55aad332de79066d",
+     "blame_commits": [
+      "f5683b852b1e"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2556",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2556,
+      2556
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "dd4140ebcdb3944a8f7237b88ac845beb3b84d09",
+     "blame_commits": [
+      "dd4140ebcdb3"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2569",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2569,
+      2573
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "f5683b852b1e7ec1f26aabbb55aad332de79066d",
+     "blame_commits": [
+      "3e0ecbd89153",
+      "f5683b852b1e"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2584",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2584,
+      2585
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "25a98cbfe5270b647d3c4bb8f0a76777dc5f7870",
+     "blame_commits": [
+      "25a98cbfe527"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2594",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2594,
+      2594
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "a365cdc5fe17cb8147042e3c554f4b920f4bbd9c",
+     "blame_commits": [
+      "a365cdc5fe17"
+     ],
+     "diff_hunk": "@@ -2591,12 +2591,10 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2601",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2601,
+      2601
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "c2824ac30f315bfbc7398960c6831d68ecc9edb4",
+     "blame_commits": [
+      "c2824ac30f31"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2605",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2605,
+      2605
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "pre_existing",
+     "commit_sha": "c2824ac30f315bfbc7398960c6831d68ecc9edb4",
+     "blame_commits": [
+      "c2824ac30f31"
+     ],
+     "diff_hunk": "@@ -2607,12 +2605,12 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._attrs_to_init_script#L2608",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2608,
+      2608
+     ],
+     "function": "_make._attrs_to_init_script",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "a365cdc5fe17cb8147042e3c554f4b920f4bbd9c",
+     "blame_commits": [
+      "a365cdc5fe17"
+     ],
+     "diff_hunk": "@@ -2607,12 +2605,12 @@ def _attrs_to_init_script(",
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "att-18": {
+  "key": "att-s1-annotation_conflict",
+  "scenario": "S1",
+  "ci_commit": "1c962d15a743a3c18401f0c788f0fd0cb3d9acf8",
+  "parent_commit": "6bde3618237cdae312e4e7fb006690be2a3ee0f6",
+  "failing_tests": [
+   "tests/test_annotations.py::TestAnnotations::test_catches_basic_type_conflict"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make.Attribute.from_counting_attr"
+  ],
+  "modules": [
+   "_make"
+  ],
+  "corpus_items": 185,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.Attribute.from_counting_attr#L2490",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2490,
+      2490
+     ],
+     "function": "_make.Attribute.from_counting_attr",
+     "origin": "pre_existing",
+     "commit_sha": "566ada9848a03162ab262fa14f8d75cf703f9914",
+     "blame_commits": [
+      "566ada9848a0"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:1c962d15a743",
+     "source_type": "commit_message",
+     "text": "Mention what argument has both annotation and type argument (#1410)\n\n* Mention what argument has both annotation and type argument\n\nFixes #1354\n\nCo-authored-by: SoundsSerious\n<10334493+SoundsSerious@users.noreply.github.com>\n\n* Add news fragment"
+    }
+   ]
+  }
+ },
+ "att-19": {
+  "key": "att-s1-kw_only",
+  "scenario": "S1",
+  "ci_commit": "6e3786c599279f24e91b0d57ef448f7a85d7a69f",
+  "parent_commit": "af349876f4fb5df2b71a3f4878239b775bc89230",
+  "failing_tests": [
+   "tests/test_make.py::TestAttributes::test_immutable",
+   "tests/test_make.py::TestClassBuilder::test_handles_missing_meta_on_class",
+   "tests/test_make.py::TestClassBuilder::test_repr",
+   "tests/test_make.py::TestClassBuilder::test_returns_self",
+   "tests/test_make.py::TestTransformAttrs::test_conflicting_defaults",
+   "tests/test_make.py::TestTransformAttrs::test_empty",
+   "tests/test_make.py::TestTransformAttrs::test_kw_only",
+   "tests/test_make.py::TestTransformAttrs::test_no_modifications",
+   "tests/test_make.py::TestTransformAttrs::test_normal",
+   "tests/test_make.py::TestTransformAttrs::test_these",
+   "tests/test_make.py::TestTransformAttrs::test_transforms_to_attribute"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._transform_attrs"
+  ],
+  "modules": [
+   "_make",
+   "_next_gen"
+  ],
+  "corpus_items": 209,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make.attrib#L186",
+     "path": "src/attr/_make.py",
+     "lines": [
+      186,
+      186
+     ],
+     "function": "_make.attrib",
+     "origin": "pre_existing",
+     "commit_sha": "2f6fd8516c60868cc2f0b04177d9293eae826e77",
+     "blame_commits": [
+      "2f6fd8516c60"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L464",
+     "path": "src/attr/_make.py",
+     "lines": [
+      464,
+      468
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "e048efcb395443608d184a149c0adbca166cb833",
+     "blame_commits": [
+      "22b8cb1c4cdb",
+      "94ee26943873",
+      "e048efcb3954"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L478",
+     "path": "src/attr/_make.py",
+     "lines": [
+      478,
+      480
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "ee3ecb112f6af7f131a518058b2d0a7793edaa06",
+     "blame_commits": [
+      "ee3ecb112f6a"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L483",
+     "path": "src/attr/_make.py",
+     "lines": [
+      483,
+      483
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "74007f67d203f902e88bdecba169786bf44a8aa2",
+     "blame_commits": [
+      "74007f67d203"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L486",
+     "path": "src/attr/_make.py",
+     "lines": [
+      486,
+      487
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f57b6a6759827a0ec56729da27ec39e9e3b006f3",
+     "blame_commits": [
+      "f57b6a675982"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder.__init__#L713",
+     "path": "src/attr/_make.py",
+     "lines": [
+      713,
+      714
+     ],
+     "function": "_make._ClassBuilder.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "c2824ac30f315bfbc7398960c6831d68ecc9edb4",
+     "blame_commits": [
+      "c2824ac30f31"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder.__init__#L755",
+     "path": "src/attr/_make.py",
+     "lines": [
+      755,
+      757
+     ],
+     "function": "_make._ClassBuilder.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "679e4b443d5558d5e64133ec9047e7a4e737426b",
+     "blame_commits": [
+      "679e4b443d55"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder.__init__#L766",
+     "path": "src/attr/_make.py",
+     "lines": [
+      766,
+      766
+     ],
+     "function": "_make._ClassBuilder.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "74007f67d203f902e88bdecba169786bf44a8aa2",
+     "blame_commits": [
+      "74007f67d203"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._ClassBuilder.__init__#L772",
+     "path": "src/attr/_make.py",
+     "lines": [
+      772,
+      773
+     ],
+     "function": "_make._ClassBuilder.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "74007f67d203f902e88bdecba169786bf44a8aa2",
+     "blame_commits": [
+      "74007f67d203"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1451",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1451,
+      1451
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f520d9a89f1fde6fdc5310ffe6c5d4c7467fb10b",
+     "blame_commits": [
+      "f520d9a89f1f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1523",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1523,
+      1523
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "3040bdabbc627fc6a4d151a9cb2e6f9d4177b6f2",
+     "blame_commits": [
+      "3040bdabbc62"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1528",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1528,
+      1529
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1536",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1536,
+      1536
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs.wrap#L1539",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1539,
+      1539
+     ],
+     "function": "_make.attrs.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "bde0801987dda4019c7e3851459f3d22140725af",
+     "blame_commits": [
+      "bde0801987dd"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1567",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1567,
+      1568
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "03c10ad0ef888f920bc6453f08093857d88534e7",
+     "blame_commits": [
+      "03c10ad0ef88",
+      "9cf3d338f4d2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.from_counting_attr#L2540",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2540,
+      2542
+     ],
+     "function": "_make.Attribute.from_counting_attr",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "6e3786c599279f24e91b0d57ef448f7a85d7a69f",
+     "blame_commits": [
+      "566ada9848a0",
+      "6e3786c59927"
+     ],
+     "diff_hunk": "@@ -2516,7 +2534,11 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define.wrap#L402",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      402,
+      402
+     ],
+     "function": "_next_gen.define.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "679e4b443d5558d5e64133ec9047e7a4e737426b",
+     "blame_commits": [
+      "679e4b443d55"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define.wrap#L406",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      406,
+      407
+     ],
+     "function": "_next_gen.define.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "504eefe91fc49c761572b0a855479775fb6498a8",
+     "blame_commits": [
+      "504eefe91fc4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define#L425",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      425,
+      426
+     ],
+     "function": "_next_gen.define",
+     "origin": "pre_existing",
+     "commit_sha": "4cfd52db5141cb82b218ab9d881bbb631fa10b4e",
+     "blame_commits": [
+      "4cfd52db5141",
+      "9cf3d338f4d2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:6e3786c59927",
+     "source_type": "commit_message",
+     "text": "Make `kw_only=True` behavior consistent with dataclasses (#1457)\n\n* initial change\n\n* move comment\n\n* fix docs\n\n* Apply suggestions from code review\n\nCo-authored-by: Hynek Schlawack <hs@ox.cx>\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n*"
+    }
+   ]
+  }
+ },
+ "att-20": {
+  "key": "att-s3-aliases",
+  "scenario": "S3",
+  "ci_commit": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+  "parent_commit": "f3bcc37c3d2dc3199715f825a86b748c3b3805f9",
+  "failing_tests": [
+   "tests/test_functional.py::TestFunctional::test_fields[C2Slots]",
+   "tests/test_functional.py::TestFunctional::test_fields[C2]",
+   "tests/test_functional.py::TestFunctional::test_programmatic",
+   "tests/test_hooks.py::TestTransformHook::test_hook_conflicting_defaults_after_reorder",
+   "tests/test_make.py::TestTransformAttrs::test_conflicting_defaults",
+   "tests/test_make.py::TestTransformAttrs::test_these",
+   "tests/test_validators.py::TestDeepMapping::test_key_validator_can_be_none",
+   "tests/test_validators.py::TestDeepMapping::test_success",
+   "tests/test_validators.py::TestDeepMapping::test_value_validator_can_be_none"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._transform_attrs",
+   "attr.validators._DeepMapping.__call__"
+  ],
+  "modules": [
+   "_make",
+   "validators"
+  ],
+  "corpus_items": 202,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._transform_attrs#L466",
+     "path": "src/attr/_make.py",
+     "lines": [
+      466,
+      468
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -463,6 +463,15 @@ def _transform_attrs(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L471",
+     "path": "src/attr/_make.py",
+     "lines": [
+      471,
+      471
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -463,6 +463,15 @@ def _transform_attrs(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L478",
+     "path": "src/attr/_make.py",
+     "lines": [
+      478,
+      482
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "e048efcb395443608d184a149c0adbca166cb833",
+     "blame_commits": [
+      "22b8cb1c4cdb",
+      "94ee26943873",
+      "e048efcb3954"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L492",
+     "path": "src/attr/_make.py",
+     "lines": [
+      492,
+      493
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -480,13 +489,12 @@ def _transform_attrs(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L499",
+     "path": "src/attr/_make.py",
+     "lines": [
+      499,
+      500
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f57b6a6759827a0ec56729da27ec39e9e3b006f3",
+     "blame_commits": [
+      "f57b6a675982"
+     ],
+     "diff_hunk": "@@ -480,13 +489,12 @@ def _transform_attrs(",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2499",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2499,
+      2499
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "08fcfe91d4f44bc3273c00e5cc726bf961c950f2",
+     "blame_commits": [
+      "08fcfe91d4f4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2519",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2519,
+      2519
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "a7ba5122f692ab04c75654f712538418a384d876",
+     "blame_commits": [
+      "a7ba5122f692"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2522",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2522,
+      2523
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "bc0b437e58cf5a9c60143909c93cb0d727b15300",
+     "blame_commits": [
+      "bc0b437e58cf"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__init__#L2538",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2538,
+      2538
+     ],
+     "function": "_make.Attribute.__init__",
+     "origin": "pre_existing",
+     "commit_sha": "e18b5f340a793432312a5f7e709b99439520d98e",
+     "blame_commits": [
+      "e18b5f340a79"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.from_counting_attr#L2560",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2560,
+      2562
+     ],
+     "function": "_make.Attribute.from_counting_attr",
+     "origin": "pre_existing",
+     "commit_sha": "6e3786c599279f24e91b0d57ef448f7a85d7a69f",
+     "blame_commits": [
+      "566ada9848a0",
+      "6e3786c59927"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.evolve#L2607",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2607,
+      2607
+     ],
+     "function": "_make.Attribute.evolve",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -2585,6 +2603,20 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.evolve#L2612",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2612,
+      2612
+     ],
+     "function": "_make.Attribute.evolve",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -2585,6 +2603,20 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.evolve#L2615",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2615,
+      2615
+     ],
+     "function": "_make.Attribute.evolve",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -2585,6 +2603,20 @@ class Attribute:",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.Attribute.__setstate__#L2637",
+     "path": "src/attr/_make.py",
+     "lines": [
+      2637,
+      2638
+     ],
+     "function": "_make.Attribute.__setstate__",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": "@@ -2601,6 +2633,17 @@ class Attribute:",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:862696afb52f",
+     "source_type": "commit_message",
+     "text": "Resolve field aliases before calling field_transformer (#1509)\n\n* Resolve field aliases before calling field_transformer\n\nPreviously, field_transformer received attributes with alias=None for\nfields without an explicit alias. The default alias (e.g., stripping\nleading underscores) was only resolved "
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "_DeepMapping.__call__ line 395: 'is not' -> 'is'"
+  }
+ },
+ "att-21": {
+  "key": "att-s4-aliases-a",
+  "scenario": "S4",
+  "ci_commit": "eccd966d80aff5196efc959316961cfa780439f9",
+  "parent_commit": "e92fe52dfe1eb07167e6473724c5a8ada978add0",
+  "failing_tests": [
+   "tests/test_annotations.py::TestAnnotations::test_auto_attribs_unannotated[False]",
+   "tests/test_annotations.py::TestAnnotations::test_auto_attribs_unannotated[True]",
+   "tests/test_functional.py::TestFunctional::test_no_setattr_with_ng_defaults[False]",
+   "tests/test_functional.py::TestFunctional::test_no_setattr_with_ng_defaults[True]",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_attr_level_kw_only_and_class_level_kw_only",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_kw_only_inheritance",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_kw_only_inheritance_force_kw_only",
+   "tests/test_make.py::TestMatchArgs::test_explicit_match_args",
+   "tests/test_make.py::TestMatchArgs::test_match_args",
+   "tests/test_make.py::TestMatchArgs::test_match_args_argument",
+   "tests/test_make.py::TestMatchArgs::test_match_args_attr_set[False]",
+   "tests/test_make.py::TestMatchArgs::test_match_args_attr_set[True]",
+   "tests/test_make.py::TestMatchArgs::test_match_args_kw_only",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_detect",
+   "tests/test_next_gen.py::TestNextGen::test_override_auto_attribs_true",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_explicit_match_args",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_match_args_kw_only",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[dec2]",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[define]",
+   "tests/test_setattr.py::TestSetAttr::test_setattr_converter_piped"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._transform_attrs"
+  ],
+  "modules": [
+   "_make",
+   "validators"
+  ],
+  "corpus_items": 222,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "attr._make._transform_attrs",
+   "mutant": "_transform_attrs line 424: '+' -> '-'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._transform_attrs#L466",
+     "path": "src/attr/_make.py",
+     "lines": [
+      466,
+      468
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L471",
+     "path": "src/attr/_make.py",
+     "lines": [
+      471,
+      471
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L478",
+     "path": "src/attr/_make.py",
+     "lines": [
+      478,
+      482
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "e048efcb395443608d184a149c0adbca166cb833",
+     "blame_commits": [
+      "22b8cb1c4cdb",
+      "94ee26943873",
+      "e048efcb3954"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L492",
+     "path": "src/attr/_make.py",
+     "lines": [
+      492,
+      493
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L499",
+     "path": "src/attr/_make.py",
+     "lines": [
+      499,
+      500
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f57b6a6759827a0ec56729da27ec39e9e3b006f3",
+     "blame_commits": [
+      "f57b6a675982"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "att-22": {
+  "key": "att-s3-fields_instance",
+  "scenario": "S3",
+  "ci_commit": "48b8611c27779811d161200e17de8da24aae7feb",
+  "parent_commit": "3a68d4913221abc6f8ad3be50937f7ae49300a98",
+  "failing_tests": [
+   "tests/test_funcs.py::TestAsDict::test_non_atomic_types",
+   "tests/test_hooks.py::TestAsDictHook::test_asdict",
+   "tests/test_make.py::TestFields::test_instance"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._funcs._asdict_anything",
+   "attr._make.fields"
+  ],
+  "modules": [
+   "_funcs",
+   "_make"
+  ],
+  "corpus_items": 190,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_funcs._asdict_anything#L171",
+     "path": "src/attr/_funcs.py",
+     "lines": [
+      171,
+      171
+     ],
+     "function": "_funcs._asdict_anything",
+     "origin": "pre_existing",
+     "commit_sha": "908cb018f21beb4c139160c3d8a85db330e87cee",
+     "blame_commits": [
+      "908cb018f21b"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.fields#L1931",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1931,
+      1933
+     ],
+     "function": "_make.fields",
+     "origin": "pre_existing",
+     "commit_sha": "4fcd15bddbc96fd23d3218493c831a0e38b1cd86",
+     "blame_commits": [
+      "4fcd15bddbc9"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:48b8611c2777",
+     "source_type": "commit_message",
+     "text": "Add instance support to attrs.fields() (#1529)\n\n* Add instance support to attrs.fields()\n\nfixes #1400\n\n* fix pr#"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "_asdict_anything line 226: 'is not' -> 'is'"
+  }
+ },
+ "att-23": {
+  "key": "att-s4-aliases-b",
+  "scenario": "S4",
+  "ci_commit": "45de9beb093d2142517ab7d1ebda6522e3d3c4ac",
+  "parent_commit": "ae37edd71a691b8ca797a0a53d0248543abfe12b",
+  "failing_tests": [
+   "tests/test_annotations.py::TestAnnotations::test_auto_attribs_unannotated[False]",
+   "tests/test_annotations.py::TestAnnotations::test_auto_attribs_unannotated[True]",
+   "tests/test_functional.py::TestFunctional::test_no_setattr_with_ng_defaults[False]",
+   "tests/test_functional.py::TestFunctional::test_no_setattr_with_ng_defaults[True]",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_attr_level_kw_only_and_class_level_kw_only",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_kw_only_inheritance",
+   "tests/test_make.py::TestKeywordOnlyAttributes::test_kw_only_inheritance_force_kw_only",
+   "tests/test_make.py::TestMatchArgs::test_explicit_match_args",
+   "tests/test_make.py::TestMatchArgs::test_match_args",
+   "tests/test_make.py::TestMatchArgs::test_match_args_argument",
+   "tests/test_make.py::TestMatchArgs::test_match_args_attr_set[False]",
+   "tests/test_make.py::TestMatchArgs::test_match_args_attr_set[True]",
+   "tests/test_make.py::TestMatchArgs::test_match_args_kw_only",
+   "tests/test_next_gen.py::TestNextGen::test_auto_attribs_detect",
+   "tests/test_next_gen.py::TestNextGen::test_override_auto_attribs_true",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_explicit_match_args",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_match_args_kw_only",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[dec2]",
+   "tests/test_pattern_matching.py::TestPatternMatching::test_simple_match_case[define]",
+   "tests/test_setattr.py::TestSetAttr::test_setattr_converter_piped"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._make._transform_attrs"
+  ],
+  "modules": [
+   "_make",
+   "_next_gen"
+  ],
+  "corpus_items": 206,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "attr._make._transform_attrs",
+   "mutant": "_transform_attrs line 424: '+' -> '-'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_make._transform_attrs#L466",
+     "path": "src/attr/_make.py",
+     "lines": [
+      466,
+      468
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L471",
+     "path": "src/attr/_make.py",
+     "lines": [
+      471,
+      471
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L478",
+     "path": "src/attr/_make.py",
+     "lines": [
+      478,
+      482
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "e048efcb395443608d184a149c0adbca166cb833",
+     "blame_commits": [
+      "22b8cb1c4cdb",
+      "94ee26943873",
+      "e048efcb3954"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L492",
+     "path": "src/attr/_make.py",
+     "lines": [
+      492,
+      493
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+     "blame_commits": [
+      "862696afb52f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make._transform_attrs#L499",
+     "path": "src/attr/_make.py",
+     "lines": [
+      499,
+      500
+     ],
+     "function": "_make._transform_attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f57b6a6759827a0ec56729da27ec39e9e3b006f3",
+     "blame_commits": [
+      "f57b6a675982"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1443",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1443,
+      1443
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "f520d9a89f1fde6fdc5310ffe6c5d4c7467fb10b",
+     "blame_commits": [
+      "f520d9a89f1f"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_make.attrs#L1587",
+     "path": "src/attr/_make.py",
+     "lines": [
+      1587,
+      1588
+     ],
+     "function": "_make.attrs",
+     "origin": "pre_existing",
+     "commit_sha": "03c10ad0ef888f920bc6453f08093857d88534e7",
+     "blame_commits": [
+      "03c10ad0ef88",
+      "9cf3d338f4d2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define.wrap#L393",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      393,
+      393
+     ],
+     "function": "_next_gen.define.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "679e4b443d5558d5e64133ec9047e7a4e737426b",
+     "blame_commits": [
+      "679e4b443d55"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define.wrap#L397",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      397,
+      398
+     ],
+     "function": "_next_gen.define.wrap",
+     "origin": "pre_existing",
+     "commit_sha": "504eefe91fc49c761572b0a855479775fb6498a8",
+     "blame_commits": [
+      "504eefe91fc4"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_next_gen.define#L416",
+     "path": "src/attr/_next_gen.py",
+     "lines": [
+      416,
+      417
+     ],
+     "function": "_next_gen.define",
+     "origin": "pre_existing",
+     "commit_sha": "4cfd52db5141cb82b218ab9d881bbb631fa10b4e",
+     "blame_commits": [
+      "4cfd52db5141",
+      "9cf3d338f4d2"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "att-24": {
+  "key": "att-s2-d",
+  "scenario": "S2",
+  "ci_commit": "8f76a5262b3b426bfb6a1127f12d49430d168c8b",
+  "parent_commit": "0a08cee06960e415f735dec4cf2fb91d669e2433",
+  "failing_tests": [
+   "tests/test_funcs.py::TestAsTuple::test_non_atomic_types"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "attr._funcs.astuple"
+  ],
+  "modules": [
+   "_funcs"
+  ],
+  "corpus_items": 119,
+  "notes": {
+   "mutant": "astuple line 304: 'and' -> 'or'",
+   "mutant_in_changed_function": true,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/attr/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:_funcs.astuple#L274",
+     "path": "src/attr/_funcs.py",
+     "lines": [
+      274,
+      274
+     ],
+     "function": "_funcs.astuple",
+     "origin": "pre_existing",
+     "commit_sha": "1b419e304b01bbbcb1d0d7b0515efdbc7de73588",
+     "blame_commits": [
+      "1b419e304b01"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:_funcs.astuple#L314",
+     "path": "src/attr/_funcs.py",
+     "lines": [
+      314,
+      315
+     ],
+     "function": "_funcs.astuple",
+     "origin": "pre_existing",
+     "commit_sha": "0bf0678a224dc89f150eb55861700864bec85cf6",
+     "blame_commits": [
+      "0bf0678a224d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ }
+}

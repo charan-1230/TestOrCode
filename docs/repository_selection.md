@@ -171,3 +171,55 @@ Prototype shortcuts (shape-only): the S4 episode lists one changed file path wit
 3. **Screen 1-2 further candidates** with `scripts/screening/` (about one hour each) to supply a real backup and the other libraries; check Docker access (`docker info`) at the same time.
 4. Write the function-identity mapper and gold-evidence curation rule; fill `EpisodeInput`/`Episode` from the verification output.
 5. Run one real episode end to end in a no-network sandbox with the 3.12 environment.
+
+## 11. Held-out library screening (2026-11-11/12)
+
+The proposal needs 3 held-out libraries × 24 episodes, with S1 10 / S2 4 / S3 4 / S4 3 / S5 3 per library. S1, S3 and S5
+each need their own real commit, so a library needs **at least 17 distinct qualifying S1-type commits**. They must also be
+function-attributable, use one source layout, and fail in the test body. A library additionally needs green source-only
+commits for S2/S4, and S4 decoys whose probe passes at runtime.
+
+**How candidates were screened:**
+- Screening was done in the user's list order.
+- Statically: `scripts/screening/classify_commits.py`.
+- Dynamically: `verify_s1.py` (copy with `src/` support, outside the repo; Python 3.12 / pytest 8.4.2 unless noted),
+  followed by a failure-kind check.
+- **Failure rule** (team decision 2026-11-11, replacing the first, assertion-only rule): a junit `<failure>` in the test
+  body, excluding `AttributeError`, `ImportError`, `ModuleNotFoundError` and `NameError`.
+- The final selection is in `datasets/HELDOUT.md`.
+
+| # | Candidate | Outcome | Evidence |
+|---|---|---|---|
+| 1 | more-itertools (MIT) | **selected** | 21 qualifying S1 commits (393 both-commits; pre-2019 history has tests inside the package and is unusable) |
+| 2 | attrs (MIT) | **selected** | Python 3.10 (3.12 typing changes break 2016–2022 tests): 18 qualifying; 112dd1d4 dropped (needs `src/attrs/`), so 17 used with zero slack; 7 are pre-`src/` (`attr/`) commits handled by a per-episode layout override |
+| 3 | cachetools (MIT) | rejected | 8 S1-valid commits |
+| 4 | click (BSD-3) | rejected | 20 qualifying on Python 3.10, but only 15 distinct and function-attributable (c2ed4149/fbdd4340 are the same change; 4 only fail the import-set test `test_light_imports`) |
+| 5 | sortedcontainers (Apache-2.0) | rejected | 4 both-commits in the `src/` layout |
+| 6 | validators (MIT) | rejected | 0 S1-valid commits |
+| 7 | packaging (Apache-2.0/BSD-2) | **selected** | 20 qualifying S1 commits |
+| 8 | pyparsing (MIT) | rejected | 16 S1-valid even after ignoring `test_diagram.py`; suite 45–90 s, too slow for mutant search |
+| 9 | python-slugify (MIT) | rejected | 9 both-commits |
+| 10 | marshmallow (MIT) | rejected | 15 qualifying (Python 3.12 + 3.11 for distutils-era commits) |
+| 11 | python-dateutil | rejected | `_version.py` is VCS-generated: not importable from a plain checkout (worktree materialisation) |
+| 12 | tomlkit (MIT) | rejected | 2 S1-valid commits |
+| 13 | toolz (BSD-3) | rejected | 0 verified S1 bases (section 1) |
+| 14 | humanize (MIT) | rejected | VCS-generated `_version.py` (as dateutil) |
+
+The selection above follows the list order. Before attrs was rescreened on Python 3.10 and admitted with the layout
+override, alternatives were also screened, and none qualified:
+- tabulate: 7 S1-valid.
+- sqlparse: 8.
+- pydash: 4.
+- Python-Markdown: does not collect under pytest.
+- prettytable: VCS version file.
+- natsort: locale-dependent tests.
+- deepdiff: compiled dependency (cachebox).
+- arrow: tz-database-dependent tests.
+- rich: output depends on the `NO_COLOR` the runtime sets and on the pygments version.
+- yapf: needs `third_party/` on the path.
+- sqlglot: nested packages, VCS version, slow.
+- Jinja2: 95 both-commits.
+- inflect: 33 both-commits.
+
+**Environment finding:** test venvs must be created from a system interpreter (`/usr/bin/python3.x`). The bubblewrap
+sandbox does not mount uv-managed interpreters, so a probe run with one fails with `libpython… cannot open shared object`.

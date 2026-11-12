@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import dataclasses
 import difflib
 import hashlib
 import io
@@ -80,7 +81,95 @@ SCENARIO = {
 BUDGET = EpisodeBudget(
     max_tool_calls=40, max_llm_calls=25, max_tokens=120000, max_revisions=1, wall_clock_seconds=900
 )  # placeholder budgets: tune on the dev split
-POLICY = EditPolicy(allowed_source_roots=("boltons/",), allowed_test_roots=("tests/",))
+
+
+@dataclass(frozen=True)
+class Library:
+    """Everything library-specific.  The defaults are the boltons pilot and reproduce its files byte for byte.
+
+    ``scripts/heldout/build_heldout.py`` swaps in another library by assigning the module-level ``LIB``.
+    """
+
+    package: str = "boltons"  # qualname prefix (import name)
+    source_root: str = "boltons/"  # production modules live directly under this path
+    test_root: str = "tests/"
+    pythonpath: str = ""  # worktree subdirectory put on PYTHONPATH ("src" for a src layout)
+    pytest_args: tuple[
+        str, ...
+    ] = ()  # extra arguments for every pytest run (e.g. --ignore of tool-only test files)
+    repo_id: str = "repo-a"
+    repo_url: str = "https://github.com/mahmoud/boltons"
+    license: str = "BSD-3-Clause"
+    readme: str = "README.md"
+    doc_template: str = "docs/{m}.rst"  # per affected module; "" disables
+    doc_files: tuple[str, ...] = ()  # always indexed (after the README)
+    changelog: str = "CHANGELOG.md"
+    changelog_split: str = (
+        r"(?m)^(?=## )"  # section boundary regex; the first piece (preamble) is skipped
+    )
+    corpus_version: str = "pilot-2"
+    stream_prefix: str = "pilot"  # stream_id = f"{stream_prefix}-{split}"
+    id_prefix: dict | None = None  # split -> episode id prefix (default: the split name)
+    file_prefix: str = "pilot"  # output files: f"{file_prefix}_{split}[_agent_view].jsonl", f"{file_prefix}_manifest.json", ...
+    split_in_filename: bool = (
+        True  # False: one stream per file, f"{file_prefix}[_agent_view].jsonl"
+    )
+    requirements: str = "requirements-pilot.txt"  # relative to this directory, or absolute
+    # Held-out rules (proposal scope "failures in unit tests"; S5 "docs changes removed"):
+    test_body_failures_only: bool = False
+    strip_changed_docs: bool = (
+        False  # S5: drop every indexed doc/changelog/README file the CI commit changed
+    )
+    # PYTHONHASHSEED for every pytest run (set ordering in failure messages is per process)
+    hash_seed: str | None = None
+    # also pin truncated addresses and decimal id()s in failure text (see stable_text)
+    normalize_ids: bool = False
+    memory_limit_mb: int | None = (
+        None  # RLIMIT_DATA for every pytest run (a mutant can allocate without bound)
+    )
+    class_probes: bool = False  # S4 probe for a unittest method: its class reduced to that one test
+
+    @property
+    def tests_dir(self) -> str:
+        return self.test_root.rstrip("/")
+
+    def stem(self, split: str) -> str:
+        return f"{self.file_prefix}_{split}" if self.split_in_filename else self.file_prefix
+
+
+LIB = Library()
+_BASE_LIB = LIB
+
+
+def use_layout(spec: dict | None) -> None:
+    """Per-episode source layout override (a library that moved, e.g. ``attr/`` -> ``src/attr/``); None restores the base.
+
+    Only ``source_root`` and ``pythonpath`` can be overridden; the pilot never does, so its build is unaffected.
+    """
+    global LIB
+    over = {k: spec[k] for k in ("source_root", "pythonpath") if spec and k in spec}
+    LIB = dataclasses.replace(_BASE_LIB, **over) if over else _BASE_LIB
+
+
+def _memory_limit() -> None:
+    import resource
+
+    limit = LIB.memory_limit_mb * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_DATA, (limit, limit))
+
+
+def policy() -> EditPolicy:
+    return EditPolicy(allowed_source_roots=(LIB.source_root,), allowed_test_roots=(LIB.test_root,))
+
+
+def is_source(path: str) -> bool:
+    return path.startswith(LIB.source_root) and path.endswith(".py")
+
+
+# Held-out failure rule (team decision 2026-11-11): a qualifying failure is a junit <failure> raised in the test body by
+# the behaviour change (assertion, or an exception the changed code raises); collection/setup <error>s and missing-API
+# breakage (the names below) are build-type failures and are excluded.
+EXCLUDED_FAILURE_PREFIXES = ("AttributeError", "ImportError", "ModuleNotFoundError", "NameError")
 SWAPS = [
     (" >= ", " > "),
     (" <= ", " < "),
@@ -113,8 +202,19 @@ class Ctx:
         env = {
             k: v for k, v in os.environ.items() if k not in ("FORCE_COLOR", "PY_COLORS", "GIT_DIR")
         }
-        env.update(PYTHONPATH=str(self.work), PYTHONDONTWRITEBYTECODE="1", NO_COLOR="1")
+        env.update(
+            PYTHONPATH=str(self.work / LIB.pythonpath) if LIB.pythonpath else str(self.work),
+            PYTHONDONTWRITEBYTECODE="1",
+            NO_COLOR="1",
+        )
         self.env = env
+        if LIB.hash_seed is not None:
+            self.env["PYTHONHASHSEED"] = LIB.hash_seed
+        if LIB.normalize_ids:
+            _WORK_DIRS.append(str(self.work))
+        self.kinds: dict[
+            str, tuple[str, str]
+        ] = {}  # nodeid -> (junit tag, full message) of the latest failure
 
     def git(self, *args: str, cwd: Path | None = None) -> str:
         done = subprocess.run(
@@ -160,23 +260,36 @@ class Ctx:
                 "no:cacheprovider",
                 "--import-mode=importlib",
                 f"--junitxml={handle.name}",
+                *LIB.pytest_args,
                 *targets,
             ]
             try:
                 done = subprocess.run(
                     cmd,
                     cwd=self.work,
-                    env=self.env,
+                    env={
+                        **self.env,
+                        "PYTHONPATH": str(self.work / LIB.pythonpath)
+                        if LIB.pythonpath
+                        else str(self.work),
+                    },
                     capture_output=True,
                     text=True,
                     timeout=timeout,
                     check=False,
+                    preexec_fn=_memory_limit if LIB.memory_limit_mb else None,
                 )
             except subprocess.TimeoutExpired:
                 return "timeout", {}, set()
             fails: dict[str, tuple[str, str]] = {}
             passed: set[str] = set()
-            for case in ET.parse(handle.name).getroot().iter("testcase"):
+            try:
+                cases = list(ET.parse(handle.name).getroot().iter("testcase"))
+            except (
+                ET.ParseError
+            ):  # pytest died before writing its report (e.g. a mutant exhausting memory)
+                return "crashed", {}, set()
+            for case in cases:
                 parts = case.get("classname", "").split(".")
                 idx = next(
                     (
@@ -197,7 +310,13 @@ class Ctx:
                     case.find("failure") if case.find("failure") is not None else case.find("error")
                 )
                 if bad is not None:
-                    fails[nodeid] = ((bad.get("message") or "")[:300], (bad.text or "")[:1500])
+                    message, trace = bad.get("message") or "", bad.text or ""
+                    if (
+                        LIB.normalize_ids
+                    ):  # normalise before truncating, or a cut can land inside a path or id
+                        message, trace = stable_text(message) or "", stable_text(trace) or ""
+                    fails[nodeid] = (message[:300], trace[:1500])
+                    self.kinds[nodeid] = (bad.tag, bad.get("message") or "")
                 elif case.find("skipped") is None:
                     passed.add(nodeid)
             return done.returncode, fails, passed
@@ -206,7 +325,7 @@ class Ctx:
         """Full suite STABILITY_RUNS times; the failing set must be identical every time."""
         sets, last = [], ({}, set())
         for _ in range(STABILITY_RUNS):
-            rc, fails, passed = self.pytest(["tests"])
+            rc, fails, passed = self.pytest([LIB.tests_dir])
             if rc not in (0, 1):
                 msg = f"pytest exited {rc}"
                 raise BuildError(msg)
@@ -215,7 +334,22 @@ class Ctx:
         if len(set(sets)) != 1:
             msg = "failing set differs between repeated runs"
             raise BuildError(msg)
+        bad = self.non_test_body(last[0])
+        if bad:
+            msg = f"not test-body failures (held-out failure rule): {bad[:3]}"
+            raise BuildError(msg)
         return last
+
+    def non_test_body(self, fails) -> list[str]:
+        """Failing node ids outside the held-out failure rule (only enforced when LIB.test_body_failures_only)."""
+        if not LIB.test_body_failures_only:
+            return []
+        out = []
+        for nodeid in sorted(fails):
+            tag, message = self.kinds.get(nodeid, ("error", ""))
+            if tag != "failure" or message.startswith(EXCLUDED_FAILURE_PREFIXES):
+                out.append(f"{nodeid}: {tag} {message[:80]!r}")
+        return out
 
 
 def iter_funcs(tree: ast.AST, prefix: tuple[str, ...] = ()):
@@ -245,9 +379,10 @@ def module_of(path: str) -> str:
 def test_targets(ctx: Ctx, path: str) -> list[str]:
     mod = module_of(path)
     found = sorted(
-        p.relative_to(ctx.work).as_posix() for p in (ctx.work / "tests").glob(f"test_{mod}*.py")
+        p.relative_to(ctx.work).as_posix()
+        for p in (ctx.work / LIB.tests_dir).glob(f"test_{mod.lstrip('_')}*.py")
     )
-    return found or ["tests"]
+    return found or [LIB.tests_dir]
 
 
 @dataclass
@@ -301,7 +436,7 @@ def find_mutant(
                 finally:
                     full.write_text(source)
                 extra = set(fails) - set(base_fails)
-                if rc == 1 and extra and accept(extra):
+                if rc == 1 and extra and accept(extra) and not ctx.non_test_body(extra):
                     diff = "".join(
                         difflib.unified_diff(lines, mutated, f"a/{path}", f"b/{path}", n=3)
                     )
@@ -333,6 +468,14 @@ def chunks(text: str, limit: int = CHUNK) -> list[str]:
     return [c[: limit * 2] for c in out]
 
 
+def corpus_doc_paths(modules: set[str]) -> list[str]:
+    """README, fixed doc files, then the per-module doc pages (pilot: README.md + docs/<module>.rst)."""
+    paths = [LIB.readme, *LIB.doc_files]
+    if LIB.doc_template:
+        paths += [LIB.doc_template.format(m=m) for m in sorted(modules)]
+    return list(dict.fromkeys(paths))
+
+
 def build_corpus(
     ctx: Ctx,
     cutoff: str,
@@ -359,7 +502,7 @@ def build_corpus(
                 text=text[:CHUNK],
             )
         )
-    for path in ["README.md", *[f"docs/{m}.rst" for m in sorted(modules)]]:
+    for path in corpus_doc_paths(modules):
         if path in drop_docs:
             continue
         body = ctx.show(cutoff, path)
@@ -373,20 +516,20 @@ def build_corpus(
                     text=piece,
                 )
             )
-    changelog = ctx.show(cutoff, "CHANGELOG.md") or ""
-    sections = re.split(r"(?m)^(?=## )", changelog)[1:4]
+    changelog = "" if LIB.changelog in drop_docs else (ctx.show(cutoff, LIB.changelog) or "")
+    sections = re.split(LIB.changelog_split, changelog)[1:4]
     for n, sec in enumerate(sections, 1):
         items.append(
             EvidenceItem(
                 evidence_id=f"changelog:{n}",
                 source_type=EvidenceSourceType.CHANGELOG,
-                source_ref="CHANGELOG.md",
+                source_ref=LIB.changelog,
                 commit_sha=cutoff,
                 text=sec.strip()[: CHUNK * 3],
             )
         )
     for mod in sorted(modules):
-        rel = f"boltons/{mod}.py"
+        rel = f"{LIB.source_root}{mod}.py"
         path = ctx.work / rel
         if not path.exists():
             continue
@@ -423,13 +566,16 @@ def build_corpus(
 # Source-comment evidence (corpus policy "pilot-2")
 # --------------------------------------------------------------------------- #
 
-CORPUS_VERSION = "pilot-2"
-COMMENT_RULE = (
-    "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI "
-    "state (the CI diff, including injected mutants) in boltons/*.py. Consecutive comment-only lines form one item; "
-    "an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments "
-    "outside functions, and every comment or docstring in test files. No relevance filter and no rewriting."
-)
+
+def comment_rule() -> str:
+    return (
+        "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI "
+        f"state (the CI diff, including injected mutants) in {LIB.source_root}*.py. Consecutive comment-only lines form one item; "
+        "an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments "
+        "outside functions, and every comment or docstring in test files. No relevance filter and no rewriting."
+    )
+
+
 _PRAGMA = re.compile(
     r"#\s*(?:noqa|type:|pragma|fmt:|pylint:|flake8:|isort:|-\*-)|#!|coding[:=]", re.IGNORECASE
 )
@@ -544,7 +690,7 @@ def add_source_comments(ctx: Ctx, draft: Draft) -> None:
     total = draft.cutoff_index + 1
     records = []
     for path in sorted(draft.diffs):
-        if not (path.startswith("boltons/") and path.endswith(".py")):
+        if not is_source(path):
             continue
         new_src = (ctx.work / path).read_text()
         added = _added_lines(ctx.git("diff", "-U0", draft.parent, "--", path))
@@ -587,7 +733,7 @@ def add_source_comments(ctx: Ctx, draft: Draft) -> None:
                     "text_verified": True,
                 }
             )
-    draft.notes["source_comment_rule"] = COMMENT_RULE
+    draft.notes["source_comment_rule"] = comment_rule()
     draft.notes["source_comments"] = records
 
 
@@ -595,7 +741,7 @@ def apply_gold(draft: Draft, spec: dict) -> None:
     """Set gold evidence on the UPDATE_TEST labels from manifest selectors; every selector must resolve to exactly one item."""
     selectors = spec.get("gold_evidence") or [{"type": "message"}]
     by_id = {i.evidence_id: i for i in draft.corpus}
-    function = (draft.source_function or "").removeprefix("boltons.")
+    function = (draft.source_function or "").removeprefix(f"{LIB.package}.")
     ids: list[str] = []
     for sel in selectors:
         if sel["type"] == "message":
@@ -617,6 +763,16 @@ def apply_gold(draft: Draft, spec: dict) -> None:
             if not eid.startswith(f"comment:{function}#"):
                 msg = f"{draft.key}: gold comment {eid} is not inside the labelled function {function}"
                 raise BuildError(msg)
+        elif sel["type"] in ("changelog", "doc", "docstring"):
+            hits = [
+                i
+                for i in draft.corpus
+                if i.evidence_id.startswith(f"{sel['type']}:") and sel["contains"] in (i.text or "")
+            ]
+            if len(hits) != 1:
+                msg = f"{draft.key}: {sel['type']} selector {sel} resolved to {len(hits)} items, expected exactly 1"
+                raise BuildError(msg)
+            eid = hits[0].evidence_id
         else:
             msg = f"{draft.key}: unknown gold selector {sel}"
             raise BuildError(msg)
@@ -673,8 +829,8 @@ class Draft:
 def split_diff_paths(ctx: Ctx, parent: str) -> dict[str, tuple[str, str]]:
     """Per-path diff of the CURRENT worktree against ``parent`` (the exact CI-state change)."""
     out: dict[str, tuple[str, str]] = {}
-    ctx.git("add", "-N", "--", "boltons")
-    names = ctx.git("diff", "--name-status", parent, "--", "boltons").splitlines()
+    ctx.git("add", "-N", "--", LIB.source_root.rstrip("/"))
+    names = ctx.git("diff", "--name-status", parent, "--", LIB.source_root.rstrip("/")).splitlines()
     for row in names:
         status, path = row.split("\t")[0][0], row.split("\t")[-1]
         diff = ctx.git("diff", parent, "--", path)
@@ -685,11 +841,31 @@ def split_diff_paths(ctx: Ctx, parent: str) -> dict[str, tuple[str, str]]:
 
 ADDRESS = re.compile(r"0x[0-9a-fA-F]{8,}")
 TMP_DIR = re.compile(r"/tmp/pytest-of-[^/\s'\"]+/pytest-\d+/")
+ATTRS_GENERATED = re.compile(
+    r"(<attrs generated [\w ]+?) [0-9a-f]{40}>"
+)  # attrs names generated code with a random hash
+
+
+# Further per-process identities (held-out only, ``LIB.normalize_ids``): pytest-truncated addresses ("...x71a4d340>"),
+# reprs that embed id() in decimal ("<Tag @ 1249501307>") and mock ids ("id='1353144145'").
+TRUNCATED_ADDRESS = re.compile(r"\.\.\.x[0-9a-f]{4,}>")
+TRUNCATED_DECIMAL_ID = re.compile(r"\.\.\.\d{4,}>")
+_WORK_DIRS: list[
+    str
+] = []  # build worktrees (held-out): absolute paths in failure text become "<worktree>"
+DECIMAL_ID = re.compile(r"( @ |id=')\d{9,}")
 
 
 def stable_text(text: str) -> str | None:
     """Memory addresses and pytest tmp dirs (run counter, OS user) change per run; pin them for reproducibility."""
     text = TMP_DIR.sub("/tmp/pytest-of-user/pytest-0/", text)
+    text = ATTRS_GENERATED.sub(r"\1 " + "0" * 40 + ">", text)
+    if LIB.normalize_ids:
+        for work in sorted(_WORK_DIRS, key=len, reverse=True):
+            text = text.replace(work, "<worktree>")
+        text = TRUNCATED_ADDRESS.sub("...x7f0000000000>", text)
+        text = TRUNCATED_DECIMAL_ID.sub("...140000000000000>", text)
+        text = DECIMAL_ID.sub(r"\g<1>140000000000000", text)
     return ADDRESS.sub("0x7f0000000000", text) or None
 
 
@@ -707,7 +883,7 @@ def failing_models(fails: dict[str, tuple[str, str]]) -> list[FailingTest]:
 
 
 def qualified(module: str, qual: str) -> str:
-    return f"boltons.{module}.{qual}"
+    return f"{LIB.package}.{module}.{qual}"
 
 
 def common(
@@ -758,15 +934,18 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
     commit = ctx.full(spec["commit"])
     parent = ctx.full(commit + "^")
     names = [r.split("\t") for r in ctx.rg("diff", "--name-status", parent, commit).splitlines()]
-    src = [p[-1] for p in names if p[-1].startswith("boltons/") and p[-1].endswith(".py")]
-    tst = [p[-1] for p in names if p[-1].startswith("tests/") and p[-1].endswith(".py")]
+    src = [p[-1] for p in names if is_source(p[-1])]
+    tst = [p[-1] for p in names if p[-1].startswith(LIB.test_root) and p[-1].endswith(".py")]
     docs = {p[-1] for p in names if p[-1].startswith("docs/")}
+    if LIB.strip_changed_docs:
+        # held-out S5: every indexed documentation source the commit touched (README, changelog, doc pages)
+        docs |= {p[-1] for p in names} & {LIB.changelog, *corpus_doc_paths(set())}
     if not src or not tst:
         msg = f"{spec['key']}: commit must change source and tests"
         raise BuildError(msg)
     modules = {module_of(p) for p in src}
     ctx.checkout(parent)
-    rc, _base_fails, parent_pass = ctx.pytest(["tests"])
+    rc, _base_fails, parent_pass = ctx.pytest([LIB.tests_dir])
     if rc != 0:
         msg = f"{spec['key']}: parent is not green"
         raise BuildError(msg)
@@ -791,11 +970,22 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
         stripped.append(
             StrippedEvidence(source_type=EvidenceSourceType.COMMIT_MESSAGE, source_ref=commit[:12])
         )
-        stripped += [
-            StrippedEvidence(source_type=EvidenceSourceType.DOCUMENTATION, source_ref=d)
-            for d in sorted(docs)
-            if d.endswith(".rst")
-        ]
+        if LIB.strip_changed_docs:
+            stripped += [
+                StrippedEvidence(
+                    source_type=EvidenceSourceType.CHANGELOG
+                    if d == LIB.changelog
+                    else EvidenceSourceType.DOCUMENTATION,
+                    source_ref=d,
+                )
+                for d in sorted(docs)
+            ]
+        else:
+            stripped += [
+                StrippedEvidence(source_type=EvidenceSourceType.DOCUMENTATION, source_ref=d)
+                for d in sorted(docs)
+                if d.endswith(".rst")
+            ]
     base = common(
         ctx,
         spec,
@@ -842,7 +1032,7 @@ def build_outdated(ctx: Ctx, spec: dict, pool: set[str]) -> tuple[Draft, dict]:
         draft.availability = Availability.AVAILABLE
     # label check: the developer's tests repair exactly this failure set
     ctx.git("checkout", "-q", commit, "--", *tst)
-    rc, left, _ = ctx.pytest(["tests"])
+    rc, left, _ = ctx.pytest([LIB.tests_dir])
     if rc != 0 or left:
         msg = f"{spec['key']}: developer test diff does not make the suite green"
         raise BuildError(msg)
@@ -919,8 +1109,10 @@ def build_s3(ctx: Ctx, spec: dict, pool: set[str]) -> Draft:
         spec,
         pool,
         spec["mutant"]["paths"],
-        None,
-        {info["function"].split(".", 2)[-1]},
+        {p: set(spec["mutant"]["functions"]) for p in spec["mutant"]["paths"]}
+        if spec["mutant"].get("functions")
+        else None,
+        {info["function"].split(".", 2)[-1], *spec["mutant"].get("exclude", ())},
         lambda extra: 1 <= len(extra - outdated) <= limit,
     )
     apply_mutant_text(ctx, mutant)
@@ -932,7 +1124,7 @@ def build_s3(ctx: Ctx, spec: dict, pool: set[str]) -> Draft:
     mutant.new_failures = sorted(new)
     # both halves of the label are verified: developer tests fix only the outdated half
     ctx.git("checkout", "-q", draft.ci_commit, "--", *info["tests"])
-    _, after, _ = ctx.pytest(["tests"])
+    _, after, _ = ctx.pytest([LIB.tests_dir])
     if set(after) != new:
         msg = f"{spec['key']}: developer tests should leave exactly the mutant failures"
         raise BuildError(msg)
@@ -953,6 +1145,36 @@ def probe_for(ctx: Ctx, commit: str, test_id: str) -> tuple[str, str]:
     path, _, name = test_id.partition("::")
     func = name.split("::")[-1]
     src = ctx.show(commit, path) or ""
+    if LIB.class_probes and "::" in name:
+        func = func.split("[", 1)[
+            0
+        ]  # parametrized test id: the method name is before the parameter list
+        # unittest-style method: the probe is its class with only this test (setUp/helpers kept), named Test*
+        cls_name = name.split("::")[0]
+        tree = ast.parse(src)
+        cls = next(
+            (n for n in tree.body if isinstance(n, ast.ClassDef) and n.name == cls_name), None
+        )
+        if cls is not None:
+            keep = [
+                m
+                for m in cls.body
+                if not (
+                    isinstance(m, ast.FunctionDef | ast.AsyncFunctionDef)
+                    and m.name.startswith("test")
+                    and m.name != func
+                )
+            ]
+            if any(isinstance(m, ast.FunctionDef) and m.name == func for m in keep):
+                probe_cls = ast.ClassDef(
+                    name=cls_name if cls_name.startswith("Test") else f"Test{cls_name}",
+                    bases=cls.bases,
+                    keywords=cls.keywords,
+                    body=keep,
+                    decorator_list=[],
+                    type_params=[],
+                )
+                return ast.unparse(ast.fix_missing_locations(probe_cls)), f"{path}::{name}"
     for qual, node in iter_funcs(ast.parse(src)):
         if qual.split(".")[-1] == func:
             code = ast.get_source_segment(src, node)
@@ -966,18 +1188,18 @@ def build_s4(ctx: Ctx, spec: dict, pool: set[str], source: Draft) -> Draft:
     commit = ctx.full(spec["commit"])
     parent = ctx.full(commit + "^")
     if any(
-        r.split("\t")[-1].startswith("tests/")
+        r.split("\t")[-1].startswith(LIB.test_root)
         for r in ctx.rg("diff", "--name-status", parent, commit).splitlines()
     ):
         msg = f"{spec['key']}: S4 base commit must not change tests"
         raise BuildError(msg)
     ctx.checkout(commit)
-    rc, _, passed = ctx.pytest(["tests"])
+    rc, _, passed = ctx.pytest([LIB.tests_dir])
     if rc != 0:
         msg = f"{spec['key']}: S4 base commit is not green"
         raise BuildError(msg)
     src_fn = source.source_function or ""
-    module, _, qual = src_fn.removeprefix("boltons.").partition(".")
+    module, _, qual = src_fn.removeprefix(f"{LIB.package}.").partition(".")
     source_tests = source.outdated_ids
     # the earliest outdated test becomes the decoy probe; it must still pass on the mutated state
     probe_code, probe_id = probe_for(ctx, source.ci_commit, source_tests[0])
@@ -985,7 +1207,7 @@ def build_s4(ctx: Ctx, spec: dict, pool: set[str], source: Draft) -> Draft:
         msg = f"{spec['key']}: probe {probe_id} does not pass on the clean base"
         raise BuildError(msg)
     limit = spec["mutant"]["max_failing"]
-    path = f"boltons/{module}.py"
+    path = f"{LIB.source_root}{module}.py"
     mutant = find_mutant(
         ctx,
         path,
@@ -1008,7 +1230,7 @@ def build_s4(ctx: Ctx, spec: dict, pool: set[str], source: Draft) -> Draft:
     base["modules"] = modules
     record = MemoryRecord(
         record_id=f"mem-{source.key}",
-        repo_id="repo-a",
+        repo_id=LIB.repo_id,
         function_qualname=src_fn,
         behaviour_signature=f"{source.source_subject} (approved earlier)",
         direction=RepairDirection.UPDATE_TEST,
@@ -1042,7 +1264,7 @@ def build_s4(ctx: Ctx, spec: dict, pool: set[str], source: Draft) -> Draft:
 
 def apply_back(ctx: Ctx, commit: str) -> None:
     ctx.checkout(commit)
-    _, left, _ = ctx.pytest(["tests"])
+    _, left, _ = ctx.pytest([LIB.tests_dir])
     if left:
         msg = "reverting the mutant did not restore a green suite"
         raise BuildError(msg)
@@ -1065,16 +1287,12 @@ def _build_s2(ctx: Ctx, spec: dict, pool: set[str], cand: str) -> Draft:
     names = [
         r.split("\t")[-1] for r in ctx.rg("diff", "--name-status", parent, commit).splitlines()
     ]
-    src = [
-        p
-        for p in names
-        if p.startswith("boltons/") and p.endswith(".py") and not p.endswith("__init__.py")
-    ]
-    if not src or any(p.startswith("tests/") for p in names):
+    src = [p for p in names if is_source(p) and not p.endswith("__init__.py")]
+    if not src or any(p.startswith(LIB.test_root) for p in names):
         msg = "not a source-only commit"
         raise BuildError(msg)
     ctx.checkout(commit)
-    rc, _, passed = ctx.pytest(["tests"])
+    rc, _, passed = ctx.pytest([LIB.tests_dir])
     if rc != 0:
         msg = "base commit not green"
         raise BuildError(msg)
@@ -1094,7 +1312,14 @@ def _build_s2(ctx: Ctx, spec: dict, pool: set[str], cand: str) -> Draft:
         cutoff_index=0,
     )
     mutant = add_mutant(
-        ctx, scratch, spec, pool, src, preferred, set(), lambda extra: 1 <= len(extra) <= limit
+        ctx,
+        scratch,
+        spec,
+        pool,
+        src,
+        preferred,
+        set(spec["mutant"].get("exclude", ())),
+        lambda extra: 1 <= len(extra) <= limit,
     )
     apply_mutant_text(ctx, mutant)
     fails, _ = ctx.stable_failures()
@@ -1180,22 +1405,22 @@ def finalize(ctx: Ctx, draft: Draft, ep_id: str, position: int, env: Environment
     agent_input = EpisodeInput(
         episode_id=ep_id,
         repo=RepoRef(
-            repo_id="repo-a",
-            repo_url="https://github.com/mahmoud/boltons",
-            package_name="boltons",
-            license="BSD-3-Clause",
+            repo_id=LIB.repo_id,
+            repo_url=LIB.repo_url,
+            package_name=LIB.package,
+            license=LIB.license,
         ),
         environment=env,
         ci_event=ci,
         corpus=RetrievalCorpusSpec(
             corpus_id=f"corpus-{ep_id}",
-            corpus_version=CORPUS_VERSION,
+            corpus_version=LIB.corpus_version,
             history_cutoff_commit=draft.ci_commit,
             history_cutoff_index=draft.cutoff_index,
             items=draft.corpus,
         ),
         visible_memory=visible_memory if visible_memory is not None else [],
-        edit_policy=POLICY,
+        edit_policy=policy(),
         budget=BUDGET,
     )
     scenario = SCENARIO[draft.scenario]
@@ -1222,7 +1447,7 @@ def finalize(ctx: Ctx, draft: Draft, ep_id: str, position: int, env: Environment
         episode_id=ep_id,
         scenario=scenario,
         difficulty=difficulty(draft),
-        stream_id=f"pilot-{draft.split}",
+        stream_id=f"{LIB.stream_prefix}-{draft.split}",
         stream_position=position,
         agent_input=agent_input,
         ground_truth=truth,
@@ -1253,13 +1478,27 @@ def leak_audit(ep: Episode) -> dict:
             for ln in ref.unified_diff.splitlines()
             if ln[:1] in ("-", " ") and not ln.startswith("---")
         }
-        hits = [a for a in added if len(a) >= 25 and a in text and a not in known]
+        # Real CI content (commit message, source diff, pytest's failure output of the CI state) is visible by design: a
+        # repair line found only there (e.g. the new output in an assertion diff) was not leaked by this pipeline.
+        # The leak check therefore covers everything else the builder constructs (corpus, memory, ...).
+        ci_message_id = f"msg:{ep.agent_input.ci_event.commit.sha[:12]}"  # the same message, indexed for retrieval
+        constructed = {k: v for k, v in payload.items() if k != "ci_event"}
+        constructed["corpus"] = {
+            **payload["corpus"],
+            "items": [i for i in payload["corpus"]["items"] if i["evidence_id"] != ci_message_id],
+        }
+        outside_ci = json.dumps(constructed, ensure_ascii=False)
+        hits = [a for a in added if len(a) >= 25 and a in outside_ci and a not in known]
         if hits:
             problems.append(f"reference repair line in agent view: {hits[0][:60]!r}")
     return {"problems": problems, "clean": not problems}
 
 
 PILOT_REQUIREMENTS = HERE / "requirements-pilot.txt"
+
+
+def requirements_path() -> Path:
+    return HERE / LIB.requirements
 
 
 def _pins(lines: list[str]) -> tuple[dict[str, str], list[str]]:
@@ -1306,7 +1545,7 @@ def check_pilot_environment(freeze: str, pins_text: str) -> None:
         raise BuildError(msg)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
@@ -1327,7 +1566,7 @@ def main() -> int:
         "checkout -f / clean -fdx). Never overrides the refusal for the main clone, a standalone repository, another "
         "repository's worktree, or a path containing/inside the clone or this project.",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     manifest = json.loads(Path(args.manifest).read_text())
     try:
@@ -1355,7 +1594,7 @@ def main() -> int:
     if pytest_version != manifest["pin"]["pytest"]:
         msg = f"pytest {pytest_version} != pinned {manifest['pin']['pytest']}"
         raise BuildError(msg)
-    check_pilot_environment(freeze, PILOT_REQUIREMENTS.read_text())
+    check_pilot_environment(freeze, requirements_path().read_text())
     env = EnvironmentSpec(
         python_version=manifest["pin"]["python"],
         docker_image=None,
@@ -1371,7 +1610,11 @@ def main() -> int:
 
     drafts: dict[str, Draft] = {}
     order = {"S1": 0, "S5": 0, "S3": 0, "S2": 1, "S4": 2}
+    global _BASE_LIB
+    _BASE_LIB = LIB
+    spec_by_key = {s["key"]: s for s in manifest["episodes"]}
     for spec in sorted(manifest["episodes"], key=lambda s: order[s["scenario"]]):
+        use_layout(spec)
         pool = pools[spec["split"]]
         sys.stdout.write(f"building {spec['key']} ({spec['scenario']}) ...\n")
         sys.stdout.flush()
@@ -1388,6 +1631,7 @@ def main() -> int:
         if not draft.modules <= pool:
             msg = f"{spec['key']}: modules {sorted(draft.modules - pool)} outside the {spec['split']} pool"
             raise BuildError(msg)
+        use_layout(None)
         drafts[spec["key"]] = draft
 
     topo = {
@@ -1404,13 +1648,14 @@ def main() -> int:
             (d for d in drafts.values() if d.split == split), key=lambda d: topo[d.ci_commit]
         )
         for pos, draft in enumerate(mine):
-            ids[draft.key] = f"{split}-{pos + 1:02d}"
+            ids[draft.key] = f"{(LIB.id_prefix or {}).get(split, split)}-{pos + 1:02d}"
     for split in ("dev", "test"):
         mine = sorted(
             (d for d in drafts.values() if d.split == split), key=lambda d: topo[d.ci_commit]
         )
         for pos, draft in enumerate(mine):
             ep_id = ids[draft.key]
+            use_layout(spec_by_key[draft.key])
             if draft.scenario == "S4":
                 src_draft = drafts[
                     next(s["memory_from"] for s in manifest["episodes"] if s["key"] == draft.key)
@@ -1423,7 +1668,7 @@ def main() -> int:
             # round trip: rebuild the CI state from the agent view alone and re-run the tests
             payload = ep.agent_payload()
             materialize(rt_ctx.repo, rt_ctx.work, payload)
-            _rc, fails, _ = rt_ctx.pytest(["tests"])
+            _rc, fails, _ = rt_ctx.pytest([LIB.tests_dir])
             expected = sorted(f.test_id for f in ep.agent_input.ci_event.failing_tests)
             verification[ep_id] = {
                 "key": draft.key,
@@ -1450,6 +1695,7 @@ def main() -> int:
                 msg = f"{ep_id} ({draft.key}) failed verification: {verification[ep_id]}"
                 raise BuildError(msg)
             episodes[split].append(ep)
+            use_layout(None)
 
     # split hygiene
     sets = {
@@ -1469,8 +1715,10 @@ def main() -> int:
 
     files: dict[str, str] = {}
     for split, eps in episodes.items():
-        full = out_dir / f"pilot_{split}.jsonl"
-        view = out_dir / f"pilot_{split}_agent_view.jsonl"
+        if not eps:
+            continue
+        full = out_dir / f"{LIB.stem(split)}.jsonl"
+        view = out_dir / f"{LIB.stem(split)}_agent_view.jsonl"
         full.write_text("".join(e.model_dump_json() + "\n" for e in eps), encoding="utf-8")
         view.write_text(
             "".join(json.dumps(e.agent_payload(), ensure_ascii=False) + "\n" for e in eps),
@@ -1495,15 +1743,15 @@ def main() -> int:
             for s, eps in episodes.items()
         },
         "module_pools": {k: sorted(v) for k, v in pools.items()},
-        "corpus_version": CORPUS_VERSION,
-        "source_comment_policy": COMMENT_RULE,
+        "corpus_version": LIB.corpus_version,
+        "source_comment_policy": comment_rule(),
         "files_sha256": files,
-        "frozen_test_split": "datasets/pilot_test*.jsonl: do not tune on it; regenerate only deliberately",
+        "frozen_test_split": f"datasets/{LIB.stem('test')}*.jsonl: do not tune on it; regenerate only deliberately",
     }
-    (out_dir / "pilot_manifest.json").write_text(
+    (out_dir / f"{LIB.file_prefix}_manifest.json").write_text(
         json.dumps(summary, indent=1) + "\n", encoding="utf-8"
     )
-    (out_dir / "pilot_verification.json").write_text(
+    (out_dir / f"{LIB.file_prefix}_verification.json").write_text(
         json.dumps(verification, indent=1) + "\n", encoding="utf-8"
     )
     sys.stdout.write(f"wrote {sum(len(v) for v in episodes.values())} episodes to {out_dir}\n")

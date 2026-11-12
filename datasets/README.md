@@ -1,5 +1,7 @@
 # Pilot dataset (boltons): 9 dev + 4 frozen test episodes (13 in total)
 
+> The held-out evaluation set (3 libraries × 24 episodes, `heldout_*`) is documented separately in [`HELDOUT.md`](HELDOUT.md).
+
 Real commits, diffs and tests from [boltons](https://github.com/mahmoud/boltons) pinned at
 `d31d821d56c8f7756af9c30a864077f2e5855321` (BSD-3-Clause). Only the injected regressions (S2/S3/S4), the S4 decoy memory and the
 S5 evidence stripping are constructed. Chosen by `docs/repository_selection.md`; built by `scripts/pilot/build_dataset.py`.

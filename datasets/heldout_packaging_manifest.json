@@ -1,0 +1,215 @@
+{
+ "pin": {
+  "repo_url": "https://github.com/pypa/packaging",
+  "head": "9afc187996400b417b7109b1b3452d7fdcfe7696",
+  "python": "3.12",
+  "pytest": "8.4.2",
+  "test_command": "python -m pytest tests --import-mode=importlib (PYTHONPATH=src)",
+  "stability_runs": 5
+ },
+ "dependency_lock_hash": "beed872362627382c8f4b92b9a31623a807cba177035506e1ea82859d613d5c9",
+ "splits": {
+  "dev": [],
+  "test": [
+   {
+    "id": "pkg-01",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "538cd15c7d73d5a7466f8343e256923e77ab7113",
+    "key": "pkg-s5-is_compatible"
+   },
+   {
+    "id": "pkg-02",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "e5a7893a99d64acb18ca8eec8848daa026c1c4de",
+    "key": "pkg-s5-musl_version"
+   },
+   {
+    "id": "pkg-03",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "e120b49667e1c769ff60a4181cb1897c78f4f386",
+    "key": "pkg-s2-a"
+   },
+   {
+    "id": "pkg-04",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "080405b1974efff3e7b5a199c3b6592f36ad97e0",
+    "key": "pkg-s1-exceptiongroup"
+   },
+   {
+    "id": "pkg-05",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "a2b3e346b03c0446df2ab8e7f9c997d65495dc6d",
+    "key": "pkg-s1-gil_disabled"
+   },
+   {
+    "id": "pkg-06",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "4dce7618f59d623512b21d846da3e072e86aaf2e",
+    "key": "pkg-s4-gil_disabled"
+   },
+   {
+    "id": "pkg-07",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "4d8534061364e3cbfee582192ab81a095ec2db51",
+    "key": "pkg-s4-exceptiongroup"
+   },
+   {
+    "id": "pkg-08",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "c385b58c4d0e4d66f5c8273ebb155801c92aadf3",
+    "key": "pkg-s3-python_full_version"
+   },
+   {
+    "id": "pkg-09",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "6c338a8425803476769151953cc5de5548e2befa",
+    "key": "pkg-s2-b"
+   },
+   {
+    "id": "pkg-10",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "888eb1452625196985701e2727c5416b70e969fd",
+    "key": "pkg-s3-semicolon_message"
+   },
+   {
+    "id": "pkg-11",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "c39b6da9ab11f649f5497a11628f9dfc98380bb2",
+    "key": "pkg-s2-c"
+   },
+   {
+    "id": "pkg-12",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "e892020b3721179bbf097c3083b8aa424d50b6c9",
+    "key": "pkg-s1-abi3t"
+   },
+   {
+    "id": "pkg-13",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "37b023285c27bc51940f33e50c1ebf692acf92c5",
+    "key": "pkg-s5-emscripten"
+   },
+   {
+    "id": "pkg-14",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "963118e37caae97bc8b72f72956c7fb4ca9857ec",
+    "key": "pkg-s4-abi3t"
+   },
+   {
+    "id": "pkg-15",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "68cdb4d400823b401c1a40969964f509636a8094",
+    "key": "pkg-s1-native_linux"
+   },
+   {
+    "id": "pkg-16",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "45d15309ac4a2411196e800378f257ade132483d",
+    "key": "pkg-s3-fat3"
+   },
+   {
+    "id": "pkg-17",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "684427106cfbb3eae8f4ee9f4489c4d22757a9d2",
+    "key": "pkg-s1-manylinux_cache"
+   },
+   {
+    "id": "pkg-18",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "cf100d20e09c270cb6e19e72edbd0d40728de501",
+    "key": "pkg-s1-default_environment"
+   },
+   {
+    "id": "pkg-19",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "abf000549c2ec5b31357046498d6e4f0f9d7d743",
+    "key": "pkg-s1-utf8_charset"
+   },
+   {
+    "id": "pkg-20",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "206834025040aca6f8a2fdfc4039dbfa2a9861a6",
+    "key": "pkg-s3-from_email"
+   },
+   {
+    "id": "pkg-21",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "c5675838046cf8b7cf93787f9e3e1d16fcdc24ef",
+    "key": "pkg-s2-d"
+   },
+   {
+    "id": "pkg-22",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "f8630ea2b7c810de81841459dcdb481d5b7a1318",
+    "key": "pkg-s1-abi_iterators"
+   },
+   {
+    "id": "pkg-23",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "959bb79c06cb883bf1ecd1ddc94a079294907e0f",
+    "key": "pkg-s1-sibling_includes"
+   },
+   {
+    "id": "pkg-24",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "2d57ce2b15a85be2c2b07ad5831ed4921429edcb",
+    "key": "pkg-s1-validate_includes"
+   }
+  ]
+ },
+ "module_pools": {
+  "dev": [],
+  "test": [
+   "_elffile",
+   "_manylinux",
+   "_musllinux",
+   "_parser",
+   "_ranges",
+   "_structures",
+   "_tokenizer",
+   "dependency_groups",
+   "direct_url",
+   "errors",
+   "markers",
+   "metadata",
+   "pylock",
+   "ranges",
+   "requirements",
+   "specifiers",
+   "tags",
+   "utils",
+   "version"
+  ]
+ },
+ "corpus_version": "heldout-1",
+ "source_comment_policy": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in src/packaging/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+ "files_sha256": {
+  "heldout_packaging.jsonl": "2b7248b5fe56110118dfbada65e85ec7c9447a6151cb4d28c5c76b667af7f5d2",
+  "heldout_packaging_agent_view.jsonl": "e1836941f1e9c628ad29080de5508ef7dcb2741d440b03e352cea4584445f194"
+ },
+ "frozen_test_split": "datasets/heldout_packaging*.jsonl: do not tune on it; regenerate only deliberately"
+}

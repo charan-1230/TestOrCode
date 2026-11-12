@@ -96,8 +96,7 @@ def support_code(module_text: str) -> str:
     tree = ast.parse(module_text)
     body = [
         n for n in tree.body
-        if not (_is_test_def(n) or (isinstance(n, ast.ClassDef) and n.name.startswith("Test"))
-                or _is_marker_assignment(n) or _is_main_guard(n))
+        if not (_is_test_def(n) or _is_test_class(n) or _is_marker_assignment(n) or _is_main_guard(n))
     ]
     return ast.unparse(ast.Module(body=body, type_ignores=[])) + "\n" if body else ""
 
@@ -118,6 +117,11 @@ def probe_problem(probe_code: str) -> str | None:
 
 def _is_test_def(node: ast.stmt) -> bool:
     return isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test")
+
+
+def _is_test_class(node: ast.stmt) -> bool:
+    """A pytest ``Test*`` class, or any class defining test methods (unittest ``TestCase``s are collected by any name)."""
+    return isinstance(node, ast.ClassDef) and (node.name.startswith("Test") or any(_is_test_def(m) for m in node.body))
 
 
 def _is_marker_assignment(node: ast.stmt) -> bool:

@@ -97,6 +97,17 @@ def test_derivation_keeps_selected_methods_and_drops_skip_markers() -> None:
         probe_from_tests(module, ["test_missing"])
 
 
+def test_support_code_drops_unittest_classes_of_any_name() -> None:
+    # unittest collects TestCase classes whatever their name (more-itertools: ``ChunkedTests``); keeping one would
+    # make a seeded probe run that whole class too.  Helper classes without test methods stay.
+    module = (
+        "from unittest import TestCase\n\n\nclass Helper:\n    def make(self):\n        return 1\n\n\n"
+        "class ChunkedTests(TestCase):\n    def test_one(self):\n        self.assertEqual(Helper().make(), 1)\n"
+    )
+    support = support_code(module)
+    assert "class Helper" in support and "ChunkedTests" not in support and "from unittest import TestCase" in support
+
+
 @pytest.mark.parametrize(("code", "reason"), [("def test_x(:\n", "does not parse"),
                                               ("x = 1\n", "defines no test"), ("def helper():\n    pass\n", "no test")])
 def test_malformed_probes_are_recognised(code: str, reason: str) -> None:

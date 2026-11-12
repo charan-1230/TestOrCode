@@ -1,0 +1,198 @@
+{
+ "pin": {
+  "repo_url": "https://github.com/more-itertools/more-itertools",
+  "head": "ceafee8ce96f4bc1eb74c528bc247c91d648a0bb",
+  "python": "3.12",
+  "pytest": "8.4.2",
+  "test_command": "python -m pytest tests --import-mode=importlib",
+  "stability_runs": 5
+ },
+ "dependency_lock_hash": "912081a0c76469b883eac802e68e82d7af4f0d08fa2f07130c71a360a73df95c",
+ "splits": {
+  "dev": [],
+  "test": [
+   {
+    "id": "mit-01",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "6a5ee59e201701009d632236cddb68b214ae41d1",
+    "key": "mit-s1-zip_equal"
+   },
+   {
+    "id": "mit-02",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "94bbc8816570ad13ebbcdaa6353125044eb60aa0",
+    "key": "mit-s2-a"
+   },
+   {
+    "id": "mit-03",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "70c4e62ddac7708e6aaca24c61d8b984fc5a80b1",
+    "key": "mit-s5-last"
+   },
+   {
+    "id": "mit-04",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "086c54045678590da373ab327ff375e1e9c7ba07",
+    "key": "mit-s3-strictly_n-lazy"
+   },
+   {
+    "id": "mit-05",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "6f775551a9067be9fb2686dcc7d4e1d9d8edf08b",
+    "key": "mit-s1-strictly_n-counts"
+   },
+   {
+    "id": "mit-06",
+    "scenario": "S2",
+    "difficulty": "easy",
+    "ci_commit": "4d905d23966b947821c66aded6a690573f23d39a",
+    "key": "mit-s2-b"
+   },
+   {
+    "id": "mit-07",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "ab72fc8a4e120678525c3e2b67203c6cea462204",
+    "key": "mit-s3-unique_in_window"
+   },
+   {
+    "id": "mit-08",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "09eb43d1b636493b9f762426794730c8c35ce83c",
+    "key": "mit-s4-unique_in_window"
+   },
+   {
+    "id": "mit-09",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "c3fa79983245cba4c056bfb4def9eab91bd7300e",
+    "key": "mit-s5-sliding_window"
+   },
+   {
+    "id": "mit-10",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "7313c86ca1570f4b0bba5cc53c104f7490243caf",
+    "key": "mit-s2-c"
+   },
+   {
+    "id": "mit-11",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "ed201a263eef095bccae03f148c0e43f22e5f615",
+    "key": "mit-s1-distinct_permutations"
+   },
+   {
+    "id": "mit-12",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "fb95291e8f9ac590a88b99252eba5488ef984b4c",
+    "key": "mit-s1-circular_shifts"
+   },
+   {
+    "id": "mit-13",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "e733192454b73bbea8645e4dcbee95b13eba714c",
+    "key": "mit-s3-is_sorted"
+   },
+   {
+    "id": "mit-14",
+    "scenario": "S2",
+    "difficulty": "medium",
+    "ci_commit": "519aee10fc6be9c8421bcd4f43217539501ba103",
+    "key": "mit-s2-d"
+   },
+   {
+    "id": "mit-15",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+    "key": "mit-s1-islice_extended"
+   },
+   {
+    "id": "mit-16",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "acdb1d9e0642996136bd6514642c76d8704ccfed",
+    "key": "mit-s4-islice_extended"
+   },
+   {
+    "id": "mit-17",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "f8ccab2285e271a829cc04a8185118143380a212",
+    "key": "mit-s1-running_median"
+   },
+   {
+    "id": "mit-18",
+    "scenario": "S4",
+    "difficulty": "hard",
+    "ci_commit": "f559403c543b3a1436d32eb9944750cd60e1e18e",
+    "key": "mit-s4-running_median"
+   },
+   {
+    "id": "mit-19",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "d9adeb4e3142c78dc18ab00bdd397a57fbcb1874",
+    "key": "mit-s1-nth_combination"
+   },
+   {
+    "id": "mit-20",
+    "scenario": "S3",
+    "difficulty": "hard",
+    "ci_commit": "def2d821c0a15ede86578660e7dc48e44bad9579",
+    "key": "mit-s3-nth_permutation"
+   },
+   {
+    "id": "mit-21",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "06f31819121eb0620d3165fda73a44cbf71b140d",
+    "key": "mit-s1-nth_combination_with_replacement"
+   },
+   {
+    "id": "mit-22",
+    "scenario": "S1",
+    "difficulty": "medium",
+    "ci_commit": "d71c4ad9f828117e609269701f6df10419ae90c8",
+    "key": "mit-s1-locate"
+   },
+   {
+    "id": "mit-23",
+    "scenario": "S1",
+    "difficulty": "easy",
+    "ci_commit": "d63a26e56eac21ef874d243d2230123464539ed5",
+    "key": "mit-s1-first_true"
+   },
+   {
+    "id": "mit-24",
+    "scenario": "S5",
+    "difficulty": "medium",
+    "ci_commit": "71b46b06fb48abcd2f7a26d74c148a650d340386",
+    "key": "mit-s5-windowed"
+   }
+  ]
+ },
+ "module_pools": {
+  "dev": [],
+  "test": [
+   "more",
+   "recipes"
+  ]
+ },
+ "corpus_version": "heldout-1",
+ "source_comment_policy": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+ "files_sha256": {
+  "heldout_more_itertools.jsonl": "615a063eda7b41c26a2dcd77b9cae873485449c8bcdb30aef484be2ab014b35b",
+  "heldout_more_itertools_agent_view.jsonl": "c3b8f12dac4df0bebbfba3523d715be04e0d2ea966d616bb07d2fe8dc4665954"
+ },
+ "frozen_test_split": "datasets/heldout_more_itertools*.jsonl: do not tune on it; regenerate only deliberately"
+}

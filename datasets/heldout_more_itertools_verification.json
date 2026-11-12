@@ -1,0 +1,2067 @@
+{
+ "mit-01": {
+  "key": "mit-s1-zip_equal",
+  "scenario": "S1",
+  "ci_commit": "6a5ee59e201701009d632236cddb68b214ae41d1",
+  "parent_commit": "437de9ee3e4112a15c9760d9f21efdfec4b804fc",
+  "failing_tests": [
+   "tests/test_more.py::ZipEqualTest::test_unequal_lists"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.zip_equal"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 187,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.zip_equal#L1460",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1460,
+      1460
+     ],
+     "function": "more.zip_equal",
+     "origin": "pre_existing",
+     "commit_sha": "437de9ee3e4112a15c9760d9f21efdfec4b804fc",
+     "blame_commits": [
+      "437de9ee3e41"
+     ],
+     "diff_hunk": "@@ -1414,33 +1414,62 @@ def stagger(iterable, offsets=(-1, 0, 1), longest=False, fillvalue=None):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.zip_equal#L1468",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1468,
+      1468
+     ],
+     "function": "more.zip_equal",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "6a5ee59e201701009d632236cddb68b214ae41d1",
+     "blame_commits": [
+      "6a5ee59e2017"
+     ],
+     "diff_hunk": "@@ -1414,33 +1414,62 @@ def stagger(iterable, offsets=(-1, 0, 1), longest=False, fillvalue=None):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.zip_equal#L1471",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1471,
+      1471
+     ],
+     "function": "more.zip_equal",
+     "origin": "pre_existing",
+     "commit_sha": "437de9ee3e4112a15c9760d9f21efdfec4b804fc",
+     "blame_commits": [
+      "437de9ee3e41"
+     ],
+     "diff_hunk": "@@ -1414,33 +1414,62 @@ def stagger(iterable, offsets=(-1, 0, 1), longest=False, fillvalue=None):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.zip_equal#L1473",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1473,
+      1474
+     ],
+     "function": "more.zip_equal",
+     "origin": "pre_existing",
+     "commit_sha": "437de9ee3e4112a15c9760d9f21efdfec4b804fc",
+     "blame_commits": [
+      "437de9ee3e41"
+     ],
+     "diff_hunk": "@@ -1414,33 +1414,62 @@ def stagger(iterable, offsets=(-1, 0, 1), longest=False, fillvalue=None):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:6a5ee59e2017",
+     "source_type": "commit_message",
+     "text": "Add error information for zip_unequal's exception"
+    }
+   ]
+  }
+ },
+ "mit-02": {
+  "key": "mit-s2-a",
+  "scenario": "S2",
+  "ci_commit": "94bbc8816570ad13ebbcdaa6353125044eb60aa0",
+  "parent_commit": "5eaff74ddf0f8ff2923eae097fd1b1426a01b8da",
+  "failing_tests": [
+   "tests/test_more.py::NthOrLastTests::test_basic"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.nth_or_last"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 185,
+  "notes": {
+   "mutant": "nth_or_last line 203: '+' -> '-'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "mit-03": {
+  "key": "mit-s5-last",
+  "scenario": "S5",
+  "ci_commit": "70c4e62ddac7708e6aaca24c61d8b984fc5a80b1",
+  "parent_commit": "2269f6e287a90121e5fae4bf0b7479d95b7f0e1c",
+  "failing_tests": [
+   "tests/test_more.py::LastTests::test_empty"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "more_itertools.more.last"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 190,
+  "notes": {
+   "withheld_message_sha256": "d5f5df10a72a54ad9303fcec5578b316031bd1a98360c1049b2c55bab4f55c20",
+   "withheld_message_chars": 28,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.last#L183",
+     "path": "more_itertools/more.py",
+     "lines": [
+      183,
+      183
+     ],
+     "function": "more.last",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "70c4e62ddac7708e6aaca24c61d8b984fc5a80b1",
+     "blame_commits": [
+      "70c4e62ddac7"
+     ],
+     "diff_hunk": "@@ -180,19 +180,25 @@ def last(iterable, default=_marker):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.last#L186",
+     "path": "more_itertools/more.py",
+     "lines": [
+      186,
+      187
+     ],
+     "function": "more.last",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "70c4e62ddac7708e6aaca24c61d8b984fc5a80b1",
+     "blame_commits": [
+      "70c4e62ddac7"
+     ],
+     "diff_hunk": "@@ -180,19 +180,25 @@ def last(iterable, default=_marker):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.last#L195",
+     "path": "more_itertools/more.py",
+     "lines": [
+      195,
+      195
+     ],
+     "function": "more.last",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "70c4e62ddac7708e6aaca24c61d8b984fc5a80b1",
+     "blame_commits": [
+      "70c4e62ddac7"
+     ],
+     "diff_hunk": "@@ -180,19 +180,25 @@ def last(iterable, default=_marker):",
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "mit-04": {
+  "key": "mit-s3-strictly_n-lazy",
+  "scenario": "S3",
+  "ci_commit": "086c54045678590da373ab327ff375e1e9c7ba07",
+  "parent_commit": "20c7517055a5eac309f9c0e10b4295ff9aada2c2",
+  "failing_tests": [
+   "tests/test_more.py::ChunkedTests::test_strict_being_true",
+   "tests/test_more.py::StrictlyNTests::test_basic",
+   "tests/test_more.py::StrictlyNTests::test_too_long_custom",
+   "tests/test_more.py::StrictlyNTests::test_too_long_default",
+   "tests/test_more.py::StrictlyNTests::test_too_short_custom",
+   "tests/test_more.py::StrictlyNTests::test_too_short_default"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.chunked",
+   "more_itertools.more.strictly_n"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 206,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:086c54045678",
+     "source_type": "commit_message",
+     "text": "Make strictly_n lazy"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "chunked line 165: 'is not' -> 'is'"
+  }
+ },
+ "mit-05": {
+  "key": "mit-s1-strictly_n-counts",
+  "scenario": "S1",
+  "ci_commit": "6f775551a9067be9fb2686dcc7d4e1d9d8edf08b",
+  "parent_commit": "0d5262795d9deed97ccc2a3449d34890bde5c511",
+  "failing_tests": [
+   "tests/test_more.py::StrictlyNTests::test_too_long_custom",
+   "tests/test_more.py::StrictlyNTests::test_too_long_default",
+   "tests/test_more.py::StrictlyNTests::test_too_short_custom",
+   "tests/test_more.py::StrictlyNTests::test_too_short_default"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.strictly_n"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 206,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:6f775551a906",
+     "source_type": "commit_message",
+     "text": "too_short and too_long get item counts"
+    }
+   ]
+  }
+ },
+ "mit-06": {
+  "key": "mit-s2-b",
+  "scenario": "S2",
+  "ci_commit": "4d905d23966b947821c66aded6a690573f23d39a",
+  "parent_commit": "084a2c6c659c4f6cd33f8c8306b333d1c24cb49f",
+  "failing_tests": [
+   "tests/test_more.py::ChunkedTests::test_strict_being_true"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.chunked"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 207,
+  "notes": {
+   "mutant": "chunked line 166: 'is not' -> 'is'",
+   "mutant_in_changed_function": false,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "mit-07": {
+  "key": "mit-s3-unique_in_window",
+  "scenario": "S3",
+  "ci_commit": "ab72fc8a4e120678525c3e2b67203c6cea462204",
+  "parent_commit": "c8baa10e66de18662114b71edcfa32f5dfdd2881",
+  "failing_tests": [
+   "tests/test_more.py::ChunkedTests::test_strict_being_true",
+   "tests/test_more.py::UniqueInWindowTests::test_basic"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.chunked",
+   "more_itertools.more.unique_in_window"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 213,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:ab72fc8a4e12",
+     "source_type": "commit_message",
+     "text": "Fix unique_in_window to match described behavior"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "chunked line 172: 'is not' -> 'is'"
+  }
+ },
+ "mit-08": {
+  "key": "mit-s4-unique_in_window",
+  "scenario": "S4",
+  "ci_commit": "09eb43d1b636493b9f762426794730c8c35ce83c",
+  "parent_commit": "ab72fc8a4e120678525c3e2b67203c6cea462204",
+  "failing_tests": [
+   "tests/test_more.py::UniqueInWindowTests::test_invalid_n"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.unique_in_window"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 213,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "more_itertools.more.unique_in_window",
+   "mutant": "unique_in_window line 4272: '<=' -> '<'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "mit-09": {
+  "key": "mit-s5-sliding_window",
+  "scenario": "S5",
+  "ci_commit": "c3fa79983245cba4c056bfb4def9eab91bd7300e",
+  "parent_commit": "2db569338ed29e92f6b9b61b98030dad14f3ee0b",
+  "failing_tests": [
+   "tests/test_recipes.py::SlidingWindowTests::test_basic"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "more_itertools.recipes.sliding_window"
+  ],
+  "modules": [
+   "recipes"
+  ],
+  "corpus_items": 156,
+  "notes": {
+   "withheld_message_sha256": "9d44d5641fdd55617e9996726fee29ffd7f8733d38486a1374941be819028ec5",
+   "withheld_message_chars": 35,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "mit-10": {
+  "key": "mit-s2-c",
+  "scenario": "S2",
+  "ci_commit": "7313c86ca1570f4b0bba5cc53c104f7490243caf",
+  "parent_commit": "91a38218a99e633768c5cfc3010ef0d246017f2e",
+  "failing_tests": [
+   "tests/test_more.py::TimeLimitedTests::test_basic",
+   "tests/test_more.py::TimeLimitedTests::test_complete"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.time_limited.__next__"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 218,
+  "notes": {
+   "mutant": "time_limited.__next__ line 3247: '==' -> '!='",
+   "mutant_in_changed_function": true,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": []
+  }
+ },
+ "mit-11": {
+  "key": "mit-s1-distinct_permutations",
+  "scenario": "S1",
+  "ci_commit": "ed201a263eef095bccae03f148c0e43f22e5f615",
+  "parent_commit": "12f56444ac7b42b59541571d106cbc6ab695dacc",
+  "failing_tests": [
+   "tests/test_more.py::DistinctPermutationsTests::test_unsortable_hashables",
+   "tests/test_more.py::DistinctPermutationsTests::test_unsortable_some_unhashables"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.distinct_permutations"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 236,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.distinct_permutations#L680",
+     "path": "more_itertools/more.py",
+     "lines": [
+      680,
+      680
+     ],
+     "function": "more.distinct_permutations",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L683",
+     "path": "more_itertools/more.py",
+     "lines": [
+      683,
+      683
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L686",
+     "path": "more_itertools/more.py",
+     "lines": [
+      686,
+      686
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L690",
+     "path": "more_itertools/more.py",
+     "lines": [
+      690,
+      690
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L694",
+     "path": "more_itertools/more.py",
+     "lines": [
+      694,
+      694
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L699",
+     "path": "more_itertools/more.py",
+     "lines": [
+      699,
+      700
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._full#L702",
+     "path": "more_itertools/more.py",
+     "lines": [
+      702,
+      702
+     ],
+     "function": "more.distinct_permutations._full",
+     "origin": "pre_existing",
+     "commit_sha": "3c1e75e02fbfdf9d860d16a52739ce81c39260ca",
+     "blame_commits": [
+      "3c1e75e02fbf"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations#L704",
+     "path": "more_itertools/more.py",
+     "lines": [
+      704,
+      704
+     ],
+     "function": "more.distinct_permutations",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L706",
+     "path": "more_itertools/more.py",
+     "lines": [
+      706,
+      706
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L712",
+     "path": "more_itertools/more.py",
+     "lines": [
+      712,
+      712
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L715",
+     "path": "more_itertools/more.py",
+     "lines": [
+      715,
+      716
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L725",
+     "path": "more_itertools/more.py",
+     "lines": [
+      725,
+      726
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L731",
+     "path": "more_itertools/more.py",
+     "lines": [
+      731,
+      732
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L739",
+     "path": "more_itertools/more.py",
+     "lines": [
+      739,
+      739
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "71f76c876efa1717008118b0848853bcfad46f94",
+     "blame_commits": [
+      "71f76c876efa"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations._partial#L740",
+     "path": "more_itertools/more.py",
+     "lines": [
+      740,
+      740
+     ],
+     "function": "more.distinct_permutations._partial",
+     "origin": "pre_existing",
+     "commit_sha": "3c1e75e02fbfdf9d860d16a52739ce81c39260ca",
+     "blame_commits": [
+      "3c1e75e02fbf"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.distinct_permutations#L768",
+     "path": "more_itertools/more.py",
+     "lines": [
+      768,
+      768
+     ],
+     "function": "more.distinct_permutations",
+     "origin": "pre_existing",
+     "commit_sha": "dd62823bde5ddd3847cf4661b7f49367a81c24ef",
+     "blame_commits": [
+      "dd62823bde5d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:ed201a263eef",
+     "source_type": "commit_message",
+     "text": "Take values from the original items.  __eq__ual but different items share an index.\n\ne.g. 1==True"
+    }
+   ]
+  }
+ },
+ "mit-12": {
+  "key": "mit-s1-circular_shifts",
+  "scenario": "S1",
+  "ci_commit": "fb95291e8f9ac590a88b99252eba5488ef984b4c",
+  "parent_commit": "9df92dae3887383f053cf548ca21a89850699c9a",
+  "failing_tests": [
+   "tests/test_more.py::CircularShiftsTests::test_duplicates",
+   "tests/test_more.py::CircularShiftsTests::test_simple_circular_shifts"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.circular_shifts"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 225,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:fb95291e8f9a",
+     "source_type": "commit_message",
+     "text": "Issue 869: Add a steps argument to circular_shifts"
+    },
+    {
+     "evidence_id": "docstring:more.circular_shifts",
+     "source_type": "docstring",
+     "text": "Yield the circular shifts of *iterable*.\n\n>>> list(circular_shifts(range(4)))\n[(0, 1, 2, 3), (1, 2, 3, 0), (2, 3, 0, 1), (3, 0, 1, 2)]\n\nSet *steps* to the number of places to rotate to the left\n(or to the right if negative).  Defaults to 1.\n\n>>> list(circular_shifts(range(4), 2))\n[(0, 1, 2, 3), (2, "
+    }
+   ]
+  }
+ },
+ "mit-13": {
+  "key": "mit-s3-is_sorted",
+  "scenario": "S3",
+  "ci_commit": "e733192454b73bbea8645e4dcbee95b13eba714c",
+  "parent_commit": "b2b3bf6ddc5cb652201545ba191d07400c4e89cf",
+  "failing_tests": [
+   "tests/test_more.py::InterleaveLongestTests::test_even",
+   "tests/test_more.py::InterleaveLongestTests::test_mixed_types",
+   "tests/test_more.py::InterleaveLongestTests::test_short",
+   "tests/test_more.py::IsSortedTests::test_basic"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.interleave_longest",
+   "more_itertools.more.is_sorted"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 225,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:e733192454b7",
+     "source_type": "commit_message",
+     "text": "Issue 916: lt only for is_sorted (#917)"
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "interleave_longest line 1152: 'is not' -> 'is'"
+  }
+ },
+ "mit-14": {
+  "key": "mit-s2-d",
+  "scenario": "S2",
+  "ci_commit": "519aee10fc6be9c8421bcd4f43217539501ba103",
+  "parent_commit": "fdbfbd6442d7bd85465a235c001fec6c05736558",
+  "failing_tests": [
+   "tests/test_more.py::SampleTests::test_length",
+   "tests/test_more.py::SampleTests::test_strict"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more._sample_unweighted"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 235,
+  "notes": {
+   "mutant": "_sample_unweighted line 3720: 'and' -> 'or'",
+   "mutant_in_changed_function": true,
+   "restored_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more._sample_unweighted#L3716",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3716,
+      3717
+     ],
+     "function": "more._sample_unweighted",
+     "origin": "pre_existing",
+     "commit_sha": "90f83cba8b4f70cdb25da7a5a92874b0df9d79c3",
+     "blame_commits": [
+      "90f83cba8b4f",
+      "c11195abbc3c"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._sample_counted.feed#L3780",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3780,
+      3780
+     ],
+     "function": "more._sample_counted.feed",
+     "origin": "pre_existing",
+     "commit_sha": "bbe6c8f7f3f59555ab5035871aa919a6b9d9dbb7",
+     "blame_commits": [
+      "bbe6c8f7f3f5"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ },
+ "mit-15": {
+  "key": "mit-s1-islice_extended",
+  "scenario": "S1",
+  "ci_commit": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+  "parent_commit": "569e0ad654a85c77581b318305edc2eb7c4068ae",
+  "failing_tests": [
+   "tests/test_more.py::IsliceExtendedTests::test_elements_lifecycle"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more._islice_helper"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 250,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more._islice_helper#L2614",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2614,
+      2614
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2618",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2618,
+      2618
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2621",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2621,
+      2621
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2629",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2629,
+      2629
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2636",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2636,
+      2638
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "efd3e11a9a017fb677deb29332e5f63a0c00eee6",
+     "blame_commits": [
+      "efd3e11a9a01"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2641",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2641,
+      2641
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "efd3e11a9a017fb677deb29332e5f63a0c00eee6",
+     "blame_commits": [
+      "efd3e11a9a01"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2644",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2644,
+      2644
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2647",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2647,
+      2648
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2653",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2653,
+      2655
+     ],
+     "function": "more._islice_helper",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+     "blame_commits": [
+      "a16e9c1c9b06"
+     ],
+     "diff_hunk": "@@ -2649,9 +2649,14 @@ def _islice_helper(it, s):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2658",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2658,
+      2658
+     ],
+     "function": "more._islice_helper",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+     "blame_commits": [
+      "a16e9c1c9b06"
+     ],
+     "diff_hunk": "@@ -2649,9 +2649,14 @@ def _islice_helper(it, s):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2662",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2662,
+      2662
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": "@@ -2649,9 +2649,14 @@ def _islice_helper(it, s):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2668",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2668,
+      2668
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2673",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2673,
+      2675
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2684",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2684,
+      2684
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2689",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2689,
+      2690
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2694",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2694,
+      2695
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2699",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2699,
+      2699
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:a16e9c1c9b06",
+     "source_type": "commit_message",
+     "text": "Improve islice_extended memory usage when stop<0 and step>0\n\nEnsure we release iterated elements asap when stop<0 and step>0.\nWe're currently holding a reference on that last returned element one\niteration step too long, since we use a variable to hold the yielded element.\n\n- Improved _islice_helper"
+    }
+   ]
+  }
+ },
+ "mit-16": {
+  "key": "mit-s4-islice_extended",
+  "scenario": "S4",
+  "ci_commit": "acdb1d9e0642996136bd6514642c76d8704ccfed",
+  "parent_commit": "7eef2f82da613862a7f5cc9b54695dd76533cb31",
+  "failing_tests": [
+   "tests/test_more.py::IsliceExtendedTests::test_all",
+   "tests/test_more.py::IsliceExtendedTests::test_slicing_extensive"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more._islice_helper"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 250,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "more_itertools.more._islice_helper",
+   "mutant": "_islice_helper line 2637: '+' -> '-'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more._islice_helper#L2624",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2624,
+      2624
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2628",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2628,
+      2628
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2631",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2631,
+      2631
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2639",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2639,
+      2639
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": "@@ -2628,7 +2634,7 @@ def _islice_helper(it, s):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2646",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2646,
+      2648
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "efd3e11a9a017fb677deb29332e5f63a0c00eee6",
+     "blame_commits": [
+      "efd3e11a9a01"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2651",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2651,
+      2651
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "efd3e11a9a017fb677deb29332e5f63a0c00eee6",
+     "blame_commits": [
+      "efd3e11a9a01"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2654",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2654,
+      2654
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2657",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2657,
+      2658
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2663",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2663,
+      2665
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+     "blame_commits": [
+      "a16e9c1c9b06"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2668",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2668,
+      2668
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "a16e9c1c9b06747be55a7e301f279f8fac77693e",
+     "blame_commits": [
+      "a16e9c1c9b06"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2672",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2672,
+      2672
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2678",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2678,
+      2678
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2683",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2683,
+      2685
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2694",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2694,
+      2694
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2699",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2699,
+      2700
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2704",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2704,
+      2705
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more._islice_helper#L2709",
+     "path": "more_itertools/more.py",
+     "lines": [
+      2709,
+      2709
+     ],
+     "function": "more._islice_helper",
+     "origin": "pre_existing",
+     "commit_sha": "6c488b14b59d64a130667394fa3625ceeab2559e",
+     "blame_commits": [
+      "6c488b14b59d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "mit-17": {
+  "key": "mit-s1-running_median",
+  "scenario": "S1",
+  "ci_commit": "f8ccab2285e271a829cc04a8185118143380a212",
+  "parent_commit": "5c8336c5f3a7cbc07fd1d1d4a85cd1d833218bfd",
+  "failing_tests": [
+   "tests/test_recipes.py::RunningMedianTests::test_vs_statistics_median_windowed"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.recipes.running_median"
+  ],
+  "modules": [
+   "recipes"
+  ],
+  "corpus_items": 173,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1371",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1371,
+      1373
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "pre_existing",
+     "commit_sha": "5c8336c5f3a7cbc07fd1d1d4a85cd1d833218bfd",
+     "blame_commits": [
+      "5c8336c5f3a7"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1375",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1375,
+      1378
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "pre_existing",
+     "commit_sha": "5c8336c5f3a7cbc07fd1d1d4a85cd1d833218bfd",
+     "blame_commits": [
+      "5c8336c5f3a7"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1380",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1380,
+      1383
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f8ccab2285e271a829cc04a8185118143380a212",
+     "blame_commits": [
+      "5c8336c5f3a7",
+      "f8ccab2285e2"
+     ],
+     "diff_hunk": "@@ -1379,24 +1379,24 @@ def _sorted_window(iterator, k):  # pragma: no cover",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "docstring:recipes.running_median",
+     "source_type": "docstring",
+     "text": "Cumulative median of values seen so far or values in a sliding window.\n\nSet *maxlen* to a positive integer to specify the maximum size\nof the sliding window.  The default of *None* is equivalent to\nan unbounded window.\n\nFor example:\n\n    >>> list(running_median([5.0, 9.0, 4.0, 12.0, 8.0, 9.0]))\n    "
+    }
+   ]
+  }
+ },
+ "mit-18": {
+  "key": "mit-s4-running_median",
+  "scenario": "S4",
+  "ci_commit": "f559403c543b3a1436d32eb9944750cd60e1e18e",
+  "parent_commit": "f8ccab2285e271a829cc04a8185118143380a212",
+  "failing_tests": [
+   "tests/test_recipes.py::RunningMedianTests::test_error_cases"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.recipes.running_median"
+  ],
+  "modules": [
+   "recipes"
+  ],
+  "corpus_items": 173,
+  "notes": {
+   "probe_passes_on_mutated_state": true,
+   "decoy_function": "more_itertools.recipes.running_median",
+   "mutant": "running_median line 1435: '<=' -> '<'",
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1371",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1371,
+      1373
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f559403c543b3a1436d32eb9944750cd60e1e18e",
+     "blame_commits": [
+      "5c8336c5f3a7",
+      "f559403c543b"
+     ],
+     "diff_hunk": "@@ -1365,12 +1365,12 @@ def _running_median_minheap_only(iterator):  # pragma: no cover",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1375",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1375,
+      1378
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "pre_existing",
+     "commit_sha": "5c8336c5f3a7cbc07fd1d1d4a85cd1d833218bfd",
+     "blame_commits": [
+      "5c8336c5f3a7"
+     ],
+     "diff_hunk": "@@ -1365,12 +1365,12 @@ def _running_median_minheap_only(iterator):  # pragma: no cover",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:recipes._sorted_window#L1380",
+     "path": "more_itertools/recipes.py",
+     "lines": [
+      1380,
+      1383
+     ],
+     "function": "recipes._sorted_window",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "f559403c543b3a1436d32eb9944750cd60e1e18e",
+     "blame_commits": [
+      "5c8336c5f3a7",
+      "f559403c543b"
+     ],
+     "diff_hunk": "@@ -1379,7 +1379,7 @@ def _sorted_window(iterator, k):  # pragma: no cover",
+     "text_verified": true
+    }
+   ]
+  },
+  "runtime_decoy_probe": "passed"
+ },
+ "mit-19": {
+  "key": "mit-s1-nth_combination",
+  "scenario": "S1",
+  "ci_commit": "d9adeb4e3142c78dc18ab00bdd397a57fbcb1874",
+  "parent_commit": "fa3b62edda0a149aa4fa0450fc5fd928e064a22b",
+  "failing_tests": [
+   "tests/test_recipes.py::NthCombinationTests::test_invalid_r"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.recipes.nth_combination"
+  ],
+  "modules": [
+   "recipes"
+  ],
+  "corpus_items": 171,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "docstring:recipes.nth_combination",
+     "source_type": "docstring",
+     "text": "Equivalent to ``list(combinations(iterable, r))[index]``.\n\nThe subsequences of *iterable* that are of length *r* can be ordered\nlexicographically. :func:`nth_combination` computes the subsequence at\nsort position *index* directly, without computing the previous\nsubsequences.\n\n    >>> nth_combination"
+    },
+    {
+     "evidence_id": "msg:d9adeb4e3142",
+     "source_type": "commit_message",
+     "text": "Sync exception with the code equivalent"
+    }
+   ]
+  }
+ },
+ "mit-20": {
+  "key": "mit-s3-nth_permutation",
+  "scenario": "S3",
+  "ci_commit": "def2d821c0a15ede86578660e7dc48e44bad9579",
+  "parent_commit": "6b32fbfba127d6b4aaf57d6b254b2ab5fc80ae76",
+  "failing_tests": [
+   "tests/test_more.py::IntersperseTest::test_n",
+   "tests/test_recipes.py::NthPermutationTests::test_invalid_r"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.intersperse",
+   "more_itertools.more.nth_permutation"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 241,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.intersperse#L935",
+     "path": "more_itertools/more.py",
+     "lines": [
+      935,
+      936
+     ],
+     "function": "more.intersperse",
+     "origin": "pre_existing",
+     "commit_sha": "59267866839e9650b87521188489244393529a46",
+     "blame_commits": [
+      "59267866839e"
+     ],
+     "diff_hunk": "@@ -931,7 +931,7 @@ def intersperse(e, iterable, n=1):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.intersperse#L939",
+     "path": "more_itertools/more.py",
+     "lines": [
+      939,
+      941
+     ],
+     "function": "more.intersperse",
+     "origin": "pre_existing",
+     "commit_sha": "f0619acbb63a89d75f54ceba6cfbc905aea4e027",
+     "blame_commits": [
+      "2c16550cf4eb",
+      "f0619acbb63a"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:def2d821c0a1",
+     "source_type": "commit_message",
+     "text": "Simplify nth_permutation. Fix incorrect exception."
+    }
+   ],
+   "mixed_verified": true,
+   "mutant": "intersperse line 934: '==' -> '!='"
+  }
+ },
+ "mit-21": {
+  "key": "mit-s1-nth_combination_with_replacement",
+  "scenario": "S1",
+  "ci_commit": "06f31819121eb0620d3165fda73a44cbf71b140d",
+  "parent_commit": "def2d821c0a15ede86578660e7dc48e44bad9579",
+  "failing_tests": [
+   "tests/test_more.py::NthCombinationWithReplacementTests::test_invalid_r"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.nth_combination_with_replacement"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 239,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:06f31819121e",
+     "source_type": "commit_message",
+     "text": "Simplify nth_combination_with_replacement. Fix incorrect exception."
+    }
+   ]
+  }
+ },
+ "mit-22": {
+  "key": "mit-s1-locate",
+  "scenario": "S1",
+  "ci_commit": "d71c4ad9f828117e609269701f6df10419ae90c8",
+  "parent_commit": "c0ed9d187906d202b9276a0750b3c377584cb75f",
+  "failing_tests": [
+   "tests/test_more.py::LocateTests::test_window_size_large",
+   "tests/test_more.py::ReplaceTests::test_window_size_large",
+   "tests/test_more.py::RlocateTests::test_window_size_large"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.more.locate"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 245,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.replace#L3387",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3387,
+      3387
+     ],
+     "function": "more.replace",
+     "origin": "pre_existing",
+     "commit_sha": "c7d4395f5264c2909791fea39d03e5bdecb8f1e7",
+     "blame_commits": [
+      "c7d4395f5264"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.replace#L3390",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3390,
+      3391
+     ],
+     "function": "more.replace",
+     "origin": "pre_existing",
+     "commit_sha": "c7d4395f5264c2909791fea39d03e5bdecb8f1e7",
+     "blame_commits": [
+      "c7d4395f5264"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.replace#L3397",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3397,
+      3398
+     ],
+     "function": "more.replace",
+     "origin": "added_by_ci_diff",
+     "commit_sha": "d71c4ad9f828117e609269701f6df10419ae90c8",
+     "blame_commits": [
+      "d71c4ad9f828"
+     ],
+     "diff_hunk": "@@ -3386,13 +3394,17 @@ def replace(iterable, pred, substitutes, count=None, window_size=1):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.replace#L3401",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3401,
+      3406
+     ],
+     "function": "more.replace",
+     "origin": "pre_existing",
+     "commit_sha": "c7d4395f5264c2909791fea39d03e5bdecb8f1e7",
+     "blame_commits": [
+      "382fba78273a",
+      "c7d4395f5264"
+     ],
+     "diff_hunk": "@@ -3386,13 +3394,17 @@ def replace(iterable, pred, substitutes, count=None, window_size=1):",
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.replace#L3414",
+     "path": "more_itertools/more.py",
+     "lines": [
+      3414,
+      3415
+     ],
+     "function": "more.replace",
+     "origin": "pre_existing",
+     "commit_sha": "c7d4395f5264c2909791fea39d03e5bdecb8f1e7",
+     "blame_commits": [
+      "c7d4395f5264"
+     ],
+     "diff_hunk": "@@ -3401,8 +3413,8 @@ def replace(iterable, pred, substitutes, count=None, window_size=1):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:d71c4ad9f828",
+     "source_type": "commit_message",
+     "text": "fix: prevent _marker from being passed to user predicates in replace() and locate()\n\nThe internal _marker sentinel object was being passed to user predicate\nfunctions at the end of iteration when using window_size > 1. This caused\nunexpected behavior and TypeErrors when predicates tried to compare o"
+    }
+   ]
+  }
+ },
+ "mit-23": {
+  "key": "mit-s1-first_true",
+  "scenario": "S1",
+  "ci_commit": "d63a26e56eac21ef874d243d2230123464539ed5",
+  "parent_commit": "d0c20f594667738b714a1f7786da82e0de70fbf5",
+  "failing_tests": [
+   "tests/test_recipes.py::FirstTrueTests::test_pred"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true
+  },
+  "functions": [
+   "more_itertools.recipes.first_true"
+  ],
+  "modules": [
+   "more",
+   "recipes"
+  ],
+  "corpus_items": 301,
+  "notes": {
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.nth_prime#L5228",
+     "path": "more_itertools/more.py",
+     "lines": [
+      5228,
+      5228
+     ],
+     "function": "more.nth_prime",
+     "origin": "pre_existing",
+     "commit_sha": "e7fe24a00bd75ceadef23e29933272fddbdc1c6f",
+     "blame_commits": [
+      "e7fe24a00bd7"
+     ],
+     "diff_hunk": "@@ -5227,7 +5227,7 @@ def nth_prime(n, *, approximate=False):",
+     "text_verified": true
+    }
+   ],
+   "gold_evidence": [
+    {
+     "evidence_id": "msg:d63a26e56eac",
+     "source_type": "commit_message",
+     "text": "first_true: pred -> predicate"
+    }
+   ]
+  }
+ },
+ "mit-24": {
+  "key": "mit-s5-windowed",
+  "scenario": "S5",
+  "ci_commit": "71b46b06fb48abcd2f7a26d74c148a650d340386",
+  "parent_commit": "e4d2a4a2a97246a73856754b2c4866d7f41d4875",
+  "failing_tests": [
+   "tests/test_more.py::WindowedTests::test_basic"
+  ],
+  "stable_runs": 5,
+  "round_trip_reproduces_failures": true,
+  "leak_audit": {
+   "problems": [],
+   "clean": true,
+   "real_message_absent_from_agent_view": true
+  },
+  "functions": [
+   "more_itertools.more.windowed"
+  ],
+  "modules": [
+   "more"
+  ],
+  "corpus_items": 247,
+  "notes": {
+   "withheld_message_sha256": "1c6b97e298df2f03cb4658198250f55c597300a511c6de6a009bf99cec145f57",
+   "withheld_message_chars": 59,
+   "reference_repair_green": true,
+   "source_comment_rule": "Eligible: every '#' comment inside a function or method whose AST differs between the parent commit and the CI state (the CI diff, including injected mutants) in more_itertools/*.py. Consecutive comment-only lines form one item; an inline comment is its own item. Excluded: pragma/directive comments, shebang and encoding lines, comments outside functions, and every comment or docstring in test files. No relevance filter and no rewriting.",
+   "source_comments": [
+    {
+     "evidence_id": "comment:more.windowed#L1055",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1055,
+      1055
+     ],
+     "function": "more.windowed",
+     "origin": "pre_existing",
+     "commit_sha": "8afc217f508d28b302308db7e4224de60c12acc0",
+     "blame_commits": [
+      "8afc217f508d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.windowed#L1058",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1058,
+      1058
+     ],
+     "function": "more.windowed",
+     "origin": "pre_existing",
+     "commit_sha": "8afc217f508d28b302308db7e4224de60c12acc0",
+     "blame_commits": [
+      "8afc217f508d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.windowed#L1066",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1066,
+      1067
+     ],
+     "function": "more.windowed",
+     "origin": "pre_existing",
+     "commit_sha": "8afc217f508d28b302308db7e4224de60c12acc0",
+     "blame_commits": [
+      "8afc217f508d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    },
+    {
+     "evidence_id": "comment:more.windowed#L1071",
+     "path": "more_itertools/more.py",
+     "lines": [
+      1071,
+      1071
+     ],
+     "function": "more.windowed",
+     "origin": "pre_existing",
+     "commit_sha": "8afc217f508d28b302308db7e4224de60c12acc0",
+     "blame_commits": [
+      "8afc217f508d"
+     ],
+     "diff_hunk": null,
+     "text_verified": true
+    }
+   ]
+  }
+ }
+}

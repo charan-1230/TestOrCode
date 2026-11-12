@@ -1,0 +1,10 @@
+# Exact pip freeze of the packaging test interpreter (Python 3.12): python3.12 -m venv <venv> && <venv>/bin/python -m pip install -r requirements.txt
+hypothesis==6.170.15
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+pretend==1.0.9
+Pygments==2.21.0
+pytest==8.4.2
+sortedcontainers==2.4.0
+tomli_w==1.2.0
