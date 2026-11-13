@@ -40,7 +40,7 @@ from testorcode.hypothesis import HypothesisThresholds
 
 SECRET_VARS = frozenset({"LLM_API_KEY", "VOYAGE_API_KEY", "GITHUB_TOKEN"})
 _FIELD_FOR_VAR = {var: field for field, var in ENV_VARS.items()}
-_SECRET_FIELDS = ("llm_api_key", "llm_api_key_pool", "voyage_api_key", "github_token")
+_SECRET_FIELDS = ("llm_api_key", "llm_api_key_pool", "voyage_api_key", "voyage_api_key_pool", "github_token")
 
 
 class ExperimentOptions(BaseModel):

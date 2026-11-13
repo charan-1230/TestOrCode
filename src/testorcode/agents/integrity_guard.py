@@ -79,6 +79,7 @@ def verify_repair(
     known_failures: frozenset[str] = frozenset(),
     cached_mutants: Mapping[str, Sequence[MutantSpec]] | None = None,
     allow_unmeasurable_strength: bool = False,
+    min_retention: float = 1.0,
 ) -> GuardResult:
     """Check the applied repair: tests, weakening, scope, evidence, mutants.
 
@@ -92,6 +93,8 @@ def verify_repair(
     functions it lists; the mutants are executed now either way.
     ``allow_unmeasurable_strength``: an UPDATE_TEST repair whose strength the mutants cannot measure at all (no test in
     the touched files kills any of them, before or after) is judged on the other checks instead of escalated.
+    ``min_retention``: the share of mutants killed by the pre-repair tests that the repaired tests must still kill
+    (1.0 = none may be lost; the frozen configuration uses 0.90).
 
     Raises:
         ToolError, ToolTimeoutError.
@@ -158,7 +161,7 @@ def verify_repair(
         mutation = mutation_check(  # UPDATE_TEST: strength of the edited tests; FIX_CODE: oracle sensitivity
             context, group, proposal, pre_patch, timeout_seconds=timeout_seconds,
             python_executable=python_executable, mutants=list(cached) if cached else None,
-            allow_unmeasurable=allow_unmeasurable_strength,
+            allow_unmeasurable=allow_unmeasurable_strength, min_retention=min_retention,
         )
         if mutation.unmeasurable:
             logger.info("guard: group %s: %s", group.group.group_id, "; ".join(mutation.unmeasurable))

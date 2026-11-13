@@ -20,7 +20,7 @@ The system uses four logical agent roles coordinated by a Python orchestrator. I
 | Structured outputs | Pydantic |
 | LLM integration | OpenAI SDK / compatible hosted API |
 | Initial retrieval | `rank-bm25` |
-| Semantic embeddings | `sentence-transformers` (optional dependency group) |
+| Semantic embeddings | Voyage `voyage-code-3` over HTTPS (key pool `VOYAGE_API_KEY1..5`, cached in `results/embedding_cache`); `sentence-transformers` is an optional local fallback |
 | Memory and episode storage | JSON / JSONL |
 | Experiment analysis | pandas |
 | Git history and repository operations | Git + Python `subprocess` |
@@ -299,7 +299,7 @@ clean and the imports work; see `docs/day4-human2.md`. `matplotlib` and `reportl
 `requirements-lock.txt`.
 
 `build_report.py` reproduces the **mid-submission** report (30 October) and is kept as submitted; a pdfTeX compile of it is in
-`docs/report/report-mid-submission-pdflatex.pdf` (untracked, kept locally).  The **final** report skeleton is written by
+`docs/report/report-mid-submission-pdflatex.pdf`.  The **final** report skeleton is written by
 `docs/report/build_final_report.py` (see "Final runs" above): tables from the results directories, prose marked `[TO WRITE: ...]`.
 
 The exact module layout may evolve as implementation progresses. The team should keep shared schemas and interfaces consistent.
@@ -394,7 +394,7 @@ The implementation should preserve the research goals of TestOrCode:
 - Record experiment conditions, seeds, model IDs, predictions, retrieved evidence, patches, test outcomes, integrity results, token usage, tool calls, and errors.
 - Report only experiments that were actually executed. Clearly label incomplete components, mocks, and preliminary results.
 
-Optional embeddings and mutation testing should be integrated when their corresponding components are ready. Do not treat a successful installation as evidence that those components are implemented or validated.
+Hybrid retrieval (`docs/retrieval.md`), the frozen final configuration (`configs/final.json`) and the final run commands (`docs/final_protocol.md`) are implemented; the held-out experiments themselves have not been run. Do not treat a successful installation as evidence that any component is validated.
 
 ## 13. Quick Setup Checklist
 

@@ -57,6 +57,7 @@ ENV_VARS: Final[dict[str, str]] = {
     "embedding_cache_dir": "EMBEDDING_CACHE_DIR",
     "mutant_cache_path": "MUTANT_CACHE_PATH",
     "guard_unmeasurable_strength": "GUARD_UNMEASURABLE_STRENGTH",
+    "guard_min_retention": "GUARD_MIN_RETENTION",
     "test_patch_rule": "TEST_PATCH_RULE",
     "sandbox_isolation": "SANDBOX_ISOLATION",
     "sandbox_docker_image": "SANDBOX_DOCKER_IMAGE",
@@ -66,6 +67,7 @@ ENV_VARS: Final[dict[str, str]] = {
 
 # Extra API keys used one after another when a key's quota runs out (LLM_API_KEY_1 .. LLM_API_KEY_9, in order).
 KEY_POOL_VARS: Final[tuple[str, ...]] = tuple(f"LLM_API_KEY_{i}" for i in range(1, 10))
+VOYAGE_KEY_POOL_VARS: Final[tuple[str, ...]] = tuple(f"VOYAGE_API_KEY{i}" for i in range(1, 10))
 
 _VALID_LOG_LEVELS: Final[tuple[str, ...]] = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
@@ -91,6 +93,9 @@ class Settings(BaseModel):
 
     # Optional integrations.
     voyage_api_key: SecretStr | None = None
+    voyage_api_key_pool: tuple[SecretStr, ...] = Field(
+        default=(), description="VOYAGE_API_KEY1..9: keys rotated round-robin to multiply the per-key rate limit."
+    )
     voyage_embedding_model: str = "voyage-code-3"
     voyage_rerank_model: str = "rerank-2.5"
     github_token: SecretStr | None = None
@@ -137,6 +142,14 @@ class Settings(BaseModel):
         ),
     )
 
+    guard_min_retention: float = Field(
+        default=1.0, gt=0.0, le=1.0,
+        description=(
+            "UPDATE_TEST: the share of mutants killed by the pre-repair tests that the repaired tests must still kill. "
+            "1.0 = none may be lost (the pilot rule); the frozen final configuration uses 0.90."
+        ),
+    )
+
     # Test-side patch content rule (``tools.patch_content``): literal = only expected literal values may change (the
     # pilot); expected_value = the expected side of an equality assertion may become any side-effect-free expression.
     test_patch_rule: Literal["literal", "expected_value"] = "literal"
@@ -180,13 +193,16 @@ class Settings(BaseModel):
         pool = [source[var].strip() for var in KEY_POOL_VARS if (source.get(var) or "").strip()]
         if pool:
             raw["llm_api_key_pool"] = pool
+        voyage_pool = [source[v].strip() for v in VOYAGE_KEY_POOL_VARS if (source.get(v) or "").strip()]
+        if voyage_pool:
+            raw["voyage_api_key_pool"] = voyage_pool
         try:
             settings = cls.model_validate(raw)
         except ValidationError as exc:
             problems = []
             for err in exc.errors(include_input=False, include_url=False):
                 field = str(err["loc"][0]) if err["loc"] else "?"
-                field = "LLM_API_KEY_n" if field == "llm_api_key_pool" else field
+                field = {"llm_api_key_pool": "LLM_API_KEY_n", "voyage_api_key_pool": "VOYAGE_API_KEYn"}.get(field, field)
                 problems.append(f"{ENV_VARS.get(field, field)}: {err['msg']}")
             raise ConfigError("invalid configuration: " + "; ".join(problems)) from None
         level = settings.log_level.upper()
@@ -218,7 +234,16 @@ class Settings(BaseModel):
                 keys.append(key)
         return keys
 
+    def voyage_api_keys(self) -> list[str]:
+        """Voyage keys in rotation order: ``VOYAGE_API_KEY1..9`` then ``VOYAGE_API_KEY``; duplicates dropped."""
+        keys: list[str] = []
+        for key in (*self.voyage_api_key_pool, *((self.voyage_api_key,) if self.voyage_api_key is not None else ())):
+            value = key.get_secret_value()
+            if value and value not in keys:
+                keys.append(value)
+        return keys
+
     def secret_values(self) -> list[str]:
         """Plain secret values, for log redaction only."""
-        secrets = (self.llm_api_key, *self.llm_api_key_pool, self.voyage_api_key, self.github_token)
+        secrets = (self.llm_api_key, *self.llm_api_key_pool, self.voyage_api_key, *self.voyage_api_key_pool, self.github_token)
         return [s.get_secret_value() for s in secrets if s is not None]

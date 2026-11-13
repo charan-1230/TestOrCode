@@ -75,5 +75,14 @@
    "verification_sha256": "2c5cb260474016138e7edebe09237d3357a503257c0ab18382576438a1ae8d2a"
   }
  ],
- "total_episodes": 72
+ "total_episodes": 72,
+ "files_sha256": {
+  "heldout_test.jsonl": "6fb27ff673dfaaae465dc09cee828ce07c4150c460272c481bb48c792c04ae6a",
+  "heldout_test_agent_view.jsonl": "5ee59dc0a4a532740bdb8b9af23d3cc3262b04ab63a04a7e39342d88b00cd821"
+ },
+ "merged_from": [
+  "heldout_more_itertools[_agent_view].jsonl",
+  "heldout_attrs[_agent_view].jsonl",
+  "heldout_packaging[_agent_view].jsonl"
+ ]
 }

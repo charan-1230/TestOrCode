@@ -1,0 +1,5 @@
+{
+  "repo-b": {"path": "../../../screening/heldout/more-itertools", "python": "../../../screening/heldout/venv-mit312/bin/python"},
+  "repo-c": {"path": "../../../screening/heldout/packaging", "python": "../../../screening/heldout/venv-pkg-sys/bin/python"},
+  "repo-d": {"path": "../../../screening/heldout/attrs", "python": "../../../screening/heldout/venv-attrs-sys/bin/python"}
+}

@@ -14,6 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal
 
+from testorcode.retrieval import ci_message_evidence_id
 from testorcode.schemas.episode_schemas import Availability, EpisodeInput, ToolName
 from testorcode.schemas.result_schemas import ExperimentCondition as C
 
@@ -106,6 +107,12 @@ def episode_for_condition(episode: EpisodeInput, condition: C) -> EpisodeInput:
             update={"commit_message": None, "commit_message_availability": Availability.WITHHELD}
         )
         update["ci_event"] = event
+        # The corpus must not leak what the prompt withholds: drop the CI commit's own message item (msg:<sha12>).
+        drop = ci_message_evidence_id(episode.ci_event.commit.sha)
+        if episode.corpus.items:
+            update["corpus"] = episode.corpus.model_copy(
+                update={"items": [i for i in episode.corpus.items if i.evidence_id != drop]}
+            )
     if profile.uses_llm and not (profile.intent_retrieval or profile.standard_rag):
         update["corpus"] = episode.corpus.model_copy(update={"items": []})
         update["allowed_tools"] = [t for t in episode.allowed_tools if t not in _RETRIEVAL_TOOLS]

@@ -168,3 +168,63 @@ def test_tool_instructions_list_git_tools_only_when_all_are_allowed() -> None:
     assert prompts.RepairStep.model_validate({"action": "read_file", "query": "", "path": "a", "start_line": 1,
                                              "end_line": 0, "selectors": [], "edits": [], "rationale": "r",
                                              "evidence_ids": []}).sha == ""
+
+
+# --------------------------------------------------------------------------- #
+# Guard retention threshold (GUARD_MIN_RETENTION): killed-before vs killed-after
+# --------------------------------------------------------------------------- #
+
+
+def _retention_check(monkeypatch, tmp_path, *, total: int, lost: int, min_retention: float | None):
+    from testorcode.schemas.contracts import FailureGroupDetail, PatchProposal
+    from testorcode.schemas.episode_schemas import FailureGroup, RepairDirection
+    from testorcode.schemas.tests.conftest import make_s1
+    from testorcode.tools import mutation
+
+    ep = make_s1().agent_input
+    test = ep.ci_event.failing_tests[0]
+    group = FailureGroupDetail(group=FailureGroup(group_id="g", function_qualname="pkg.m.f", test_ids=[test.test_id]),
+                               failing_tests=(test,))
+    proposal = PatchProposal(group_id="g", decision=RepairDirection.UPDATE_TEST, scope="test",
+                             unified_diff="--- a/x\n+++ b/x\n", target_files=(test.test_file,), rationale="r",
+                             evidence_ids=("ev",))
+    base = generate_mutants(LARGE, "pkg/m.py", "f", module="pkg.m")
+    spec = [base[i % len(base)].model_copy(update={"mutant_id": f"m{i}"}) for i in range(total)]  # run_mutants is faked
+    ids = [m.mutant_id for m in spec]
+
+    def fake(*args, **kwargs):
+        before = "overrides" in kwargs  # the Guard runs the pre-repair tests with overrides
+        killed = set(ids) if before else set(ids[lost:])
+        return mutation.MutationRun(status=mutation.TestRunStatus.PASSED, outcomes=tuple(
+            mutation.MutantOutcome(i, "killed" if i in killed else "survived",
+                                   killed_by=(test.test_id,) if i in killed else ()) for i in ids))
+
+    monkeypatch.setattr(mutation, "run_mutants", fake)
+    context = mutation.EpisodeContext.from_episode_input(ep, tmp_path)
+    extra = {} if min_retention is None else {"min_retention": min_retention}
+    return mutation.mutation_check(context, group, proposal, {"tests/x.py": "old"}, timeout_seconds=5, mutants=spec, **extra)
+
+
+def test_retention_threshold_accepts_a_small_loss_only_when_relaxed(monkeypatch, tmp_path) -> None:
+    strict = _retention_check(monkeypatch, tmp_path, total=10, lost=1, min_retention=None)  # default 1.0: pilot rule
+    relaxed = _retention_check(monkeypatch, tmp_path, total=10, lost=1, min_retention=0.9)
+    assert strict.problems and strict.retention == pytest.approx(0.9)
+    assert not relaxed.problems and relaxed.retention == pytest.approx(0.9)  # 0.90 is acceptable at the threshold
+
+
+def test_retention_below_the_threshold_is_rejected(monkeypatch, tmp_path) -> None:
+    check = _retention_check(monkeypatch, tmp_path, total=5, lost=1, min_retention=0.9)  # 4/5 = 0.80
+    assert check.retention == pytest.approx(0.8) and check.problems and "retention 0.80 < 0.90" in check.problems[0]
+
+
+def test_retention_is_not_measured_when_nothing_was_killed_before(monkeypatch, tmp_path) -> None:
+    from testorcode.tools import mutation
+
+    check = _retention_check(monkeypatch, tmp_path, total=5, lost=5, min_retention=0.9)  # after kills nothing, before kills all
+    assert check.retention == 0.0 and check.problems  # all lost: rejected
+    assert isinstance(mutation.MutationCheck().retention, type(None))  # default: not measured, never invented
+
+
+def test_min_retention_setting_defaults_to_the_pilot_rule() -> None:
+    assert Settings.from_env({}).guard_min_retention == 1.0
+    assert Settings.from_env({"GUARD_MIN_RETENTION": "0.9"}).guard_min_retention == 0.9

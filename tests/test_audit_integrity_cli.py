@@ -37,7 +37,7 @@ def cli(monkeypatch, tmp_path):
     base = _fixture_repo(tmp_path)
     module = load_cli()
     episode = fx.episode()
-    monkeypatch.setattr(module, "_load_episodes", lambda splits: {episode.episode_id: episode})
+    monkeypatch.setattr(module, "_load_episodes", lambda splits, dataset="pilot": {episode.episode_id: episode})
     monkeypatch.setattr(module, "_materializer", lambda: fx.materialize)
 
     def run(runs: Path, *extra: str) -> int:
@@ -262,3 +262,44 @@ def test_an_unexpected_error_during_the_audit_writes_nothing(cli, tmp_path, monk
         cli(runs)
     assert outputs(tmp_path / "exp") == {JSONL: None, MD: None}
     assert sorted(p.name for p in (tmp_path / "exp").iterdir()) == ["runs.jsonl"]
+
+
+# --------------------------------------------------------------------------- #
+# Several libraries (--dataset / --repos)
+# --------------------------------------------------------------------------- #
+
+
+def _repos_file(tmp_path: Path, repo_id: str, clone: Path, **extra) -> Path:
+    path = tmp_path / "repos.json"
+    path.write_text(json.dumps({repo_id: {"path": str(clone), "python": sys.executable}, **extra}))
+    return path
+
+
+def test_repos_mapping_picks_the_clone_per_repo_id(cli, tmp_path):
+    repo_id = fx.episode().agent_input.repo.repo_id
+    clone = tmp_path / "base"
+    runs = write_runs(tmp_path / "multi", reverted().model_dump_json())
+    repos = _repos_file(tmp_path, repo_id, clone)
+    module = cli.module
+    assert module.main(["--runs", str(runs), "--repos", str(repos), "--dataset", "heldout",
+                        "--isolation", "trusted-host", "--timeout", "60"]) == 0
+    assert (tmp_path / "multi" / JSONL).is_file()
+
+
+def test_unmapped_repo_id_refuses_before_any_work(cli, tmp_path):
+    runs = write_runs(tmp_path / "unmapped", reverted().model_dump_json())
+    repos = _repos_file(tmp_path, "some-other-repo", tmp_path / "base")
+    assert cli.module.main(["--runs", str(runs), "--repos", str(repos)]) == 2
+    assert outputs(tmp_path / "unmapped") == {JSONL: None, MD: None}
+
+
+def test_audit_needs_an_interpreter_or_a_repos_mapping(cli, tmp_path):
+    runs = write_runs(tmp_path / "none", reverted().model_dump_json())
+    assert cli.module.main(["--runs", str(runs)]) == 2
+
+
+def test_bad_repos_file_refuses(cli, tmp_path):
+    runs = write_runs(tmp_path / "bad", reverted().model_dump_json())
+    bad = tmp_path / "bad.json"
+    bad.write_text("[1, 2]")
+    assert cli.module.main(["--runs", str(runs), "--repos", str(bad)]) == 2

@@ -1,0 +1,39 @@
+{
+  "name": "final-v1",
+  "notes": "Frozen experimental decisions for the held-out evaluation (72 episodes, --dataset heldout --split test --final --repos configs/repos.heldout.json). Retrieval: hybrid BM25 + Voyage voyage-code-3 (RRF), reranking off, warmed cache results/embedding_cache; the BM25-only comparison is the separate retrieval study (results/retrieval_heldout_*). Guard: UPDATE_TEST repairs need mutant-kill retention >= 0.90 against the mutants the PRE-repair tests killed (the developer's reference tests are evaluation-side only and never reach the Guard); strength no mutant can measure is UNMEASURABLE and escalates; structural checks (removed assertions, skip/xfail, loosened comparisons, swallowed exceptions, scope) always apply; one revision, then escalate. Patch rule: expected_value (the tested, relaxed rule; the pilot's literal-only rule is not imposed). Tool faults: seeded, about 10% of agent tool calls (patch does not apply, invalid test selector, timeout) on top of each episode's own scenario-T plan; API/rate-limit errors are never injected faults. Scoring: direction macro-F1 over UPDATE_TEST and FIX_CODE only, direction taken from the hypothesis for an escalation; final-action metrics include ESCALATE; a Guard escalation after a correct repair counts as a wrong final action (a correct repair needs correct direction, passing tests and preserved integrity). Hypothesis thresholds are the Detailed Project Idea's provisional values and must be confirmed on the development data BEFORE the held-out set is evaluated; any change is committed before the first --final run. LLM_PROVIDER, LLM_BASE_URL, LLM_MODEL and LLM_STRUCTURED_MODE are deliberately absent: they come from .env, are recorded per run in config.json, and must be one dated model for every condition. B2 is not part of the final matrix: the B2 comparison is reported as not evaluated. Secrets never go here.",
+  "settings": {
+    "RETRIEVAL_MODE": "hybrid",
+    "EMBEDDING_BACKEND": "voyage",
+    "VOYAGE_EMBEDDING_MODEL": "voyage-code-3",
+    "RERANK_BACKEND": "none",
+    "EMBEDDING_CACHE_DIR": "results/embedding_cache",
+    "RETRIEVAL_TOP_K": "8",
+    "GUARD_UNMEASURABLE_STRENGTH": "escalate",
+    "GUARD_MIN_RETENTION": "0.9",
+    "MUTANT_CACHE_PATH": "",
+    "TEST_PATCH_RULE": "expected_value",
+    "MAX_REPAIR_REVISIONS": "1",
+    "SANDBOX_ISOLATION": "auto",
+    "SANDBOX_DOCKER_IMAGE": "",
+    "TEST_TIMEOUT_SECONDS": "120"
+  },
+  "experiment": {
+    "tool_faults": true,
+    "tool_fault_rate": 0.1
+  },
+  "scoring": {
+    "direction_from": "hypothesis",
+    "escalate_after_correct_repair": "wrong"
+  },
+  "hypothesis": {
+    "min_direction_f1_gain": 0.15,
+    "max_masked_regression_full": 0.05,
+    "min_masked_regression_b1": 0.2,
+    "min_retention_full": 0.9,
+    "max_retention_b1": 0.7,
+    "min_covered_tool_call_saving": 0.25,
+    "max_overgeneralisation_scoped": 0.1,
+    "min_overgeneralisation_coarse": 0.3,
+    "b2_gap": 0.05
+  }
+}

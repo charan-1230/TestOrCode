@@ -464,6 +464,9 @@ class MutationCheck:
     # UPDATE_TEST only: no test in the touched files kills any executable mutant, before or after the repair, so these
     # mutants cannot measure the repair's strength either way.  A gap too unless ``allow_unmeasurable`` was given.
     unmeasurable: tuple[str, ...] = ()
+    # UPDATE_TEST only: share of the mutants the pre-repair tests killed that the repaired tests still kill; None when
+    # the pre-repair tests killed none (nothing to retain, so nothing measured).
+    retention: float | None = None
 
 
 def locate_function(context: EpisodeContext, function_qualname: str) -> tuple[str, str, str] | None:
@@ -492,12 +495,16 @@ def mutation_check(
     max_mutants: int = DEFAULT_MAX_MUTANTS,
     deadline_seconds: int = DEFAULT_DEADLINE_SECONDS,
     allow_unmeasurable: bool = False,
+    min_retention: float = 1.0,
 ) -> MutationCheck:
     """Measured mutation evidence for an applied repair, on mutants of the group's function.
 
     * **UPDATE_TEST** (the oracle was edited): the touched test files are run after the repair and as they were just
-      before it (``pre_patch``, rebuilt by the Guard).  A mutant killed before but not after is a *proven loss of
-      strength* (problem: REJECT).  Updated tests that kill none of the executable mutants, or mutants that could not
+      before it (``pre_patch``, rebuilt by the Guard).  *Retention* = mutants killed both before and after / mutants
+      killed before.  Retention below ``min_retention`` is a *proven loss of strength* (problem: REJECT); the default
+      1.0 rejects any lost mutant (the pilot rule), the frozen final configuration uses 0.90
+      (``Settings.guard_min_retention``).  The Guard sees only the pre-repair tests: the developer's reference tests
+      are evaluation-side (``integrity_audit``) and never reach the agent or the Guard.  Updated tests that kill none of the executable mutants, or mutants that could not
       be executed (errors, timeouts, deadline), leave the strength unproven (gap: ESCALATE).
     * **FIX_CODE** (the oracle is untouched): an oracle-sensitivity check on the repaired code.  If the group's tests
       kill none of the executable mutants of the repaired function, they cannot tell the repair from broken variants
@@ -558,9 +565,10 @@ def mutation_check(
     by_group = {m for m in killed_after if group_ids & set(a[m].killed_by)}
     problems, gaps, unmeasurable = [], [], []
     lost = sorted(killed_before - killed_after)
-    if lost:
+    retention = len(killed_before & killed_after) / len(killed_before) if killed_before else None
+    if lost and retention is not None and retention < min_retention:
         problems.append(
-            f"measured test weakening: {len(lost)} cached mutant(s) of {function} killed by the tests before the "
+            f"measured test weakening (retention {retention:.2f} < {min_retention:.2f}): {len(lost)} cached mutant(s) of {function} killed by the tests before the "
             f"repair survive the repaired tests ({', '.join(lost)}); the files kill {len(killed_after)} of "
             f"{len(valid)} after the repair, {len(killed_before)} before"
         )
@@ -590,4 +598,4 @@ def mutation_check(
     )
     return MutationCheck(result, tuple(problems), tuple(gaps), len(killed_after),
                          None if fix else len(killed_before), after.outcomes, before.outcomes if before else (),
-                         tuple(unmeasurable))
+                         tuple(unmeasurable), retention)

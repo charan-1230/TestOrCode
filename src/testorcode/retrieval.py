@@ -74,6 +74,7 @@ def _evidence(item: EvidenceItem, query: str, rank: int, score: float, method: R
         source_type=item.source_type,
         source_ref=item.source_ref,
         commit_sha=item.commit_sha,
+        commit_index=item.commit_index,
         line_start=item.line_start,
         line_end=item.line_end,
         snippet=(item.text or "")[:SNIPPET_CHARS] or None,
@@ -84,14 +85,24 @@ def _evidence(item: EvidenceItem, query: str, rank: int, score: float, method: R
     )
 
 
+def ci_message_evidence_id(ci_sha: str) -> str:
+    """Corpus id of the CI commit's own message (``msg:<sha12>``): visible to the agent exactly when the message is."""
+    return f"msg:{ci_sha[:12]}"
+
+
+def _beyond(item: EvidenceItem, cutoff_index: int | None) -> bool:
+    return cutoff_index is not None and item.commit_index is not None and item.commit_index > cutoff_index
+
+
 class Bm25Retriever:
     """BM25Okapi over ``text`` + ``source_ref`` of each item.  Deterministic; no network.
 
     Items sharing no query term are never returned; everything else is ranked by score, then ``evidence_id``.
     """
 
-    def __init__(self, items: Sequence[EvidenceItem]) -> None:
-        self._items = list(items)
+    def __init__(self, items: Sequence[EvidenceItem], *, cutoff_index: int | None = None) -> None:
+        self._cutoff = cutoff_index
+        self._items = [i for i in items if not _beyond(i, cutoff_index)]  # defence in depth: build_retriever raises first
         docs = [tokenize(f"{i.text or ''} {i.source_ref}") for i in self._items]
         self._token_sets = [set(d) for d in docs]
         self._index = BM25Okapi(docs) if docs else None
@@ -139,8 +150,8 @@ def build_retriever(corpus: RetrievalCorpusSpec, worktree_path: Path | None = No
         from testorcode.retrieval_hybrid import HybridRetriever, build_components
 
         embedder, reranker = build_components(settings)
-        return HybridRetriever(corpus.items, embedder, reranker)
-    return Bm25Retriever(corpus.items)
+        return HybridRetriever(corpus.items, embedder, reranker, cutoff_index=corpus.history_cutoff_index)
+    return Bm25Retriever(corpus.items, cutoff_index=corpus.history_cutoff_index)
 
 
 # --------------------------------------------------------------------------- #

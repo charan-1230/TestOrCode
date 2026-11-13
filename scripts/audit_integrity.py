@@ -23,6 +23,9 @@ written.
 
     python scripts/audit_integrity.py --runs results/day2/pilot-full-b1/runs.jsonl \\
         --repo ../boltons --python ../boltons-venv/bin/python [--out-dir DIR] [--overwrite]
+
+Several libraries (the held-out set): ``--dataset heldout --repos configs/repos.heldout.json`` instead of ``--repo``/``--python``;
+an episode's repo_id picks its clone and interpreter, and an unmapped repo_id refuses the audit before any work.
 """
 
 from __future__ import annotations
@@ -39,6 +42,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from testorcode.dataset import episode_path, load_episodes
+from testorcode.experiment import load_repos
 from testorcode.integrity_audit import AUDIT_VERSION, audit_run, markdown_table, summarize_audits
 from testorcode.schemas.result_schemas import ExperimentRunRecord
 from testorcode.tools.mutation import load_cached_mutants
@@ -59,8 +63,19 @@ def _materializer():
     return module.materialize
 
 
-def _load_episodes(splits: set[str]) -> dict:
-    return {e.episode_id: e for split in sorted(splits) for e in load_episodes(episode_path(split))}
+def _load_episodes(splits: set[str], dataset: str = "pilot") -> dict:
+    return {e.episode_id: e for split in sorted(splits) for e in load_episodes(episode_path(split, dataset=dataset))}
+
+
+def _environment(record, episode, repos: dict, repo: Path, python: str) -> tuple[Path, str]:
+    """The clone and interpreter to audit ``episode`` with: its library's entry of ``--repos``, or the single ``--repo``."""
+    if not repos:
+        return repo, python
+    env = repos.get(episode.agent_input.repo.repo_id)
+    if env is None:
+        raise Refused(f"--repos has no entry for repo_id {episode.agent_input.repo.repo_id!r} "
+                      f"(episode {record.episode_id})")
+    return env.path, os.path.abspath(env.python) if env.python else python
 
 
 def _read_records(runs: Path) -> tuple[list[ExperimentRunRecord], list[tuple[int, str]], list[str]]:
@@ -176,8 +191,12 @@ def _markdown(runs: Path, audits: list, duplicates: list[tuple[int, str]],
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--runs", required=True, help="an experiment's runs.jsonl")
-    parser.add_argument("--repo", default=str(ROOT.parent / "boltons"), help="the pinned clone")
-    parser.add_argument("--python", required=True, help="interpreter of the pinned pilot environment")
+    parser.add_argument("--repo", default=str(ROOT.parent / "boltons"), help="the pinned clone (single-library audit)")
+    parser.add_argument("--python", default=None,
+                        help="interpreter of the pinned environment (single-library audit; --repos carries its own)")
+    parser.add_argument("--dataset", default="pilot", help="dataset file prefix (e.g. heldout with --split test)")
+    parser.add_argument("--repos", default=None,
+                        help="JSON mapping repo_id -> {path, python} (as for run_experiment.py): audit several libraries")
     parser.add_argument("--cached-mutants", default=None,
                         help="mutant catalogue (default: generate the Guard's mutants from the CI-state source)")
     parser.add_argument("--timeout", type=int, default=120)
@@ -185,18 +204,29 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out-dir", default=None, help="where to write the reports (default: next to --runs)")
     parser.add_argument("--overwrite", action="store_true", help="replace existing integrity_audit.{jsonl,md}")
     args = parser.parse_args(argv)
-    python = os.path.abspath(args.python)  # the sandbox runs elsewhere; keep the venv symlink (no resolve)
     runs = Path(args.runs)
+    if not args.python and not args.repos:
+        print("audit refused: give --python (one library) or --repos (several)", file=sys.stderr)
+        return REFUSED
+    python = os.path.abspath(args.python) if args.python else ""  # keep the venv symlink (no resolve)
+    try:
+        repos = load_repos(args.repos) if args.repos else {}
+    except (OSError, ValueError) as exc:
+        print(f"audit refused: --repos: {exc}", file=sys.stderr)
+        return REFUSED
 
     try:
         targets = _check_outputs(Path(args.out_dir) if args.out_dir else runs.parent, args.overwrite)
         records, duplicates, repeated = _read_records(runs)
         splits = {r.provenance.split or "dev" for r in records}
-        episodes = _load_episodes(splits)
+        episodes = _load_episodes(splits, args.dataset)
         unknown = sorted({f"{r.episode_id} (run {r.provenance.run_id})" for r in records
                           if r.episode_id not in episodes})
         if unknown:
-            raise Refused(f"episode(s) not in split(s) {sorted(splits)}, nothing audited: " + ", ".join(unknown))
+            raise Refused(f"episode(s) not in split(s) {sorted(splits)} of dataset {args.dataset!r}, nothing audited: "
+                          + ", ".join(unknown))
+        for record in records:  # every library must be mapped before any audit work starts
+            _environment(record, episodes[record.episode_id], repos, Path(args.repo), python)
     except Refused as exc:
         print(f"audit refused: {exc}", file=sys.stderr)
         return REFUSED
@@ -209,8 +239,9 @@ def main(argv: list[str] | None = None) -> int:
     materialize = _materializer()
     audits = []
     for record in records:
-        audit = audit_run(record, episodes[record.episode_id], repo=Path(args.repo).resolve(),
-                          materialize=materialize, python=python, timeout_seconds=args.timeout,
+        clone, interpreter = _environment(record, episodes[record.episode_id], repos, Path(args.repo), python)
+        audit = audit_run(record, episodes[record.episode_id], repo=clone.resolve(),
+                          materialize=materialize, python=interpreter, timeout_seconds=args.timeout,
                           isolation=args.isolation, cached_mutants=cached)
         audits.append(audit)
         detail = "; ".join(

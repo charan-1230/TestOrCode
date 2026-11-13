@@ -261,6 +261,7 @@ class RetrievedEvidence(_Result):
     source_type: EvidenceSourceType
     source_ref: str = Field(min_length=1)
     commit_sha: str | None = None
+    commit_index: int | None = Field(default=None, ge=0, description="Stream position of the item's commit, for cutoff audits.")
     line_start: int | None = Field(default=None, ge=1)
     line_end: int | None = Field(default=None, ge=1)
     snippet: str | None = None
@@ -268,6 +269,9 @@ class RetrievedEvidence(_Result):
     retrieval_method: RetrievalMethod | None = None
     rank: int | None = Field(default=None, ge=1)
     score: float | None = None
+    component_ranks: dict[str, int] | None = Field(
+        default=None, description="Rank each first-stage ranker gave the item (hybrid: bm25, dense); None = unranked there."
+    )
     support: SupportStatus = SupportStatus.UNKNOWN
     freshness: EvidenceFreshness = EvidenceFreshness.UNKNOWN
 

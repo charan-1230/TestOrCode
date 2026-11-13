@@ -74,6 +74,28 @@ class RepoEnvironment(BaseModel):
     docker_image: str | None = Field(default=None, description="Sandbox image for its tests; None = the default.")
 
 
+def load_repos(path: str | Path) -> dict[str, RepoEnvironment]:
+    """``repo_id -> RepoEnvironment`` from a mapping file; relative paths are relative to the file (symlinks are kept, so a
+    venv's interpreter stays the venv's).
+
+    Raises:
+        ValueError: not a JSON object of ``{"path": ..., "python": ...}`` entries (or an entry is invalid).
+    """
+    file = Path(path)
+    raw = json.loads(file.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError(f"{file}: expected an object mapping repo_id to its environment")
+    base = file.resolve().parent
+    fixed = {}
+    for repo_id, entry in raw.items():
+        entry = dict(entry)
+        for field in ("path", "python"):
+            if entry.get(field) and not Path(entry[field]).is_absolute():
+                entry[field] = os.path.normpath(base / entry[field])  # normalised, symlinks kept
+        fixed[repo_id] = RepoEnvironment.model_validate(entry)
+    return fixed
+
+
 class ExperimentConfig(BaseModel):
     """What to run.  Frozen; contains no credentials (those come from ``.env`` when a model is called)."""
 

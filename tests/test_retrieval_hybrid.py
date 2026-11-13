@@ -92,3 +92,89 @@ def test_hybrid_settings_build_a_hybrid_retriever(monkeypatch) -> None:
     corpus = RetrievalCorpusSpec(corpus_id="c", history_cutoff_commit="a1b2c3d4", items=ITEMS)
     retriever = build_retriever(corpus, settings=settings)
     assert isinstance(retriever, HybridRetriever) and retriever.search("cache", top_k=1)[0].evidence_id == "msg:a"
+
+
+# --- Voyage key pool, resumable cache, component ranks, cutoff guard -------------------------------------------------
+
+
+class FakeClock:
+    def __init__(self) -> None:
+        self.now = 0.0
+        self.slept: list[float] = []
+
+    def __call__(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.slept.append(seconds)
+        self.now += seconds
+
+
+def test_key_pool_rotates_keys_before_waiting() -> None:
+    from testorcode.retrieval_hybrid import VoyageKeyPool
+
+    clock = FakeClock()
+    pool = VoyageKeyPool(["k1", "k2", "k3"], rpm=3, tpm=9000, clock=clock, sleep=clock.sleep)
+    used = [pool.acquire(8000) for _ in range(3)]
+    assert sorted(used) == ["k1", "k2", "k3"] and clock.slept == []  # three keys, three calls, no waiting
+    pool.acquire(8000)
+    assert clock.slept and clock.slept[0] == pytest.approx(60.0)  # a fourth 8k-token call waits for a window to clear
+
+
+def test_key_pool_enforces_requests_per_minute() -> None:
+    from testorcode.retrieval_hybrid import VoyageKeyPool
+
+    clock = FakeClock()
+    pool = VoyageKeyPool(["only"], rpm=3, tpm=9000, clock=clock, sleep=clock.sleep)
+    for _ in range(3):
+        pool.acquire(10)
+    assert clock.slept == []
+    pool.acquire(10)
+    assert clock.slept == [pytest.approx(60.0)]
+
+
+def test_key_pool_cool_down_benches_a_key() -> None:
+    from testorcode.retrieval_hybrid import VoyageKeyPool
+
+    clock = FakeClock()
+    pool = VoyageKeyPool(["a", "b"], clock=clock, sleep=clock.sleep)
+    pool.cool_down("a", 30)
+    assert pool.acquire(10) == "b"
+
+
+def test_key_pool_needs_a_key() -> None:
+    from testorcode.retrieval_hybrid import VoyageKeyPool
+
+    with pytest.raises(ConfigError):
+        VoyageKeyPool([])
+
+
+def test_cache_is_resumable_and_skips_torn_lines(tmp_path: Path) -> None:
+    inner = KeywordEmbedder()
+    first = CachedEmbedder(inner, tmp_path)
+    first.embed(["alpha cache", "beta typo"], input_type="document")
+    path = next(tmp_path.glob("*.jsonl"))
+    path.write_text(path.read_text() + '{"k": "torn')  # an interrupted write
+    second = CachedEmbedder(KeywordEmbedder(), tmp_path)
+    assert second.has("alpha cache", "document") and not second.has("alpha cache", "query")
+    second.embed(["alpha cache", "beta typo"], input_type="document")
+    assert second.inner.calls == []  # all served from disk
+
+
+def test_hybrid_hits_carry_component_ranks_and_commit_index() -> None:
+    items = [i.model_copy(update={"commit_index": n}) for n, i in enumerate(ITEMS)]
+    hits = HybridRetriever(items, KeywordEmbedder()).search("cache scoped function", top_k=3)
+    assert hits[0].evidence_id == "msg:a" and hits[0].commit_index == 0
+    assert hits[0].component_ranks == {"bm25": 1, "dense": 1}
+
+
+def test_retrievers_never_index_items_beyond_the_cutoff() -> None:
+    items = [i.model_copy(update={"commit_index": n}) for n, i in enumerate(ITEMS)]
+    for retriever in (Bm25Retriever(items, cutoff_index=0), HybridRetriever(items, KeywordEmbedder(), cutoff_index=0)):
+        assert [h.evidence_id for h in retriever.search("cache memoization typo readme", top_k=5)] == ["msg:a"]
+
+
+def test_settings_collect_the_voyage_key_pool() -> None:
+    settings = Settings.from_env({"VOYAGE_API_KEY1": "a", "VOYAGE_API_KEY2": "b", "VOYAGE_API_KEY": "a"})
+    assert settings.voyage_api_keys() == ["a", "b"]
+    assert "a" in settings.secret_values() and "b" in settings.secret_values()

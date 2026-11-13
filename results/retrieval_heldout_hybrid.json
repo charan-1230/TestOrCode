@@ -1,0 +1,5140 @@
+{
+ "config": "hybrid:bm25+voyage-code-3/rrf60/depth50/rerank30",
+ "depth": 50,
+ "metric_definitions": {
+  "ci": "paired percentile bootstrap (2000 resamples, seed 0) of the per-row hybrid - bm25 difference; uninformative for n < 10",
+  "hit@k (evidence coverage)": "1 if at least one gold item is in the top k, else 0; mean over rows (the proposal names no coverage metric)",
+  "precision@5": "|gold in top 5| / 5 (fixed denominator 5, even when fewer than 5 items come back); with one gold item the maximum is 0.2",
+  "protocols": {
+   "discoverable": "msgfree, and also gold whose text the CI diff already shows (>= half of its lines are added by the diff) removed",
+   "msgfree": "CI message item removed from corpus and gold; episodes with no other gold are left out",
+   "standard": "all gold; includes the CI commit's own message, which the prompt already shows (not a discovery)"
+  },
+  "recall@k": "|gold in top k| / |gold| for the row, then the mean over rows; k = 1, 3, 5, 10 over a depth-50 ranking",
+  "stale@5": "|stale items in top 5| / 5, stale = stale_evidence_ids() heuristic, only for gold-UPDATE_TEST functions (else 0 stale items)",
+  "stale_in_top5": "1 if any stale item is in the top 5",
+  "unit": "one row = one (episode, protocol, method); method 'group' has one row per oracle failure group with gold"
+ },
+ "rows": [
+  {
+   "episode": "mit-01",
+   "gold": [
+    "msg:6a5ee59e2017"
+   ],
+   "gold_visibility": {
+    "msg:6a5ee59e2017": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-01",
+   "gold": [
+    "msg:6a5ee59e2017"
+   ],
+   "gold_visibility": {
+    "msg:6a5ee59e2017": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-01",
+   "gold": [
+    "msg:6a5ee59e2017"
+   ],
+   "gold_visibility": {
+    "msg:6a5ee59e2017": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 8,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more.zip_equal"
+  },
+  {
+   "episode": "mit-01",
+   "gold": [
+    "msg:6a5ee59e2017"
+   ],
+   "gold_visibility": {
+    "msg:6a5ee59e2017": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-04",
+   "gold": [
+    "msg:086c54045678"
+   ],
+   "gold_visibility": {
+    "msg:086c54045678": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 44,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-04",
+   "gold": [
+    "msg:086c54045678"
+   ],
+   "gold_visibility": {
+    "msg:086c54045678": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-04",
+   "gold": [
+    "msg:086c54045678"
+   ],
+   "gold_visibility": {
+    "msg:086c54045678": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more.strictly_n"
+  },
+  {
+   "episode": "mit-04",
+   "gold": [
+    "msg:086c54045678"
+   ],
+   "gold_visibility": {
+    "msg:086c54045678": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-05",
+   "gold": [
+    "msg:6f775551a906"
+   ],
+   "gold_visibility": {
+    "msg:6f775551a906": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 22,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-05",
+   "gold": [
+    "msg:6f775551a906"
+   ],
+   "gold_visibility": {
+    "msg:6f775551a906": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-05",
+   "gold": [
+    "msg:6f775551a906"
+   ],
+   "gold_visibility": {
+    "msg:6f775551a906": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.strictly_n"
+  },
+  {
+   "episode": "mit-05",
+   "gold": [
+    "msg:6f775551a906"
+   ],
+   "gold_visibility": {
+    "msg:6f775551a906": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-07",
+   "gold": [
+    "msg:ab72fc8a4e12"
+   ],
+   "gold_visibility": {
+    "msg:ab72fc8a4e12": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": null,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-07",
+   "gold": [
+    "msg:ab72fc8a4e12"
+   ],
+   "gold_visibility": {
+    "msg:ab72fc8a4e12": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-07",
+   "gold": [
+    "msg:ab72fc8a4e12"
+   ],
+   "gold_visibility": {
+    "msg:ab72fc8a4e12": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.unique_in_window"
+  },
+  {
+   "episode": "mit-07",
+   "gold": [
+    "msg:ab72fc8a4e12"
+   ],
+   "gold_visibility": {
+    "msg:ab72fc8a4e12": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-11",
+   "gold": [
+    "msg:ed201a263eef"
+   ],
+   "gold_visibility": {
+    "msg:ed201a263eef": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": null,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-11",
+   "gold": [
+    "msg:ed201a263eef"
+   ],
+   "gold_visibility": {
+    "msg:ed201a263eef": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 26,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-11",
+   "gold": [
+    "msg:ed201a263eef"
+   ],
+   "gold_visibility": {
+    "msg:ed201a263eef": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 17,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.distinct_permutations"
+  },
+  {
+   "episode": "mit-11",
+   "gold": [
+    "msg:ed201a263eef"
+   ],
+   "gold_visibility": {
+    "msg:ed201a263eef": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 8,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts",
+    "msg:fb95291e8f9a"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff",
+    "msg:fb95291e8f9a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts",
+    "msg:fb95291e8f9a"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff",
+    "msg:fb95291e8f9a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts",
+    "msg:fb95291e8f9a"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff",
+    "msg:fb95291e8f9a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.circular_shifts"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts",
+    "msg:fb95291e8f9a"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff",
+    "msg:fb95291e8f9a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.circular_shifts"
+  },
+  {
+   "episode": "mit-12",
+   "gold": [
+    "docstring:more.circular_shifts"
+   ],
+   "gold_visibility": {
+    "docstring:more.circular_shifts": "prompt_diff"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-13",
+   "gold": [
+    "msg:e733192454b7"
+   ],
+   "gold_visibility": {
+    "msg:e733192454b7": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": null,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-13",
+   "gold": [
+    "msg:e733192454b7"
+   ],
+   "gold_visibility": {
+    "msg:e733192454b7": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 49,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-13",
+   "gold": [
+    "msg:e733192454b7"
+   ],
+   "gold_visibility": {
+    "msg:e733192454b7": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-more_itertools.more.is_sorted"
+  },
+  {
+   "episode": "mit-13",
+   "gold": [
+    "msg:e733192454b7"
+   ],
+   "gold_visibility": {
+    "msg:e733192454b7": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 15,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-15",
+   "gold": [
+    "msg:a16e9c1c9b06"
+   ],
+   "gold_visibility": {
+    "msg:a16e9c1c9b06": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-15",
+   "gold": [
+    "msg:a16e9c1c9b06"
+   ],
+   "gold_visibility": {
+    "msg:a16e9c1c9b06": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-15",
+   "gold": [
+    "msg:a16e9c1c9b06"
+   ],
+   "gold_visibility": {
+    "msg:a16e9c1c9b06": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more._islice_helper"
+  },
+  {
+   "episode": "mit-15",
+   "gold": [
+    "msg:a16e9c1c9b06"
+   ],
+   "gold_visibility": {
+    "msg:a16e9c1c9b06": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.running_median"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.running_median"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "msgfree",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.running_median"
+  },
+  {
+   "episode": "mit-17",
+   "gold": [
+    "docstring:recipes.running_median"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.running_median": "discoverable"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "discoverable",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination",
+    "msg:d9adeb4e3142"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable",
+    "msg:d9adeb4e3142": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 0.5,
+   "recall@3": 0.5,
+   "recall@5": 0.5,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination",
+    "msg:d9adeb4e3142"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable",
+    "msg:d9adeb4e3142": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 0.5,
+   "recall@3": 0.5,
+   "recall@5": 0.5,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination",
+    "msg:d9adeb4e3142"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable",
+    "msg:d9adeb4e3142": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 0.5,
+   "recall@3": 0.5,
+   "recall@5": 0.5,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.nth_combination"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination",
+    "msg:d9adeb4e3142"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable",
+    "msg:d9adeb4e3142": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 0.5,
+   "recall@10": 0.5,
+   "recall@3": 0.5,
+   "recall@5": 0.5,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.nth_combination"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.nth_combination"
+  },
+  {
+   "episode": "mit-19",
+   "gold": [
+    "docstring:recipes.nth_combination"
+   ],
+   "gold_visibility": {
+    "docstring:recipes.nth_combination": "discoverable"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "discoverable",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-20",
+   "gold": [
+    "msg:def2d821c0a1"
+   ],
+   "gold_visibility": {
+    "msg:def2d821c0a1": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-20",
+   "gold": [
+    "msg:def2d821c0a1"
+   ],
+   "gold_visibility": {
+    "msg:def2d821c0a1": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-20",
+   "gold": [
+    "msg:def2d821c0a1"
+   ],
+   "gold_visibility": {
+    "msg:def2d821c0a1": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more.nth_permutation"
+  },
+  {
+   "episode": "mit-20",
+   "gold": [
+    "msg:def2d821c0a1"
+   ],
+   "gold_visibility": {
+    "msg:def2d821c0a1": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-21",
+   "gold": [
+    "msg:06f31819121e"
+   ],
+   "gold_visibility": {
+    "msg:06f31819121e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-21",
+   "gold": [
+    "msg:06f31819121e"
+   ],
+   "gold_visibility": {
+    "msg:06f31819121e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-21",
+   "gold": [
+    "msg:06f31819121e"
+   ],
+   "gold_visibility": {
+    "msg:06f31819121e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more.nth_combination_with_replacement"
+  },
+  {
+   "episode": "mit-21",
+   "gold": [
+    "msg:06f31819121e"
+   ],
+   "gold_visibility": {
+    "msg:06f31819121e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-22",
+   "gold": [
+    "msg:d71c4ad9f828"
+   ],
+   "gold_visibility": {
+    "msg:d71c4ad9f828": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-22",
+   "gold": [
+    "msg:d71c4ad9f828"
+   ],
+   "gold_visibility": {
+    "msg:d71c4ad9f828": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-22",
+   "gold": [
+    "msg:d71c4ad9f828"
+   ],
+   "gold_visibility": {
+    "msg:d71c4ad9f828": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.more.locate"
+  },
+  {
+   "episode": "mit-22",
+   "gold": [
+    "msg:d71c4ad9f828"
+   ],
+   "gold_visibility": {
+    "msg:d71c4ad9f828": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-23",
+   "gold": [
+    "msg:d63a26e56eac"
+   ],
+   "gold_visibility": {
+    "msg:d63a26e56eac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-23",
+   "gold": [
+    "msg:d63a26e56eac"
+   ],
+   "gold_visibility": {
+    "msg:d63a26e56eac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "mit-23",
+   "gold": [
+    "msg:d63a26e56eac"
+   ],
+   "gold_visibility": {
+    "msg:d63a26e56eac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-more_itertools.recipes.first_true"
+  },
+  {
+   "episode": "mit-23",
+   "gold": [
+    "msg:d63a26e56eac"
+   ],
+   "gold_visibility": {
+    "msg:d63a26e56eac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "more_itertools",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-01",
+   "gold": [
+    "msg:58d5c0a7677f"
+   ],
+   "gold_visibility": {
+    "msg:58d5c0a7677f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-01",
+   "gold": [
+    "msg:58d5c0a7677f"
+   ],
+   "gold_visibility": {
+    "msg:58d5c0a7677f": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-01",
+   "gold": [
+    "msg:58d5c0a7677f"
+   ],
+   "gold_visibility": {
+    "msg:58d5c0a7677f": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._dunders._add_repr"
+  },
+  {
+   "episode": "att-01",
+   "gold": [
+    "msg:58d5c0a7677f"
+   ],
+   "gold_visibility": {
+    "msg:58d5c0a7677f": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-02",
+   "gold": [
+    "msg:d291e8c4dc24"
+   ],
+   "gold_visibility": {
+    "msg:d291e8c4dc24": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-02",
+   "gold": [
+    "msg:d291e8c4dc24"
+   ],
+   "gold_visibility": {
+    "msg:d291e8c4dc24": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-02",
+   "gold": [
+    "msg:d291e8c4dc24"
+   ],
+   "gold_visibility": {
+    "msg:d291e8c4dc24": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._funcs.ls"
+  },
+  {
+   "episode": "att-02",
+   "gold": [
+    "msg:d291e8c4dc24"
+   ],
+   "gold_visibility": {
+    "msg:d291e8c4dc24": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-03",
+   "gold": [
+    "msg:774cf0142abb"
+   ],
+   "gold_visibility": {
+    "msg:774cf0142abb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 25,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-03",
+   "gold": [
+    "msg:774cf0142abb"
+   ],
+   "gold_visibility": {
+    "msg:774cf0142abb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 19,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-03",
+   "gold": [
+    "msg:774cf0142abb"
+   ],
+   "gold_visibility": {
+    "msg:774cf0142abb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 17,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-attr._dunders._attrs_to_script"
+  },
+  {
+   "episode": "att-03",
+   "gold": [
+    "msg:774cf0142abb"
+   ],
+   "gold_visibility": {
+    "msg:774cf0142abb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 13,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make._add_methods"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "msgfree",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make._add_methods"
+  },
+  {
+   "episode": "att-05",
+   "gold": [
+    "comment:_make._add_methods#L150"
+   ],
+   "gold_visibility": {
+    "comment:_make._add_methods#L150": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "msgfree",
+   "rank": 8,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-07",
+   "gold": [
+    "msg:445b6b2e007f"
+   ],
+   "gold_visibility": {
+    "msg:445b6b2e007f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-07",
+   "gold": [
+    "msg:445b6b2e007f"
+   ],
+   "gold_visibility": {
+    "msg:445b6b2e007f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-07",
+   "gold": [
+    "msg:445b6b2e007f"
+   ],
+   "gold_visibility": {
+    "msg:445b6b2e007f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 13,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make.attributes"
+  },
+  {
+   "episode": "att-07",
+   "gold": [
+    "msg:445b6b2e007f"
+   ],
+   "gold_visibility": {
+    "msg:445b6b2e007f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-08",
+   "gold": [
+    "msg:d96484589912"
+   ],
+   "gold_visibility": {
+    "msg:d96484589912": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-08",
+   "gold": [
+    "msg:d96484589912"
+   ],
+   "gold_visibility": {
+    "msg:d96484589912": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-08",
+   "gold": [
+    "msg:d96484589912"
+   ],
+   "gold_visibility": {
+    "msg:d96484589912": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 8,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make._transform_attrs"
+  },
+  {
+   "episode": "att-08",
+   "gold": [
+    "msg:d96484589912"
+   ],
+   "gold_visibility": {
+    "msg:d96484589912": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-09",
+   "gold": [
+    "msg:365cd89921e2"
+   ],
+   "gold_visibility": {
+    "msg:365cd89921e2": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 20,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-09",
+   "gold": [
+    "msg:365cd89921e2"
+   ],
+   "gold_visibility": {
+    "msg:365cd89921e2": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-09",
+   "gold": [
+    "msg:365cd89921e2"
+   ],
+   "gold_visibility": {
+    "msg:365cd89921e2": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-attr._make.Attribute.__init__"
+  },
+  {
+   "episode": "att-09",
+   "gold": [
+    "msg:365cd89921e2"
+   ],
+   "gold_visibility": {
+    "msg:365cd89921e2": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-11",
+   "gold": [
+    "msg:38580632ceac"
+   ],
+   "gold_visibility": {
+    "msg:38580632ceac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": null,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-11",
+   "gold": [
+    "msg:38580632ceac"
+   ],
+   "gold_visibility": {
+    "msg:38580632ceac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 44,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-11",
+   "gold": [
+    "msg:38580632ceac"
+   ],
+   "gold_visibility": {
+    "msg:38580632ceac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 30,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-attr._make._generate_unique_filename"
+  },
+  {
+   "episode": "att-11",
+   "gold": [
+    "msg:38580632ceac"
+   ],
+   "gold_visibility": {
+    "msg:38580632ceac": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-14",
+   "gold": [
+    "msg:2257a0c60cba"
+   ],
+   "gold_visibility": {
+    "msg:2257a0c60cba": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-14",
+   "gold": [
+    "msg:2257a0c60cba"
+   ],
+   "gold_visibility": {
+    "msg:2257a0c60cba": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-14",
+   "gold": [
+    "msg:2257a0c60cba"
+   ],
+   "gold_visibility": {
+    "msg:2257a0c60cba": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr.validators._InValidator.__call__"
+  },
+  {
+   "episode": "att-14",
+   "gold": [
+    "msg:2257a0c60cba"
+   ],
+   "gold_visibility": {
+    "msg:2257a0c60cba": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-16",
+   "gold": [
+    "msg:c860e9dd2548"
+   ],
+   "gold_visibility": {
+    "msg:c860e9dd2548": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-16",
+   "gold": [
+    "msg:c860e9dd2548"
+   ],
+   "gold_visibility": {
+    "msg:c860e9dd2548": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-16",
+   "gold": [
+    "msg:c860e9dd2548"
+   ],
+   "gold_visibility": {
+    "msg:c860e9dd2548": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make._Nothing.__new__"
+  },
+  {
+   "episode": "att-16",
+   "gold": [
+    "msg:c860e9dd2548"
+   ],
+   "gold_visibility": {
+    "msg:c860e9dd2548": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-18",
+   "gold": [
+    "msg:1c962d15a743"
+   ],
+   "gold_visibility": {
+    "msg:1c962d15a743": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-18",
+   "gold": [
+    "msg:1c962d15a743"
+   ],
+   "gold_visibility": {
+    "msg:1c962d15a743": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 31,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-18",
+   "gold": [
+    "msg:1c962d15a743"
+   ],
+   "gold_visibility": {
+    "msg:1c962d15a743": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 30,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-attr._make.Attribute.from_counting_attr"
+  },
+  {
+   "episode": "att-18",
+   "gold": [
+    "msg:1c962d15a743"
+   ],
+   "gold_visibility": {
+    "msg:1c962d15a743": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 15,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-19",
+   "gold": [
+    "msg:6e3786c59927"
+   ],
+   "gold_visibility": {
+    "msg:6e3786c59927": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": null,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-19",
+   "gold": [
+    "msg:6e3786c59927"
+   ],
+   "gold_visibility": {
+    "msg:6e3786c59927": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 43,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-19",
+   "gold": [
+    "msg:6e3786c59927"
+   ],
+   "gold_visibility": {
+    "msg:6e3786c59927": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 42,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-attr._make._transform_attrs"
+  },
+  {
+   "episode": "att-19",
+   "gold": [
+    "msg:6e3786c59927"
+   ],
+   "gold_visibility": {
+    "msg:6e3786c59927": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 22,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-20",
+   "gold": [
+    "msg:862696afb52f"
+   ],
+   "gold_visibility": {
+    "msg:862696afb52f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 27,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-20",
+   "gold": [
+    "msg:862696afb52f"
+   ],
+   "gold_visibility": {
+    "msg:862696afb52f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-20",
+   "gold": [
+    "msg:862696afb52f"
+   ],
+   "gold_visibility": {
+    "msg:862696afb52f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make._transform_attrs"
+  },
+  {
+   "episode": "att-20",
+   "gold": [
+    "msg:862696afb52f"
+   ],
+   "gold_visibility": {
+    "msg:862696afb52f": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-22",
+   "gold": [
+    "msg:48b8611c2777"
+   ],
+   "gold_visibility": {
+    "msg:48b8611c2777": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-22",
+   "gold": [
+    "msg:48b8611c2777"
+   ],
+   "gold_visibility": {
+    "msg:48b8611c2777": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 15,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "att-22",
+   "gold": [
+    "msg:48b8611c2777"
+   ],
+   "gold_visibility": {
+    "msg:48b8611c2777": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-attr._make.fields"
+  },
+  {
+   "episode": "att-22",
+   "gold": [
+    "msg:48b8611c2777"
+   ],
+   "gold_visibility": {
+    "msg:48b8611c2777": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "attrs",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 8,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-04",
+   "gold": [
+    "msg:080405b1974e"
+   ],
+   "gold_visibility": {
+    "msg:080405b1974e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-04",
+   "gold": [
+    "msg:080405b1974e"
+   ],
+   "gold_visibility": {
+    "msg:080405b1974e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-04",
+   "gold": [
+    "msg:080405b1974e"
+   ],
+   "gold_visibility": {
+    "msg:080405b1974e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 7,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-packaging.metadata.Metadata.from_raw"
+  },
+  {
+   "episode": "pkg-04",
+   "gold": [
+    "msg:080405b1974e"
+   ],
+   "gold_visibility": {
+    "msg:080405b1974e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-05",
+   "gold": [
+    "msg:a2b3e346b03c"
+   ],
+   "gold_visibility": {
+    "msg:a2b3e346b03c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 16,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-05",
+   "gold": [
+    "msg:a2b3e346b03c"
+   ],
+   "gold_visibility": {
+    "msg:a2b3e346b03c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 17,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-05",
+   "gold": [
+    "msg:a2b3e346b03c"
+   ],
+   "gold_visibility": {
+    "msg:a2b3e346b03c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 14,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.tags._cpython_abis"
+  },
+  {
+   "episode": "pkg-05",
+   "gold": [
+    "msg:a2b3e346b03c"
+   ],
+   "gold_visibility": {
+    "msg:a2b3e346b03c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-08",
+   "gold": [
+    "msg:c385b58c4d0e"
+   ],
+   "gold_visibility": {
+    "msg:c385b58c4d0e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 43,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-08",
+   "gold": [
+    "msg:c385b58c4d0e"
+   ],
+   "gold_visibility": {
+    "msg:c385b58c4d0e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.4,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-08",
+   "gold": [
+    "msg:c385b58c4d0e"
+   ],
+   "gold_visibility": {
+    "msg:c385b58c4d0e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.4,
+   "stale_in_top5": 1.0,
+   "unit": "g-packaging.markers.Marker.evaluate"
+  },
+  {
+   "episode": "pkg-08",
+   "gold": [
+    "msg:c385b58c4d0e"
+   ],
+   "gold_visibility": {
+    "msg:c385b58c4d0e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-10",
+   "gold": [
+    "msg:888eb1452625"
+   ],
+   "gold_visibility": {
+    "msg:888eb1452625": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 14,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-10",
+   "gold": [
+    "msg:888eb1452625"
+   ],
+   "gold_visibility": {
+    "msg:888eb1452625": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-10",
+   "gold": [
+    "msg:888eb1452625"
+   ],
+   "gold_visibility": {
+    "msg:888eb1452625": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 15,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-packaging._parser._parse_requirement_marker"
+  },
+  {
+   "episode": "pkg-10",
+   "gold": [
+    "msg:888eb1452625"
+   ],
+   "gold_visibility": {
+    "msg:888eb1452625": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-12",
+   "gold": [
+    "msg:e892020b3721"
+   ],
+   "gold_visibility": {
+    "msg:e892020b3721": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-12",
+   "gold": [
+    "msg:e892020b3721"
+   ],
+   "gold_visibility": {
+    "msg:e892020b3721": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-12",
+   "gold": [
+    "msg:e892020b3721"
+   ],
+   "gold_visibility": {
+    "msg:e892020b3721": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.tags.cpython_tags"
+  },
+  {
+   "episode": "pkg-12",
+   "gold": [
+    "msg:e892020b3721"
+   ],
+   "gold_visibility": {
+    "msg:e892020b3721": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-15",
+   "gold": [
+    "msg:68cdb4d40082"
+   ],
+   "gold_visibility": {
+    "msg:68cdb4d40082": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-15",
+   "gold": [
+    "msg:68cdb4d40082"
+   ],
+   "gold_visibility": {
+    "msg:68cdb4d40082": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-15",
+   "gold": [
+    "msg:68cdb4d40082"
+   ],
+   "gold_visibility": {
+    "msg:68cdb4d40082": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.tags._linux_platforms"
+  },
+  {
+   "episode": "pkg-15",
+   "gold": [
+    "msg:68cdb4d40082"
+   ],
+   "gold_visibility": {
+    "msg:68cdb4d40082": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-16",
+   "gold": [
+    "msg:45d15309ac4a"
+   ],
+   "gold_visibility": {
+    "msg:45d15309ac4a": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 16,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-16",
+   "gold": [
+    "msg:45d15309ac4a"
+   ],
+   "gold_visibility": {
+    "msg:45d15309ac4a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-16",
+   "gold": [
+    "msg:45d15309ac4a"
+   ],
+   "gold_visibility": {
+    "msg:45d15309ac4a": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.tags._mac_binary_formats"
+  },
+  {
+   "episode": "pkg-16",
+   "gold": [
+    "msg:45d15309ac4a"
+   ],
+   "gold_visibility": {
+    "msg:45d15309ac4a": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module",
+    "msg:684427106cfb"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff",
+    "msg:684427106cfb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.5,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module",
+    "msg:684427106cfb"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff",
+    "msg:684427106cfb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.5,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module",
+    "msg:684427106cfb"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff",
+    "msg:684427106cfb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.5,
+   "recall@5": 0.5,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging._manylinux._is_compatible"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module",
+    "msg:684427106cfb"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff",
+    "msg:684427106cfb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.4,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging._manylinux._is_compatible"
+  },
+  {
+   "episode": "pkg-17",
+   "gold": [
+    "docstring:_manylinux._get_manylinux_module"
+   ],
+   "gold_visibility": {
+    "docstring:_manylinux._get_manylinux_module": "prompt_diff"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "msgfree",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-18",
+   "gold": [
+    "msg:cf100d20e09c"
+   ],
+   "gold_visibility": {
+    "msg:cf100d20e09c": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-18",
+   "gold": [
+    "msg:cf100d20e09c"
+   ],
+   "gold_visibility": {
+    "msg:cf100d20e09c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 3,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-18",
+   "gold": [
+    "msg:cf100d20e09c"
+   ],
+   "gold_visibility": {
+    "msg:cf100d20e09c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.markers.default_environment"
+  },
+  {
+   "episode": "pkg-18",
+   "gold": [
+    "msg:cf100d20e09c"
+   ],
+   "gold_visibility": {
+    "msg:cf100d20e09c": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-19",
+   "gold": [
+    "msg:abf000549c2e"
+   ],
+   "gold_visibility": {
+    "msg:abf000549c2e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-19",
+   "gold": [
+    "msg:abf000549c2e"
+   ],
+   "gold_visibility": {
+    "msg:abf000549c2e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-19",
+   "gold": [
+    "msg:abf000549c2e"
+   ],
+   "gold_visibility": {
+    "msg:abf000549c2e": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.metadata._Validator._process_description_content_type"
+  },
+  {
+   "episode": "pkg-19",
+   "gold": [
+    "msg:abf000549c2e"
+   ],
+   "gold_visibility": {
+    "msg:abf000549c2e": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 2,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-20",
+   "gold": [
+    "msg:206834025040"
+   ],
+   "gold_visibility": {
+    "msg:206834025040": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 10,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-20",
+   "gold": [
+    "msg:206834025040"
+   ],
+   "gold_visibility": {
+    "msg:206834025040": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-20",
+   "gold": [
+    "msg:206834025040"
+   ],
+   "gold_visibility": {
+    "msg:206834025040": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-packaging.metadata.Metadata.from_email"
+  },
+  {
+   "episode": "pkg-20",
+   "gold": [
+    "msg:206834025040"
+   ],
+   "gold_visibility": {
+    "msg:206834025040": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S3",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-22",
+   "gold": [
+    "msg:f8630ea2b7c8"
+   ],
+   "gold_visibility": {
+    "msg:f8630ea2b7c8": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 6,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-22",
+   "gold": [
+    "msg:f8630ea2b7c8"
+   ],
+   "gold_visibility": {
+    "msg:f8630ea2b7c8": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-22",
+   "gold": [
+    "msg:f8630ea2b7c8"
+   ],
+   "gold_visibility": {
+    "msg:f8630ea2b7c8": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.tags._cpython_abis"
+  },
+  {
+   "episode": "pkg-22",
+   "gold": [
+    "msg:f8630ea2b7c8"
+   ],
+   "gold_visibility": {
+    "msg:f8630ea2b7c8": "prompt_message"
+   },
+   "hit@1": 1.0,
+   "hit@10": 1.0,
+   "hit@3": 1.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 1,
+   "recall@1": 1.0,
+   "recall@10": 1.0,
+   "recall@3": 1.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-23",
+   "gold": [
+    "msg:959bb79c06cb"
+   ],
+   "gold_visibility": {
+    "msg:959bb79c06cb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 13,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-23",
+   "gold": [
+    "msg:959bb79c06cb"
+   ],
+   "gold_visibility": {
+    "msg:959bb79c06cb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-23",
+   "gold": [
+    "msg:959bb79c06cb"
+   ],
+   "gold_visibility": {
+    "msg:959bb79c06cb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "g-packaging.dependency_groups.DependencyGroupResolver._parse_group"
+  },
+  {
+   "episode": "pkg-23",
+   "gold": [
+    "msg:959bb79c06cb"
+   ],
+   "gold_visibility": {
+    "msg:959bb79c06cb": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 5,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.0,
+   "stale_in_top5": 0.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-24",
+   "gold": [
+    "msg:2d57ce2b15a8"
+   ],
+   "gold_visibility": {
+    "msg:2d57ce2b15a8": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "naive",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 20,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.4,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-24",
+   "gold": [
+    "msg:2d57ce2b15a8"
+   ],
+   "gold_visibility": {
+    "msg:2d57ce2b15a8": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "intent",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 9,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  },
+  {
+   "episode": "pkg-24",
+   "gold": [
+    "msg:2d57ce2b15a8"
+   ],
+   "gold_visibility": {
+    "msg:2d57ce2b15a8": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 0.0,
+   "hit@3": 0.0,
+   "hit@5": 0.0,
+   "library": "packaging",
+   "method": "group",
+   "precision@5": 0.0,
+   "protocol": "standard",
+   "rank": 12,
+   "recall@1": 0.0,
+   "recall@10": 0.0,
+   "recall@3": 0.0,
+   "recall@5": 0.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "g-packaging.dependency_groups.DependencyGroupResolver._resolve"
+  },
+  {
+   "episode": "pkg-24",
+   "gold": [
+    "msg:2d57ce2b15a8"
+   ],
+   "gold_visibility": {
+    "msg:2d57ce2b15a8": "prompt_message"
+   },
+   "hit@1": 0.0,
+   "hit@10": 1.0,
+   "hit@3": 0.0,
+   "hit@5": 1.0,
+   "library": "packaging",
+   "method": "intent+msg",
+   "precision@5": 0.2,
+   "protocol": "standard",
+   "rank": 4,
+   "recall@1": 0.0,
+   "recall@10": 1.0,
+   "recall@3": 0.0,
+   "recall@5": 1.0,
+   "scenario": "S1",
+   "stale@5": 0.2,
+   "stale_in_top5": 1.0,
+   "unit": "episode"
+  }
+ ]
+}

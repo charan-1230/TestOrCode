@@ -27,11 +27,13 @@ tool-fault plan.
 `<lib>` is one of `more_itertools`, `attrs` or `packaging`. In the agent-view files, each record equals `Episode.agent_payload()`.
 `tests/test_heldout_dataset.py` checks that no gold field appears in them.
 
-The runners are **not wired to these files yet**: building the data was the agreed scope. `scripts/run_experiment.py` and
-`run_episode.py` still read `pilot_*` from one repository. Running this set needs three things:
-- a dataset-path option;
-- one library clone (at the pinned HEAD) per stream;
-- `TEST_PYTHON` set to that library's venv for each stream. The venv must be on a system interpreter (`/usr/bin/python3.x`), because the bubblewrap sandbox does not mount uv-managed interpreters.
+**Running this set.** `scripts/heldout/merge_heldout.py` concatenates the three per-library files (byte for byte, no record edited) into
+`heldout_test.jsonl` and `heldout_test_agent_view.jsonl` and records their hashes in `heldout_manifest.json` (`--check` verifies
+them). The runners then take `--dataset heldout --split test --final --repos configs/repos.heldout.json`; the mapping gives each
+`repo_id` its clone (at the pinned HEAD, `../screening/heldout/<lib>`) and its system-interpreter venv (`venv-mit312`, `venv-attrs-sys`,
+`venv-pkg-sys`; the bubblewrap sandbox does not mount uv-managed interpreters). `tests/test_heldout_wiring.py` pins the merge, the 72
+episodes in stream order, the mapping and, where the clones exist, their HEADs and interpreter versions. The merged files are derived
+data: the per-library files stay the source of truth. Experimental decisions: `docs/final_protocol.md` and `configs/final.json`.
 
 ## How the episodes were built (all checks executed, nothing assumed)
 

@@ -100,6 +100,7 @@ from testorcode.errors import (
 from testorcode.llm_client import LLMClient, LLMResponse, describe_validation_error, merge_usage
 from testorcode.logging_config import episode_logging, get_logger
 from testorcode.memory import MemoryStore
+from testorcode.retrieval_hybrid import retrieval_config_id
 from testorcode.retrieval import Retriever, build_retriever, intent_queries, search_many
 from testorcode.schemas.contracts import (
     EpisodeContext,
@@ -712,6 +713,8 @@ class EpisodeRun:
             options["cached_mutants"] = self._cached_mutants
         if self.settings.guard_unmeasurable_strength == "allow":
             options["allow_unmeasurable_strength"] = True
+        if self.settings.guard_min_retention < 1.0:  # 1.0 = the pilot rule; passed only when relaxed
+            options["min_retention"] = self.settings.guard_min_retention
         return options
 
     def _verify_without_guard(self, g: GroupState) -> Stage:
@@ -1084,6 +1087,7 @@ class EpisodeRun:
                 provider=self.settings.llm_provider,
                 code_revision=_code_revision(),
                 prompt_template_version=self.PROMPTS,
+                retrieval_config_version=retrieval_config_id(self.settings) if self.profile.intent_retrieval or self.profile.standard_rag else None,
                 started_at=started_at,
                 ended_at=datetime.now(UTC),
             ),

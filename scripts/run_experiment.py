@@ -22,13 +22,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from testorcode.errors import ConfigError
-from testorcode.experiment import ROOT, ExperimentConfig, RepoEnvironment, run_experiment
+from testorcode.experiment import ROOT, ExperimentConfig, load_repos, run_experiment
 from testorcode.freeze import load_frozen
 from testorcode.schemas.result_schemas import ExperimentCondition
 
@@ -56,7 +57,17 @@ def main() -> int:
     parser.add_argument("--model", default=None, help="LLM_MODEL override for every run")
     parser.add_argument("--worktrees", default=str(ROOT.parent / "episode-worktrees"),
                         help="directory for the disposable episode worktrees (outside the clone and this project)")
+    parser.add_argument("--retrieval-mode", choices=("bm25", "hybrid"), default=None,
+                        help="RETRIEVAL_MODE for every retrieving condition (same model/budget; only the index differs)")
+    parser.add_argument("--embedding-backend", choices=("voyage", "local"), default=None)
+    parser.add_argument("--rerank", choices=("none", "voyage", "local"), default=None)
+    parser.add_argument("--embedding-cache-dir", default=None)
     args = parser.parse_args()
+    # Settings.from_env lets the process environment win over the env file, so these overrides reach every run.
+    for var, value in (("RETRIEVAL_MODE", args.retrieval_mode), ("EMBEDDING_BACKEND", args.embedding_backend),
+                       ("RERANK_BACKEND", args.rerank), ("EMBEDDING_CACHE_DIR", args.embedding_cache_dir)):
+        if value:
+            os.environ[var] = value
     try:
         frozen, frozen_sha = load_frozen(args.freeze) if args.freeze else (None, None)
         options = frozen.experiment if frozen is not None else None
@@ -73,13 +84,7 @@ def main() -> int:
             raise ValueError(f"--final needs a frozen configuration, not the draft {frozen.name!r}")
         if args.final and frozen is None:
             sys.stderr.write("warning: --final without --freeze: the runs record no frozen configuration\n")
-        repos = {}
-        if args.repos:
-            raw = json.loads(Path(args.repos).read_text(encoding="utf-8"))
-            base = Path(args.repos).resolve().parent  # relative paths are relative to the mapping file
-            repos = {k: RepoEnvironment.model_validate({**v, **{f: str((base / v[f]).absolute()) for f in ("path", "python")
-                                                              if v.get(f) and not Path(v[f]).is_absolute()}})
-                     for k, v in raw.items()}
+        repos = load_repos(args.repos) if args.repos else {}
         config = ExperimentConfig(
             split=args.split,
             final=args.final,
