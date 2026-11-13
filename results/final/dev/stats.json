@@ -1,0 +1,488 @@
+{
+  "pairs": [
+    {
+      "direction_macro_f1": {
+        "a": "FULL",
+        "b": "A1",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.19047619047619047,
+        "ci95": [
+          0.0,
+          0.5555555555555556
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "direction_macro_f1_secondary": {
+        "a": "FULL",
+        "b": "A1",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.7777777777777777,
+        "ci95": [
+          0.3,
+          0.9705882352941176
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": true
+      },
+      "secondary_direction_from": "action",
+      "final_action_accuracy": {
+        "a": "FULL",
+        "b": "A1",
+        "metric": "final_action_accuracy",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.625,
+        "ci95": [
+          0.2,
+          0.8888888888888888
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": true
+      },
+      "mcnemar_direction": {
+        "a": "FULL",
+        "b": "A1",
+        "correctness": "direction",
+        "a_only_correct": 2,
+        "b_only_correct": 0,
+        "both_correct": 12,
+        "neither_correct": 0,
+        "p_value": 0.5,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      },
+      "mcnemar_final_action": {
+        "a": "FULL",
+        "b": "A1",
+        "correctness": "final_action",
+        "a_only_correct": 10,
+        "b_only_correct": 0,
+        "both_correct": 2,
+        "neither_correct": 4,
+        "p_value": 0.001953125,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      }
+    },
+    {
+      "direction_macro_f1": {
+        "a": "FULL",
+        "b": "A2",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "direction_macro_f1_secondary": {
+        "a": "FULL",
+        "b": "A2",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.21367521367521358,
+        "ci95": [
+          -0.16666666666666666,
+          0.49999999999999994
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "secondary_direction_from": "action",
+      "final_action_accuracy": {
+        "a": "FULL",
+        "b": "A2",
+        "metric": "final_action_accuracy",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.3125,
+        "ci95": [
+          -0.18181818181818182,
+          0.631578947368421
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "mcnemar_direction": {
+        "a": "FULL",
+        "b": "A2",
+        "correctness": "direction",
+        "a_only_correct": 0,
+        "b_only_correct": 0,
+        "both_correct": 14,
+        "neither_correct": 0,
+        "p_value": 1.0,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      },
+      "mcnemar_final_action": {
+        "a": "FULL",
+        "b": "A2",
+        "correctness": "final_action",
+        "a_only_correct": 6,
+        "b_only_correct": 1,
+        "both_correct": 6,
+        "neither_correct": 3,
+        "p_value": 0.125,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      }
+    },
+    {
+      "direction_macro_f1": {
+        "a": "FULL",
+        "b": "A3",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "direction_macro_f1_secondary": {
+        "a": "FULL",
+        "b": "A3",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.06944444444444442,
+        "ci95": [
+          -0.19393939393939397,
+          0.36666666666666664
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "secondary_direction_from": "action",
+      "final_action_accuracy": {
+        "a": "FULL",
+        "b": "A3",
+        "metric": "final_action_accuracy",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.125,
+        "ci95": [
+          -0.2142857142857143,
+          0.47368421052631576
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "mcnemar_direction": {
+        "a": "FULL",
+        "b": "A3",
+        "correctness": "direction",
+        "a_only_correct": 0,
+        "b_only_correct": 0,
+        "both_correct": 14,
+        "neither_correct": 0,
+        "p_value": 1.0,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      },
+      "mcnemar_final_action": {
+        "a": "FULL",
+        "b": "A3",
+        "correctness": "final_action",
+        "a_only_correct": 3,
+        "b_only_correct": 1,
+        "both_correct": 9,
+        "neither_correct": 3,
+        "p_value": 0.625,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      }
+    },
+    {
+      "direction_macro_f1": {
+        "a": "FULL",
+        "b": "B1",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "direction_macro_f1_secondary": {
+        "a": "FULL",
+        "b": "B1",
+        "metric": "direction_macro_f1",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.2777777777777777,
+        "ci95": [
+          0.0,
+          0.49999999999999994
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "secondary_direction_from": "action",
+      "final_action_accuracy": {
+        "a": "FULL",
+        "b": "B1",
+        "metric": "final_action_accuracy",
+        "n_episodes": 9,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0,
+        "difference": 0.5,
+        "ci95": [
+          0.0,
+          0.75
+        ],
+        "samples": 10000,
+        "ci_excludes_zero": false
+      },
+      "mcnemar_direction": {
+        "a": "FULL",
+        "b": "B1",
+        "correctness": "direction",
+        "a_only_correct": 0,
+        "b_only_correct": 0,
+        "both_correct": 14,
+        "neither_correct": 0,
+        "p_value": 1.0,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      },
+      "mcnemar_final_action": {
+        "a": "FULL",
+        "b": "B1",
+        "correctness": "final_action",
+        "a_only_correct": 8,
+        "b_only_correct": 0,
+        "both_correct": 4,
+        "neither_correct": 4,
+        "p_value": 0.0078125,
+        "n_pairs": 9,
+        "n_unpaired_dropped": 0
+      }
+    }
+  ],
+  "seeds": {
+    "A1": {
+      "metric": "direction_macro_f1",
+      "per_seed": {
+        "0": 0.8095238095238095
+      },
+      "n_seeds": 1,
+      "mean": 0.8095238095238095,
+      "std": null
+    },
+    "A2": {
+      "metric": "direction_macro_f1",
+      "per_seed": {
+        "0": 1.0
+      },
+      "n_seeds": 1,
+      "mean": 1.0,
+      "std": null
+    },
+    "A3": {
+      "metric": "direction_macro_f1",
+      "per_seed": {
+        "0": 1.0
+      },
+      "n_seeds": 1,
+      "mean": 1.0,
+      "std": null
+    },
+    "B1": {
+      "metric": "direction_macro_f1",
+      "per_seed": {
+        "0": 1.0
+      },
+      "n_seeds": 1,
+      "mean": 1.0,
+      "std": null
+    },
+    "FULL": {
+      "metric": "direction_macro_f1",
+      "per_seed": {
+        "0": 1.0
+      },
+      "n_seeds": 1,
+      "mean": 1.0,
+      "std": null
+    }
+  },
+  "memory_savings": [
+    {
+      "condition": "A1",
+      "baseline": "A2",
+      "n_covered": 0,
+      "agent_tool_calls": {
+        "condition_mean": null,
+        "baseline_mean": null,
+        "n_pairs": 0,
+        "saving": null
+      },
+      "llm_calls": {
+        "condition_mean": null,
+        "baseline_mean": null,
+        "n_pairs": 0,
+        "saving": null
+      }
+    },
+    {
+      "condition": "A3",
+      "baseline": "A2",
+      "n_covered": 0,
+      "agent_tool_calls": {
+        "condition_mean": null,
+        "baseline_mean": null,
+        "n_pairs": 0,
+        "saving": null
+      },
+      "llm_calls": {
+        "condition_mean": null,
+        "baseline_mean": null,
+        "n_pairs": 0,
+        "saving": null
+      }
+    },
+    {
+      "condition": "FULL",
+      "baseline": "A2",
+      "n_covered": 1,
+      "agent_tool_calls": {
+        "condition_mean": 4.0,
+        "baseline_mean": 3.0,
+        "n_pairs": 1,
+        "saving": -0.33333333333333326
+      },
+      "llm_calls": {
+        "condition_mean": 3.0,
+        "baseline_mean": 1.0,
+        "n_pairs": 1,
+        "saving": -2.0
+      }
+    }
+  ],
+  "scoring_rules": {
+    "direction_from": "hypothesis",
+    "escalate_after_correct_repair": "wrong"
+  },
+  "hypothesis": {
+    "verdict": "rejected",
+    "rejection_tests": [
+      {
+        "test": "bootstrap 95% CI of FULL - B1 direction macro-F1 includes 0",
+        "fires": true,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "n_episodes": 9
+      },
+      {
+        "test": "B2 closes the gap: FULL - B2 direction macro-F1 < 0.05",
+        "fires": null,
+        "observed_gap": null
+      }
+    ],
+    "criteria": [
+      {
+        "criterion": "direction macro-F1 gain, FULL - B1",
+        "observed": 0.0,
+        "rule": ">= 0.15",
+        "n": 14.0,
+        "met": false
+      },
+      {
+        "criterion": "masked-regression rate, FULL",
+        "observed": 0.0,
+        "rule": "<= 0.05",
+        "n": null,
+        "met": true
+      },
+      {
+        "criterion": "masked-regression rate, B1 (expected high)",
+        "observed": 0.0,
+        "rule": ">= 0.2",
+        "n": null,
+        "met": false
+      },
+      {
+        "criterion": "mutant-kill retention, FULL (audit)",
+        "observed": 0.7142857142857143,
+        "rule": ">= 0.9",
+        "n": 7,
+        "met": false
+      },
+      {
+        "criterion": "mutant-kill retention, B1 (audit, expected low)",
+        "observed": 0.7142857142857143,
+        "rule": "<= 0.7",
+        "n": 7,
+        "met": false
+      },
+      {
+        "criterion": "agent tool-call saving on covered episodes, FULL vs A2",
+        "observed": -0.33333333333333326,
+        "rule": ">= 0.25",
+        "n": 1,
+        "met": false
+      },
+      {
+        "criterion": "over-generalisation on decoys, FULL (scoped memory)",
+        "observed": 0.0,
+        "rule": "<= 0.1",
+        "n": 1.0,
+        "met": true
+      },
+      {
+        "criterion": "over-generalisation on decoys, A4 (coarse memory)",
+        "observed": null,
+        "rule": ">= 0.3",
+        "n": null,
+        "met": null
+      }
+    ],
+    "thresholds": {
+      "min_direction_f1_gain": 0.15,
+      "max_masked_regression_full": 0.05,
+      "min_masked_regression_b1": 0.2,
+      "min_retention_full": 0.9,
+      "max_retention_b1": 0.7,
+      "min_covered_tool_call_saving": 0.25,
+      "max_overgeneralisation_scoped": 0.1,
+      "min_overgeneralisation_coarse": 0.3,
+      "b2_gap": 0.05
+    },
+    "scoring_rules": {
+      "direction_from": "hypothesis",
+      "escalate_after_correct_repair": "wrong"
+    }
+  }
+}

@@ -61,27 +61,32 @@ def main(argv: list[str] | None = None) -> int:
         pairs = [tuple(C(x.strip()) for x in p.split(":")) for p in args.pairs.split(",") if p.strip()]
     else:
         pairs = [(C.FULL, c) for c in present if c is not C.FULL] if C.FULL in present else []
+    secondary = rules.model_copy(update={"direction_from": "action" if rules.direction_from == "hypothesis" else "hypothesis"})
     out = {"pairs": [], "seeds": seed_summary(records, episodes, rules=rules), "memory_savings": [],
            "scoring_rules": rules.model_dump()}
     lines = ["# Paired statistics", "", f"Source: `{args.runs}`; {len(records)} records; bootstrap samples {args.samples}.",
              rules.describe() + ".",
              "Differences are A - B; CI = 95% percentile bootstrap over episodes (seeds of an episode resampled together).",
-             "", ("| A | B | Episodes | Direction macro-F1 diff [95% CI] | Final-action acc. diff [95% CI] | "
-                  "McNemar direction (A only / B only, p) | McNemar final action (A only / B only, p) |"),
-             "|---|---|---|---|---|---|---|"]
+             "", ("| A | B | Episodes | Direction macro-F1 diff, primary "
+                  f"({rules.direction_from}) [95% CI] | Direction macro-F1 diff, secondary ({secondary.direction_from}) [95% CI] | "
+                  "Final-action acc. diff [95% CI] | McNemar direction (A only / B only, p) | "
+                  "McNemar final action (A only / B only, p) |"),
+             "|---|---|---|---|---|---|---|---|"]
     for a, b in pairs:
         f1 = paired_bootstrap(records, a, b, episodes, samples=args.samples, rules=rules)
+        f1_secondary = paired_bootstrap(records, a, b, episodes, samples=args.samples, rules=secondary)
         acc = paired_bootstrap(records, a, b, episodes, metric="final_action_accuracy", samples=args.samples,
                                rules=rules)
         md = mcnemar(records, a, b, episodes, rules=rules)
         mf = mcnemar(records, a, b, episodes, correctness="final_action", rules=rules)
-        out["pairs"].append({"direction_macro_f1": f1, "final_action_accuracy": acc, "mcnemar_direction": md,
+        out["pairs"].append({"direction_macro_f1": f1, "direction_macro_f1_secondary": f1_secondary,
+                             "secondary_direction_from": secondary.direction_from, "final_action_accuracy": acc, "mcnemar_direction": md,
                              "mcnemar_final_action": mf})
 
         def ci(r):
             return f"{_f(r['difference'])} [{_f(r['ci95'][0])}, {_f(r['ci95'][1])}]" if r["ci95"] else _f(r["difference"])
 
-        lines.append(f"| {a.value} | {b.value} | {f1['n_episodes']} | {ci(f1)} | {ci(acc)} | "
+        lines.append(f"| {a.value} | {b.value} | {f1['n_episodes']} | {ci(f1)} | {ci(f1_secondary)} | {ci(acc)} | "
                      f"{md['a_only_correct']} / {md['b_only_correct']}, p={md['p_value']:.3f} | "
                      f"{mf['a_only_correct']} / {mf['b_only_correct']}, p={mf['p_value']:.3f} |")
     lines += ["", "## Direction macro-F1 per seed", "", "| Condition | Per seed | Mean | Std | Seeds |", "|---|---|---|---|---|"]

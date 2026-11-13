@@ -79,16 +79,17 @@ class Split:
 
 
 def condition_table(rows) -> tuple[list[str], list[list[str]]]:
-    header = ["Condition", "Episodes run", "Exec. failures", "Direction macro-F1", "Direction acc.", "Final-action acc.",
-              "Correct-repair rate", "Masked regressions"]
+    header = ["Condition", "Episodes run", "Exec. failures", "Direction macro-F1 (primary)", "Direction macro-F1 (action, secondary)",
+              "Direction acc.", "Final-action acc.", "Escalation rate", "Repair coverage", "Correct-repair rate", "Masked regressions"]
     body = []
     for r in rows:
         if not r["evaluated"]:
-            body.append([r["condition"], NOT_EVALUATED, str(r["execution_failures"]), "-", "-", "-", "-", "-"])
+            body.append([r["condition"], NOT_EVALUATED, str(r["execution_failures"]), "-", "-", "-", "-", "-", "-", "-", "-"])
             continue
         repair = frac(r["repairs_ok"], r["repairs"]) + (f" +{r['repair_unverifiable']} unverif." if r["repair_unverifiable"] else "")
         body.append([r["condition"], str(r["episodes_run"]), str(r["execution_failures"]), num(r["direction_macro_f1"]),
-                     frac(r["direction_correct"], r["direction_scored"]), num(r["final_action_accuracy"]), repair,
+                     num(r["direction_macro_f1_action"]), frac(r["direction_correct"], r["direction_scored"]),
+                     num(r["final_action_accuracy"]), num(r["escalation_rate"]), num(r["repair_coverage"]), repair,
                      frac(r["masked"], r["gold_fix"])])
     return header, body
 
@@ -353,15 +354,16 @@ def to_markdown(blocks) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--dev", type=Path, default=ROOT / "results/day3/pilot-dev-5cond")
-    parser.add_argument("--test", type=Path, default=ROOT / "results/day4/pilot-test-5cond")
-    parser.add_argument("--dataset", default=DEFAULT_DATASET)
+    parser.add_argument("--dev", type=Path, default=ROOT / "results/final/dev", help="runs of the dev stream (boltons pilot)")
+    parser.add_argument("--test", type=Path, default=ROOT / "results/final/heldout", help="runs of the held-out set")
+    parser.add_argument("--dataset", default="heldout", help="dataset of the test runs (the held-out set; split 'test')")
+    parser.add_argument("--dev-dataset", default=DEFAULT_DATASET, help="dataset of the dev runs (the pilot's dev stream)")
     parser.add_argument("--freeze", default=None, help="frozen config: scoring rules and hypothesis thresholds")
     parser.add_argument("--out", type=Path, default=HERE / "final")
     parser.add_argument("--no-pdf", action="store_true")
     args = parser.parse_args(argv)
     rules, thresholds, frozen = load_rules(args.freeze)
-    dev = Split("dev", args.dev, args.dataset, rules)
+    dev = Split("dev", args.dev, args.dev_dataset, rules)
     test = Split("test", args.test, args.dataset, rules)
     blocks = build_blocks(dev, test, frozen, thresholds, rules)
     args.out.mkdir(parents=True, exist_ok=True)

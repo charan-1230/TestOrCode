@@ -228,3 +228,29 @@ def test_retention_is_not_measured_when_nothing_was_killed_before(monkeypatch, t
 def test_min_retention_setting_defaults_to_the_pilot_rule() -> None:
     assert Settings.from_env({}).guard_min_retention == 1.0
     assert Settings.from_env({"GUARD_MIN_RETENTION": "0.9"}).guard_min_retention == 0.9
+
+
+# --------------------------------------------------------------------------- #
+# Direction metric: hypothesis primary, action secondary (both always reported)
+# --------------------------------------------------------------------------- #
+
+
+def test_summary_reports_both_direction_rules_escalation_rate_and_repair_coverage() -> None:
+    from testorcode.dataset import episode_path, load_episodes
+    from testorcode.evaluation import ScoringRules, summarize
+    from testorcode.experiment import read_records
+
+    runs = Path(__file__).resolve().parents[1] / "results" / "final" / "dev" / "runs.jsonl"
+    if not runs.is_file():
+        pytest.skip("dev pass records not present")
+    records, episodes = read_records(runs), load_episodes(episode_path("dev"))
+    primary = {s.condition: s.metrics for s in summarize(records, episodes, rules=ScoringRules(direction_from="hypothesis"))}
+    flipped = {s.condition: s.metrics for s in summarize(records, episodes, rules=ScoringRules(direction_from="action"))}
+    for condition, m in primary.items():
+        assert m["direction_macro_f1"] == m["direction_macro_f1_hypothesis"]  # primary follows the rule
+        assert flipped[condition]["direction_macro_f1"] == m["direction_macro_f1_action"]
+        # both are always present, whatever the rule: choosing one never hides the other
+        assert m["direction_macro_f1_action"] == flipped[condition]["direction_macro_f1_action"]
+        assert m["direction_macro_f1_hypothesis"] == flipped[condition]["direction_macro_f1_hypothesis"]
+        assert 0.0 <= m["escalation_rate"] <= 1.0 and 0.0 <= m["repair_coverage"] <= 1.0
+        assert m["escalation_rate"] + m["repair_coverage"] <= 1.0 + 1e-9  # an accepted repair is not an escalation

@@ -1,0 +1,110 @@
+{
+  "split": "dev",
+  "dataset": "pilot",
+  "episodes": [
+    "dev-01",
+    "dev-02",
+    "dev-03",
+    "dev-04",
+    "dev-05",
+    "dev-06",
+    "dev-07",
+    "dev-08",
+    "dev-09"
+  ],
+  "conditions": [
+    "FULL",
+    "B1",
+    "A1",
+    "A2",
+    "A3"
+  ],
+  "seeds": [
+    0
+  ],
+  "dataset_files_sha256": {
+    "pilot_dev.jsonl": "c6f0a20631cd5e50bd3fab21773c27d2a172b875c464bf94ae8d9e0e2afddffc",
+    "pilot_dev_agent_view.jsonl": "87d1398471c02cb913dc1277f9581c0a44370d69b1c2f993718ddacb0603afcd",
+    "pilot_test.jsonl": "fa3f12230cb27fd33c8dad88fabe8fc3727042338833e16aae188430d54649e7",
+    "pilot_test_agent_view.jsonl": "e21791d4fdae54dc86fa42bf97799ac8f08223cff671670d9e94b7401f9f9fa8"
+  },
+  "code_revision": "dfac052034ac26e0e2efb4bafb31df183a467a7d-dirty",
+  "final": false,
+  "tool_faults": true,
+  "tool_fault_rate": 0.1,
+  "repos": {},
+  "env_file": null,
+  "model_override": null,
+  "frozen": {
+    "sha256": "34d82393bfb3440f988f19a0c9885c1ce342fa727f66979615e843ff8c658a04",
+    "name": "final-v1",
+    "settings": {
+      "RETRIEVAL_MODE": "hybrid",
+      "EMBEDDING_BACKEND": "voyage",
+      "VOYAGE_EMBEDDING_MODEL": "voyage-code-3",
+      "RERANK_BACKEND": "none",
+      "EMBEDDING_CACHE_DIR": "results/embedding_cache",
+      "RETRIEVAL_TOP_K": "8",
+      "GUARD_UNMEASURABLE_STRENGTH": "escalate",
+      "GUARD_MIN_RETENTION": "0.9",
+      "MUTANT_CACHE_PATH": "",
+      "TEST_PATCH_RULE": "expected_value",
+      "MAX_REPAIR_REVISIONS": "1",
+      "SANDBOX_ISOLATION": "auto",
+      "SANDBOX_DOCKER_IMAGE": "",
+      "TEST_TIMEOUT_SECONDS": "120"
+    },
+    "experiment": {
+      "tool_faults": true,
+      "tool_fault_rate": 0.1
+    },
+    "scoring": {
+      "direction_from": "hypothesis",
+      "escalate_after_correct_repair": "wrong"
+    },
+    "hypothesis": {
+      "min_direction_f1_gain": 0.15,
+      "max_masked_regression_full": 0.05,
+      "min_masked_regression_b1": 0.2,
+      "min_retention_full": 0.9,
+      "max_retention_b1": 0.7,
+      "min_covered_tool_call_saving": 0.25,
+      "max_overgeneralisation_scoped": 0.1,
+      "min_overgeneralisation_coarse": 0.3,
+      "b2_gap": 0.05
+    },
+    "notes": "Frozen experimental decisions for the held-out evaluation (72 episodes, --dataset heldout --split test --final --repos configs/repos.heldout.json). Retrieval: hybrid BM25 + Voyage voyage-code-3 (RRF), reranking off, warmed cache results/embedding_cache; the BM25-only comparison is the separate retrieval study (results/retrieval_heldout_*). Guard: UPDATE_TEST repairs need mutant-kill retention >= 0.90 against the mutants the PRE-repair tests killed (the developer's reference tests are evaluation-side only and never reach the Guard); strength no mutant can measure is UNMEASURABLE and escalates; structural checks (removed assertions, skip/xfail, loosened comparisons, swallowed exceptions, scope) always apply; one revision, then escalate. Patch rule: expected_value (the tested, relaxed rule; the pilot's literal-only rule is not imposed). Tool faults: seeded, about 10% of agent tool calls (patch does not apply, invalid test selector, timeout) on top of each episode's own scenario-T plan; API/rate-limit errors are never injected faults. Scoring: direction macro-F1 over UPDATE_TEST and FIX_CODE only, direction taken from the hypothesis for an escalation; final-action metrics include ESCALATE; a Guard escalation after a correct repair counts as a wrong final action (a correct repair needs correct direction, passing tests and preserved integrity). Hypothesis thresholds are the Detailed Project Idea's provisional values and must be confirmed on the development data BEFORE the held-out set is evaluated; any change is committed before the first --final run. LLM_PROVIDER, LLM_BASE_URL, LLM_MODEL and LLM_STRUCTURED_MODE are deliberately absent: they come from .env, are recorded per run in config.json, and must be one dated model for every condition. B2 is not part of the final matrix: the B2 comparison is reported as not evaluated. Secrets never go here."
+  },
+  "settings": {
+    "llm_provider": "gemini",
+    "llm_base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
+    "llm_model": "gemini-3.5-flash-lite",
+    "llm_structured_mode": "json_schema",
+    "llm_max_retries": 6,
+    "llm_timeout_seconds": 90.0,
+    "voyage_embedding_model": "voyage-code-3",
+    "voyage_rerank_model": "rerank-2.5",
+    "experiment_condition": "A2",
+    "random_seed": 42,
+    "dataset_path": "datasets/pilot_dev.jsonl",
+    "results_path": "results",
+    "test_python": "/home/charan/Desktop/4-1/LMA/projects/proj2/TestOrCode/boltons-venv/bin/python",
+    "test_timeout_seconds": 120,
+    "retrieval_top_k": 8,
+    "max_repair_revisions": 1,
+    "retrieval_mode": "hybrid",
+    "embedding_backend": "voyage",
+    "local_embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "rerank_backend": "none",
+    "local_rerank_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "embedding_cache_dir": "results/embedding_cache",
+    "mutant_cache_path": null,
+    "guard_unmeasurable_strength": "escalate",
+    "guard_min_retention": 0.9,
+    "test_patch_rule": "expected_value",
+    "sandbox_isolation": "auto",
+    "sandbox_docker_image": null,
+    "log_level": "INFO",
+    "log_file": null
+  }
+}

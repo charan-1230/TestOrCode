@@ -23,8 +23,8 @@ from testorcode.freeze import load_rules
 
 SHOWN = (
     "n_runs", "n_incompatible_records", "n_execution_failures", "n_direction_scored", "direction_macro_f1",
-    "direction_accuracy", "n_direction_undecided", "n_tests_scored", "accuracy", "macro_f1", "masked_regression_rate",
-    "reverted_intent_rate", "escalation_precision", "escalation_recall", "unnecessary_escalation_rate",
+    "direction_macro_f1_hypothesis", "direction_macro_f1_action", "direction_accuracy", "n_direction_undecided", "n_tests_scored", "accuracy", "macro_f1", "masked_regression_rate",
+    "reverted_intent_rate", "escalation_rate", "repair_coverage", "escalation_precision", "escalation_recall", "unnecessary_escalation_rate",
     "repair_success_rate", "n_repair_unverifiable", "gold_evidence_recall@3", "gold_evidence_recall@5",
     "gold_evidence_recall@8", "citation_existence_rate", "mean_tool_calls", "mean_total_tokens",
 )  # fmt: skip

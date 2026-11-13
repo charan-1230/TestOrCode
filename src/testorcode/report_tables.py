@@ -88,6 +88,9 @@ def condition_rows(
             "condition": condition.value, "evaluated": evaluated,
             "episodes_run": c.get("scored", 0) if c else 0, "execution_failures": c.get("failed", 0) if c else 0,
             "direction_macro_f1": m.get("direction_macro_f1") if evaluated else None,
+            "direction_macro_f1_action": m.get("direction_macro_f1_action") if evaluated else None,  # secondary
+            "escalation_rate": m.get("escalation_rate") if evaluated else None,
+            "repair_coverage": m.get("repair_coverage") if evaluated else None,
             "final_action_accuracy": m.get("accuracy") if evaluated else None,
             "direction_correct": round((m.get("direction_accuracy") or 0) * (m.get("n_direction_scored") or 0))
             if evaluated and m.get("direction_accuracy") is not None else None,
@@ -109,21 +112,22 @@ def markdown_table(rows: list[dict[str, Any]], *, title: str, notes: Sequence[st
         ("**Preliminary.** Raw counts are shown next to each rate. `-` means not computable (never 0). A condition "
          f"that has not run is marked *{NOT_EVALUATED}*. Execution failures (API/tool errors) are counted apart and "
          "never scored."), "",
-        ("| Condition | Episodes run | Execution failures | Direction macro-F1 | Direction accuracy | "
-         "Final-action accuracy | Correct-repair rate | Masked regressions |"),
-        "|---|---|---|---|---|---|---|---|",
+        ("| Condition | Episodes run | Execution failures | Direction macro-F1 (primary) | Direction macro-F1 (action, secondary) | "
+         "Direction accuracy | Final-action accuracy | Escalation rate | Repair coverage | Correct-repair rate | Masked regressions |"),
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in rows:
         if not r["evaluated"]:
             failed = str(r["execution_failures"]) if r["execution_failures"] else "0"
-            lines.append(f"| {r['condition']} | {NOT_EVALUATED} | {failed} | - | - | - | - | - |")
+            lines.append(f"| {r['condition']} | {NOT_EVALUATED} | {failed} | - | - | - | - | - | - | - | - |")
             continue
         repair = _frac(r["repairs_ok"], r["repairs"])
         if r["repair_unverifiable"]:
             repair += f" +{r['repair_unverifiable']} unverifiable"
         lines.append(
             f"| {r['condition']} | {r['episodes_run']} | {r['execution_failures']} | {_f(r['direction_macro_f1'])} | "
-            f"{_frac(r['direction_correct'], r['direction_scored'])} | {_f(r['final_action_accuracy'])} | {repair} | {_frac(r['masked'], r['gold_fix'])} |"
+            f"{_f(r['direction_macro_f1_action'])} | {_frac(r['direction_correct'], r['direction_scored'])} | "
+            f"{_f(r['final_action_accuracy'])} | {_f(r['escalation_rate'])} | {_f(r['repair_coverage'])} | {repair} | {_frac(r['masked'], r['gold_fix'])} |"
         )
     if notes:
         lines += ["", *[f"- {n}" for n in notes]]

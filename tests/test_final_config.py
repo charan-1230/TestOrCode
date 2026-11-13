@@ -54,9 +54,19 @@ def test_scoring_rules_and_dpi_thresholds(frozen) -> None:
     assert (h.max_overgeneralisation_scoped, h.min_overgeneralisation_coarse) == (0.1, 0.3)
 
 
-def test_model_and_secrets_stay_out_of_the_frozen_file(frozen) -> None:
-    keys = set(json.loads(FINAL.read_text())["settings"])
-    assert not keys & SECRET_VARS and not any(k.startswith(("LLM_", "VOYAGE_API")) for k in keys - {"VOYAGE_EMBEDDING_MODEL"})
+def test_model_is_pinned_and_secrets_stay_out_of_the_frozen_file(frozen) -> None:
+    settings = json.loads(FINAL.read_text())["settings"]
+    assert not set(settings) & SECRET_VARS and not any(k.startswith(("LLM_API_KEY", "VOYAGE_API_KEY")) for k in settings)
+    assert settings["LLM_MODEL"] == "gemini-3.5-flash-lite" and settings["LLM_PROVIDER"] == "gemini"
+    # a wrong .env (a typo in the model id) cannot change the frozen model
+    applied = frozen.apply(Settings.from_env({"LLM_MODEL": "typo-model"}))
+    assert applied.llm_model == "gemini-3.5-flash-lite" and applied.llm_structured_mode == "json_schema"
+
+
+def test_hypothesis_direction_is_primary_and_action_is_secondary_in_the_notes(frozen) -> None:
+    assert frozen.scoring.direction_from == "hypothesis"
+    notes = frozen.notes or ""
+    assert "PRIMARY direction macro-F1" in notes and "SECONDARY direction macro-F1" in notes and "CONFIRMED UNCHANGED" in notes
 
 
 def test_conditions_implement_the_ablations() -> None:

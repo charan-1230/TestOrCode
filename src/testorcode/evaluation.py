@@ -528,6 +528,8 @@ class ScoringRules(BaseModel):
 
 
 DEFAULT_RULES: Final[ScoringRules] = ScoringRules()
+HYPOTHESIS_RULES: Final[ScoringRules] = ScoringRules(direction_from="hypothesis")
+ACTION_RULES: Final[ScoringRules] = ScoringRules(direction_from="action")
 
 
 def scored_direction(prediction: PredictedDecision | None, rules: ScoringRules = DEFAULT_RULES) -> RepairDirection | None:
@@ -660,6 +662,9 @@ def _summarize_condition(
     injected = recovered = 0
     scope_hits: list[bool] = []
     after_repair = 0
+    directions_hyp: list[tuple[RepairDirection, RepairDirection | None]] = []  # both rules, whatever ``rules`` says
+    directions_act: list[tuple[RepairDirection, RepairDirection | None]] = []
+    coverage_tests = covered_by_repair = 0
 
     for rec in scored_runs:
         episode = episodes[rec.episode_id]
@@ -682,8 +687,13 @@ def _summarize_condition(
                 if score.expected_action is not DecisionLabel.ESCALATE:
                     non_escalate_gold += 1
                     unnecessary += final is DecisionLabel.ESCALATE
+            accepted_tests = {t for g in rec.failure_groups if g.disposition == "accepted" for t in g.test_ids}
+            coverage_tests += 1
+            covered_by_repair += score.test_id in accepted_tests
             if score.expected_action is not DecisionLabel.ESCALATE:  # S5 cases are scored as escalation, not side
                 directions.append((score.gold_direction, scored_direction(predictions.get(score.test_id), rules)))
+                directions_hyp.append((score.gold_direction, scored_direction(predictions.get(score.test_id), HYPOTHESIS_RULES)))
+                directions_act.append((score.gold_direction, scored_direction(predictions.get(score.test_id), ACTION_RULES)))
             masked += score.wrong_side == "masked_regression"
             reverted += score.wrong_side == "reverted_intent"
             gold_fix += score.expected_action is DecisionLabel.FIX_CODE
@@ -751,10 +761,19 @@ def _summarize_condition(
         # the repair was then verified.  Gold-ESCALATE tests are excluded; an undecided test counts as a miss.
         "direction_macro_f1": _direction_macro_f1(directions),
         "direction_accuracy": _ratio(sum(1 for g, p in directions if g is p), len(directions)),
+        # Primary (``direction_macro_f1``) follows ``rules.direction_from``; both rules are always reported next to each
+        # other so the choice never hides the other number.  The frozen final configuration: hypothesis primary.
+        "direction_macro_f1_hypothesis": _direction_macro_f1(directions_hyp),
+        "direction_macro_f1_action": _direction_macro_f1(directions_act),
+        "n_direction_undecided_action": float(sum(1 for _, p in directions_act if p is None)),
         "n_direction_scored": float(len(directions)),
         "n_direction_undecided": float(sum(1 for _, p in directions if p is None)),
         "masked_regression_rate": _ratio(masked, gold_fix),
         "reverted_intent_rate": _ratio(reverted, gold_update),
+        # Reported separately from direction and accuracy: how often the final action is ESCALATE, and for how many
+        # scored tests a repair was accepted (repair coverage).  Denominator: scored tests.
+        "escalation_rate": _ratio(predicted_escalate, len(pairs)),
+        "repair_coverage": _ratio(covered_by_repair, coverage_tests),
         "escalation_precision": _ratio(true_escalate, predicted_escalate),
         "escalation_recall": _ratio(true_escalate, gold_escalate),
         "unnecessary_escalation_rate": _ratio(unnecessary, non_escalate_gold),
